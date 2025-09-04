@@ -90,6 +90,8 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
   const [estimatedCompletion, setEstimatedCompletion] = useState<Date | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [stepProgress, setStepProgress] = useState(0);
 
   // Calculate total estimated duration
   const totalEstimatedDuration = AGENT_STEPS.reduce((sum, step) => sum + step.estimatedDuration, 0);
@@ -143,7 +145,8 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
         `${import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'}/api/journey/status/${jobId}`,
         { 
           headers,
-          method: 'GET'
+          method: 'GET',
+          signal: AbortSignal.timeout(10000) // 10 second timeout
         }
       )
       
@@ -157,19 +160,24 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
         
         setStatus(data.status)
         
+        // Update progress state properly
         if (data.progress) {
           setProgress(data.progress)
+          setCurrentStep(data.progress.current_step || 0)
+          setStepProgress(data.progress.percentage || 0)
         }
         
         if (data.status === 'completed') {
-          setProgress(prev => ({
-            ...prev!,
+          const completedProgress = {
             current_step: 8,
             total_steps: 8,
             step_name: 'Completed',
             message: 'Journey map generated successfully!',
             percentage: 100
-          }))
+          }
+          setProgress(completedProgress)
+          setCurrentStep(8)
+          setStepProgress(100)
           
           if (onComplete) {
             setTimeout(() => onComplete(), 1500)
@@ -261,6 +269,8 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
           // Handle progress updates
           if (data.progress) {
             setProgress(data.progress);
+            setCurrentStep(data.progress.current_step || 0);
+            setStepProgress(data.progress.percentage || 0);
             setStatus(data.status || 'processing');
             
             // Set start time on first progress update
@@ -271,14 +281,16 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
 
           // Handle completion
           if (data.status === 'completed') {
-            setProgress(prev => ({
-              ...prev!,
+            const completedProgress = {
               current_step: 8,
               total_steps: 8,
               step_name: 'Completed',
               message: 'Journey map generated successfully!',
               percentage: 100
-            }));
+            };
+            setProgress(completedProgress);
+            setCurrentStep(8);
+            setStepProgress(100);
             
             if (onComplete) {
               setTimeout(() => onComplete(), 1500);
@@ -393,15 +405,15 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
 
   // Get current step info
   const getCurrentStepInfo = () => {
-    if (!progress) return AGENT_STEPS[0];
-    const stepIndex = Math.max(0, Math.min(progress.current_step - 1, AGENT_STEPS.length - 1));
+    if (!currentStep) return AGENT_STEPS[0];
+    const stepIndex = Math.max(0, Math.min(currentStep - 1, AGENT_STEPS.length - 1));
     return AGENT_STEPS[stepIndex];
   };
 
   const currentStepInfo = getCurrentStepInfo();
   const isCompleted = status === "completed";
   const isFailed = status === "failed";
-  const percentage = progress?.percentage || 0;
+  const percentage = stepProgress;
 
   return (
     <div className="space-y-6">
@@ -458,7 +470,7 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-gray-700">Overall Progress</span>
-            <span className="text-sm font-bold text-gray-900">{Math.round(percentage)}%</span>
+            <span className="text-sm font-bold text-gray-900">{Math.round(stepProgress)}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
             <motion.div
@@ -468,12 +480,12 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
                 'bg-gradient-to-r from-blue-600 to-purple-600'
               }`}
               initial={{ width: 0 }}
-              animate={{ width: `${percentage}%` }}
+              animate={{ width: `${stepProgress}%` }}
             />
           </div>
           <div className="flex justify-between text-xs text-gray-500 mt-1">
             <span>
-              {progress ? `Step ${progress.current_step} of ${progress.total_steps}` : 'Initializing...'}
+              {currentStep ? `Step ${currentStep} of 8` : 'Initializing...'}
             </span>
             <span>
               {startTime && !isCompleted && !isFailed ? formatTime(elapsedTime) : ''}
@@ -482,17 +494,17 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
         </div>
 
         {/* Current Agent Status */}
-        {!isCompleted && !isFailed && progress && (
+        {!isCompleted && !isFailed && currentStep > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
             <div className="flex items-center space-x-4">
               <div className="text-3xl">{currentStepInfo.icon}</div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-blue-900">{currentStepInfo.name}</h3>
                 <p className="text-blue-700 mb-2">{currentStepInfo.description}</p>
-                <p className="text-sm text-blue-600 font-medium">{progress.message}</p>
+                <p className="text-sm text-blue-600 font-medium">{progress?.message || 'Processing...'}</p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-blue-900">{Math.round(percentage)}%</div>
+                <div className="text-2xl font-bold text-blue-900">{Math.round(stepProgress)}%</div>
                 {estimatedCompletion && (
                   <div className="text-xs text-blue-600">
                     {formatTimeRemaining((estimatedCompletion.getTime() - Date.now()) / 1000)}
@@ -570,9 +582,9 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
         <div className="space-y-3">
           {AGENT_STEPS.map((step, index) => {
             const stepNumber = index + 1;
-            const isCompleted = progress ? stepNumber < progress.current_step : false;
-            const isCurrent = progress ? stepNumber === progress.current_step : stepNumber === 1;
-            const isPending = progress ? stepNumber > progress.current_step : stepNumber > 1;
+            const isStepCompleted = currentStep > stepNumber;
+            const isStepCurrent = currentStep === stepNumber;
+            const isStepPending = currentStep < stepNumber;
 
             return (
               <motion.div
@@ -581,24 +593,24 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
                 className={`flex items-center space-x-4 p-4 rounded-xl transition-all duration-300 ${
-                  isCurrent 
+                  isStepCurrent 
                     ? 'bg-blue-50 border-2 border-blue-200 shadow-sm' 
-                    : isCompleted 
+                    : isStepCompleted 
                       ? 'bg-green-50 border border-green-200'
                       : 'bg-gray-50 border border-gray-200'
                 }`}
               >
                 {/* Step Icon/Status */}
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
-                  isCompleted 
+                  isStepCompleted 
                     ? 'bg-green-500 text-white' 
-                    : isCurrent 
+                    : isStepCurrent 
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-300 text-gray-600'
                 }`}>
-                  {isCompleted ? (
+                  {isStepCompleted ? (
                     <CheckCircle className="w-6 h-6" />
-                  ) : isCurrent ? (
+                  ) : isStepCurrent ? (
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -614,19 +626,19 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
                   <div className="flex items-center space-x-2 mb-1">
                     <span className="text-lg">{step.icon}</span>
                     <h4 className={`font-semibold ${
-                      isCurrent ? 'text-blue-900' : isCompleted ? 'text-green-900' : 'text-gray-600'
+                      isStepCurrent ? 'text-blue-900' : isStepCompleted ? 'text-green-900' : 'text-gray-600'
                     }`}>
                       {step.name}
                     </h4>
                   </div>
                   <p className={`text-sm ${
-                    isCurrent ? 'text-blue-700' : isCompleted ? 'text-green-700' : 'text-gray-500'
+                    isStepCurrent ? 'text-blue-700' : isStepCompleted ? 'text-green-700' : 'text-gray-500'
                   }`}>
                     {step.description}
                   </p>
                   
                   {/* Current step progress message */}
-                  {isCurrent && progress && (
+                  {isStepCurrent && progress && (
                     <p className="text-xs text-blue-600 font-medium mt-1">
                       {progress.message}
                     </p>
@@ -635,9 +647,9 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
 
                 {/* Duration/Status */}
                 <div className="text-right">
-                  {isCompleted ? (
+                  {isStepCompleted ? (
                     <span className="text-xs text-green-600 font-medium">✓ Complete</span>
-                  ) : isCurrent ? (
+                  ) : isStepCurrent ? (
                     <div className="flex items-center space-x-1">
                       <Clock className="w-4 h-4 text-blue-500" />
                       <span className="text-xs text-blue-600">
@@ -660,7 +672,7 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-lg font-bold text-gray-900">
-                {progress?.current_step || 0}/{AGENT_STEPS.length}
+                {currentStep || 0}/{AGENT_STEPS.length}
               </div>
               <div className="text-sm text-gray-600">Agents Complete</div>
             </div>
