@@ -1,14 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../lib/supabase'
 import { Map, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
-
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export default function EmailVerificationPage() {
   const navigate = useNavigate()
