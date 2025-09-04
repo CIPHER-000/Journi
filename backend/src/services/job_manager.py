@@ -175,16 +175,24 @@ class JobManager:
             job.status = JobStatus.PROCESSING
             job.updated_at = datetime.now()
             await self._update_progress(job_id, 0, "Starting", "Initializing journey mapping process...")
+            
+            # Add timeout for the entire workflow
+            import asyncio
+            
             crew_coordinator = CrewCoordinator(user)
 
             async def progress_callback(step: int, step_name: str, message: str):
                 await self._update_progress(job_id, step, step_name, message)
 
             try:
-                form_data_dict = job.form_data.dict()
-                journey_map_data = await crew_coordinator.execute_workflow(
-                    form_data_dict, progress_callback, job_id
+                # Add timeout to prevent hanging
+                workflow_task = asyncio.create_task(
+                    crew_coordinator.execute_workflow(form_data_dict, progress_callback, job_id)
                 )
+                
+                # Wait for completion with timeout (15 minutes max)
+                journey_map_data = await asyncio.wait_for(workflow_task, timeout=900)
+                
                 journey_map = self._convert_to_journey_map(journey_map_data)
                 job.result = journey_map
                 job.status = JobStatus.COMPLETED
@@ -201,7 +209,20 @@ class JobManager:
 
                 await self._update_progress(job_id, 8, "Completed", "Journey map generated successfully!")
 
+            except asyncio.TimeoutError:
+                logger.error(f"Workflow timeout for job {job_id}")
+                job.status = JobStatus.FAILED
+                job.error_message = "Workflow timed out after 15 minutes"
+                job.updated_at = datetime.now()
+                await usage_service.update_journey_status(
+                    journey_id=job_id,
+                    status="failed",
+                    progress_data={"error": "Workflow timeout"}
+                )
+                await self._update_progress(job_id, -1, "Failed", "Workflow timed out")
+                raise
             except Exception as workflow_error:
+                logger.error(f"Workflow error for job {job_id}: {str(workflow_error)}")
                 job.status = JobStatus.FAILED
                 job.error_message = str(workflow_error)
                 job.updated_at = datetime.now()
@@ -214,6 +235,7 @@ class JobManager:
                 raise workflow_error
 
         except Exception as e:
+            logger.error(f"Job manager error for job {job_id}: {str(e)}")
             job.status = JobStatus.FAILED
             job.error_message = str(e)
             await usage_service.update_journey_status(
