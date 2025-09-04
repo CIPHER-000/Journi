@@ -352,7 +352,27 @@ export default function CreateJourneyPage() {
         }
         
         // If we get here, the response is OK and parsed as JSON
-        return responseData;
+        console.log('Journey creation successful, job data:', responseData)
+        
+        // Success case - start tracking the job
+        const job: JobStatus = responseData
+        
+        // Generate title if not provided by backend
+        const journeyTitle = job.result?.title || generateJourneyTitle(formData)
+        
+        // Update the job status with the title
+        setJobStatus({
+          ...job,
+          result: {
+            ...job.result,
+            title: journeyTitle
+          }
+        })
+        
+        setProgressMessages(['🚀 Journey map creation started...', '🤖 Initializing AI agents...'])
+        
+        // The JourneyProgress component will handle all the progress tracking
+        return
       } catch (error) {
         console.error('Error in fetch request:', error);
         
@@ -376,14 +396,6 @@ export default function CreateJourneyPage() {
       }
       
       // Handle response status codes
-      let responseData;
-      try {
-        responseData = await response.json();
-      } catch (e) {
-        console.error('Failed to parse response as JSON:', e);
-        throw new Error('Invalid response from server');
-      }
-      
       if (response.status === 402) {
         // Payment required - show upgrade modal
         setUsageInfo({
@@ -394,35 +406,6 @@ export default function CreateJourneyPage() {
         setIsSubmitting(false);
         return;
       } 
-      
-      if (response.ok) {
-        // Success case - start tracking the job
-        const job: JobStatus = responseData;
-        console.log('Journey creation successful, job data:', job);
-        
-        // Ensure we have the title from the backend response if available, otherwise use the form data
-        const journeyTitle = job.result?.title || formData.title;
-        
-        // Update the job status with the title
-        setJobStatus({
-          ...job,
-          result: {
-            ...job.result,
-            title: journeyTitle
-          }
-        });
-        
-        setProgressMessages(['🚀 Journey map creation started...', '🤖 Initializing AI agents...']);
-        
-        // The JourneyProgress component will handle all the progress tracking
-        // No need to manage WebSocket or polling here
-        
-        return; // Exit successfully
-      }
-      
-      // If we get here, there was an error
-      console.error('Failed to create journey map. Response:', responseData);
-      throw new Error(responseData.detail || responseData.message || 'Failed to create journey map');
       
     } catch (error: unknown) {
       console.error('Error creating journey map:', error);
