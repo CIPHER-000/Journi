@@ -174,6 +174,7 @@ class AuthService:
     async def verify_token(self, token: str) -> Optional[UserProfile]:
         """Verify Supabase access token and return user profile"""
         if not self._is_available():
+            logger.warning("Supabase auth service not available")
             return None
             
         try:
@@ -189,11 +190,14 @@ class AuthService:
                 logger.warning(f"Email not confirmed for user: {auth_response.user.id}")
                 return None
             
+            logger.info(f"Successfully verified token for user: {auth_response.user.id}")
+            
             # Try to get existing user profile
             profile_response = self.supabase_admin.table("users").select("*").eq("id", auth_response.user.id).execute()
             
             if profile_response.data:
                 # User profile exists, use it
+                logger.info(f"Found existing user profile for: {auth_response.user.id}")
                 profile_data = profile_response.data[0]
             else:
                 # User profile doesn't exist, create it
@@ -206,12 +210,12 @@ class AuthService:
                     "journey_count": 0,
                     "is_active": True,
                     "email_verified": True,
-                    "created_at": datetime.utcnow().isoformat(),
-                    "updated_at": datetime.utcnow().isoformat()
                 }
                 
                 try:
                     create_response = self.supabase_admin.table("users").insert(new_profile_data).execute()
+                    logger.info(f"User profile creation response: {create_response}")
+                    
                     if not create_response.data:
                         logger.error(f"Failed to create user profile for {auth_response.user.id}")
                         return None
@@ -219,23 +223,53 @@ class AuthService:
                     logger.info(f"Successfully created user profile for {auth_response.user.id}")
                 except Exception as create_error:
                     logger.error(f"Error creating user profile: {str(create_error)}")
-                    return None
+                    # If profile creation fails, create a minimal profile from auth data
+                    logger.info("Creating minimal profile from auth data")
+                    profile_data = {
+                        "id": auth_response.user.id,
+                        "email": auth_response.user.email,
+                        "plan_type": "free",
+                        "journey_count": 0,
+                        "is_active": True,
+                        "email_verified": True,
+                        "created_at": auth_response.user.created_at,
+                        "updated_at": auth_response.user.updated_at or auth_response.user.created_at,
+                        "journey_limit": 2,
+                        "openai_api_key": None,
+                        "last_login": None
+                    }
             
             # Get user's plan details
-            plan_response = self.supabase_admin.table("subscription_plans").select("journey_limit").eq("id", profile_data.get("plan_type", "free")).execute()
-            journey_limit = plan_response.data[0]["journey_limit"] if plan_response.data else 2
-            profile_data['journey_limit'] = journey_limit
+            try:
+                plan_response = self.supabase_admin.table("subscription_plans").select("journey_limit").eq("id", profile_data.get("plan_type", "free")).execute()
+                journey_limit = plan_response.data[0]["journey_limit"] if plan_response.data else 2
+                profile_data['journey_limit'] = journey_limit
+            except Exception as plan_error:
+                logger.warning(f"Failed to get plan details, using default: {plan_error}")
+                profile_data['journey_limit'] = 2
             
+            # Ensure all required fields are present
+            if 'created_at' not in profile_data:
+                profile_data['created_at'] = auth_response.user.created_at
+            if 'updated_at' not in profile_data:
+                profile_data['updated_at'] = auth_response.user.updated_at or auth_response.user.created_at
+            if 'openai_api_key' not in profile_data:
+                profile_data['openai_api_key'] = None
+            if 'last_login' not in profile_data:
+                profile_data['last_login'] = None
+            
+            logger.info(f"Creating UserProfile object with data: {profile_data}")
             user_profile = UserProfile(**profile_data)
             
             # Decrypt API key
             if user_profile.openai_api_key:
                 user_profile.openai_api_key = self._decrypt_api_key(user_profile.openai_api_key)
             
+            logger.info(f"Successfully created UserProfile for: {user_profile.email}")
             return user_profile
             
         except Exception as e:
-            logger.warning(f"Token verification failed: {str(e)}")
+            logger.error(f"Token verification failed: {str(e)}", exc_info=True)
             return None
     
     async def update_user_settings(self, user_id: str, openai_api_key: Optional[str]) -> UserProfile:
