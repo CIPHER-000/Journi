@@ -124,6 +124,11 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
 
   // Polling fallback function
   const pollJobStatus = useCallback(async (jobId: string) => {
+    // Prevent excessive polling if already completed/failed
+    if (status === 'completed' || status === 'failed') {
+      return;
+    }
+
     try {
       const token = localStorage.getItem('auth_token')
       const headers: HeadersInit = {
@@ -183,15 +188,21 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
         }
         
         // Continue polling if still processing
-        if (data.status === 'processing' || data.status === 'queued') {
-          setTimeout(() => pollJobStatus(jobId), 3000)
+        if ((data.status === 'processing' || data.status === 'queued') && status !== 'completed' && status !== 'failed') {
+          // Increase polling interval to reduce resource usage
+          setTimeout(() => pollJobStatus(jobId), 8000) // Changed from 3s to 8s
         }
       }
     } catch (error) {
       console.error('Polling error:', error)
-      setError('Connection error during polling')
-      // Retry polling after delay
-      setTimeout(() => pollJobStatus(jobId), 5000)
+      
+      // Only retry if not completed/failed and haven't exceeded attempts
+      if (status !== 'completed' && status !== 'failed' && reconnectAttempts < 5) {
+        setReconnectAttempts(prev => prev + 1)
+        setTimeout(() => pollJobStatus(jobId), 10000) // Longer delay on error
+      } else {
+        setError('Unable to connect to backend. Please refresh the page.')
+      }
     } finally {
       // Don't set loading to false here since we're polling
     }
@@ -218,8 +229,11 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
         console.log('WebSocket connection timeout, falling back to polling');
         newWs.close();
         setConnectionStatus('disconnected');
-        pollJobStatus(jobId);
-      }, 10000);
+        // Only start polling if not already polling
+        if (!pollIntervalRef.current) {
+          pollJobStatus(jobId);
+        }
+      }, 15000); // Increased timeout
 
       newWs.onopen = () => {
         clearTimeout(connectionTimeout);
@@ -293,8 +307,10 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
         setConnectionStatus('disconnected');
         setError("Connection error. Falling back to polling...");
         
-        // Fallback to polling
-        pollJobStatus(jobId);
+        // Fallback to polling only if not already polling
+        if (!pollIntervalRef.current) {
+          pollJobStatus(jobId);
+        }
       };
 
       newWs.onclose = (event) => {
@@ -304,7 +320,7 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
         
         // Only try to reconnect if not completed/failed and haven't exceeded attempts
         if (status !== 'completed' && status !== 'failed' && reconnectAttempts < 3) {
-          const timeout = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
+          const timeout = Math.min(2000 * Math.pow(2, reconnectAttempts), 20000);
           console.log(`🔄 Reconnecting in ${timeout}ms... (attempt ${reconnectAttempts + 1}/3)`);
           
           setTimeout(() => {
@@ -313,7 +329,10 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
           }, timeout);
         } else if (reconnectAttempts >= 3) {
           console.log('Max reconnection attempts reached, falling back to polling');
-          pollJobStatus(jobId);
+          // Only start polling if not already polling
+          if (!pollIntervalRef.current) {
+            pollJobStatus(jobId);
+          }
         }
       };
 
@@ -322,7 +341,10 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
     } catch (error) {
       console.error('WebSocket setup failed:', error);
       setConnectionStatus('disconnected');
-      pollJobStatus(jobId);
+      // Only start polling if not already polling
+      if (!pollIntervalRef.current) {
+        pollJobStatus(jobId);
+      }
     }
   }, [jobId, reconnectAttempts, status, onComplete, pollJobStatus, startTime, navigate]);
 
@@ -333,8 +355,15 @@ export default function JourneyProgress({ jobId, title, onComplete }: JourneyPro
     console.log(`🔄 Initializing connection for job ${jobId}`);
     setStartTime(new Date());
     
-    // Try WebSocket first, with polling fallback
-    connectWebSocket();
+    // Start with polling since WebSocket is failing
+    pollJobStatus(jobId);
+    
+    // Try WebSocket as secondary option
+    setTimeout(() => {
+      if (connectionStatus === 'disconnected') {
+        connectWebSocket();
+      }
+    }, 5000);
     
     // Cleanup function
     return () => {
