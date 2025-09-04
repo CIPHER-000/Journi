@@ -57,6 +57,7 @@ app = FastAPI(
 # Define allowed origins for production
 PROD_ALLOWED_ORIGINS = [
     "https://getjourni.netlify.app",
+    "https://journi-ai-journey-mapper.netlify.app",
     "https://journi-frontend.netlify.app",
     "http://localhost:5173",
     "https://localhost:5173",

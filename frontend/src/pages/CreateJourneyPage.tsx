@@ -264,27 +264,27 @@ export default function CreateJourneyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Generate title automatically
-    const generatedTitle = generateJourneyTitle(formData);
-    setFormData(prev => ({ ...prev, title: generatedTitle }));
-    
     setIsSubmitting(true)
     setStartTime(new Date())
     setProgressMessages([])
 
     try {
+      // Generate title automatically
+      const generatedTitle = generateJourneyTitle(formData);
+      const formDataWithTitle = { ...formData, title: generatedTitle };
+      
       const formDataToSend = new FormData()
-      formData.files.forEach(file => {
+      formDataWithTitle.files.forEach(file => {
         formDataToSend.append('files', file)
       })
       
       // Add other form data
-      Object.entries(formData).forEach(([key, value]) => {
+      Object.entries(formDataWithTitle).forEach(([key, value]) => {
         if (key !== 'files') {
           if (Array.isArray(value)) {
             value.forEach(item => formDataToSend.append(key, item))
           } else {
-            formDataToSend.append(key, value)
+            formDataToSend.append(key, value || '')
           }
         }
       })
