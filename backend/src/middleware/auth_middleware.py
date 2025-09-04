@@ -1,0 +1,53 @@
+from fastapi import HTTPException, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Optional
+from ..services.auth_service import auth_service
+from ..models.auth import UserProfile
+import logging
+
+logger = logging.getLogger(__name__)
+
+security = HTTPBearer()
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> UserProfile:
+    """Extract and validate user from JWT token"""
+    try:
+        token = credentials.credentials
+        user = await auth_service.verify_token(token)
+        
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        return user
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Token validation error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token validation failed",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+async def get_current_user_optional(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Optional[UserProfile]:
+    """Extract user from token if provided, return None if not authenticated"""
+    if not credentials:
+        return None
+    
+    try:
+        return await get_current_user(credentials)
+    except HTTPException:
+        return None
+
+def require_auth(user: UserProfile = Depends(get_current_user)) -> UserProfile:
+    """Dependency that requires authentication"""
+    return user
+
+def optional_auth(user: Optional[UserProfile] = Depends(get_current_user_optional)) -> Optional[UserProfile]:
+    """Dependency for optional authentication"""
+    return user

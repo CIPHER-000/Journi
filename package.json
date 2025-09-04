@@ -1,0 +1,19 @@
+{
+  "name": "journi-ai-journey-mapper",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run dev --workspace=frontend",
+    "dev:frontend": "npm run dev -w frontend",
+    "dev:backend": "echo 'Backend requires Python setup in WebContainer - see README'",
+    "build": "npm run build --workspace=frontend",
+    "preview": "npm run preview --workspace=frontend",
+    "install:frontend": "npm install -w frontend",
+    "install:backend": "echo 'Backend dependencies require full Python environment'",
+    "install:all": "npm install --workspaces"
+  },
+  "workspaces": [
+    "frontend"
+  ]
+}
