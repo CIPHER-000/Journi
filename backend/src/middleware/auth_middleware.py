@@ -3,6 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 import jwt
 import os
+from datetime import datetime
 from ..services.auth_service import auth_service
 from ..models.auth import UserProfile
 import logging
@@ -16,40 +17,24 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     try:
         token = credentials.credentials
         
-        # First try to decode the JWT to get user info
+        # Use the auth service to verify the token and get/create user profile
         try:
-            # Decode without verification first to get the payload
-            decoded = jwt.decode(token, options={"verify_signature": False})
-            user_id = decoded.get('sub')
-            email = decoded.get('email')
+            user_profile = await auth_service.verify_token(token)
             
-            if not user_id or not email:
+            if not user_profile:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid token payload",
+                    detail="Invalid or expired token",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
             
-            # Create a user profile from the token data
-            user = UserProfile(
-                id=user_id,
-                email=email,
-                plan_type="free",
-                journey_count=0,
-                email_verified=True,  # If they have a valid token, email is verified
-                journey_limit=2,
-                created_at=decoded.get('iat', ''),
-                updated_at=decoded.get('iat', ''),
-                is_active=True
-            )
+            return user_profile
             
-            return user
-            
-        except jwt.InvalidTokenError as e:
-            logger.error(f"JWT decode error: {str(e)}")
+        except Exception as e:
+            logger.error(f"Token verification error: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token format",
+                detail="Token validation failed",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         

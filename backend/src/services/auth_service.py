@@ -189,26 +189,41 @@ class AuthService:
                 logger.warning(f"Email not confirmed for user: {auth_response.user.id}")
                 return None
             
-            # Get current user profile
+            # Try to get existing user profile
             profile_response = self.supabase_admin.table("users").select("*").eq("id", auth_response.user.id).execute()
             
-            if not profile_response.data:
-                logger.warning(f"No user profile found for ID: {auth_response.user.id}")
-                return None
-            
-            profile_data = profile_response.data[0]
-            
-            # Update email_verified status if needed
-            if not profile_data.get("email_verified"):
-                self.supabase_admin.table("users").update({
+            if profile_response.data:
+                # User profile exists, use it
+                profile_data = profile_response.data[0]
+            else:
+                # User profile doesn't exist, create it
+                logger.info(f"Creating user profile for new user: {auth_response.user.id}")
+                
+                new_profile_data = {
+                    "id": auth_response.user.id,
+                    "email": auth_response.user.email,
+                    "plan_type": "free",
+                    "journey_count": 0,
+                    "is_active": True,
                     "email_verified": True,
+                    "created_at": datetime.utcnow().isoformat(),
                     "updated_at": datetime.utcnow().isoformat()
-                }).eq("id", auth_response.user.id).execute()
-                profile_data["email_verified"] = True
+                }
+                
+                try:
+                    create_response = self.supabase_admin.table("users").insert(new_profile_data).execute()
+                    if not create_response.data:
+                        logger.error(f"Failed to create user profile for {auth_response.user.id}")
+                        return None
+                    profile_data = create_response.data[0]
+                    logger.info(f"Successfully created user profile for {auth_response.user.id}")
+                except Exception as create_error:
+                    logger.error(f"Error creating user profile: {str(create_error)}")
+                    return None
             
             # Get user's plan details
             plan_response = self.supabase_admin.table("subscription_plans").select("journey_limit").eq("id", profile_data.get("plan_type", "free")).execute()
-            journey_limit = plan_response.data[0]["journey_limit"] if plan_response.data else 5
+            journey_limit = plan_response.data[0]["journey_limit"] if plan_response.data else 2
             profile_data['journey_limit'] = journey_limit
             
             user_profile = UserProfile(**profile_data)
