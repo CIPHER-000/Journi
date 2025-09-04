@@ -220,8 +220,8 @@ export default function CreateJourneyPage() {
             ws.close()
           }
           setTimeout(() => {
-            navigate(`/journey/${status.result.id}`)
-          }, 2000)
+            navigate(`/journey/${status.result.id}`, { replace: true })
+          }, 3000) // Increased delay to show completion message
         } else if (status.status === 'failed') {
           if (ws) {
             ws.close()
@@ -230,16 +230,16 @@ export default function CreateJourneyPage() {
           setIsSubmitting(false)
         } else if (status.status === 'processing' || status.status === 'queued') {
           // Continue polling
-          setTimeout(() => pollJobStatus(jobId), 3000)
+          setTimeout(() => pollJobStatus(jobId), 8000) // Reduced polling frequency
         }
       } else {
         console.error('Failed to fetch job status')
-        setTimeout(() => pollJobStatus(jobId), 5000)
+        setTimeout(() => pollJobStatus(jobId), 10000) // Longer delay on error
       }
     } catch (error) {
       console.error('Error polling job status:', error)
       // Continue polling on error
-      setTimeout(() => pollJobStatus(jobId), 5000)
+      setTimeout(() => pollJobStatus(jobId), 12000) // Even longer delay on exception
     }
   }
 
@@ -357,21 +357,14 @@ export default function CreateJourneyPage() {
         // Success case - start tracking the job
         const job: JobStatus = responseData
         
-        // Generate title if not provided by backend
-        const journeyTitle = job.result?.title || generateJourneyTitle(formData)
-        
-        // Update the job status with the title
         setJobStatus({
           ...job,
-          result: {
-            ...job.result,
-            title: journeyTitle
-          }
+          status: job.status || 'queued'
         })
         
         setProgressMessages(['🚀 Journey map creation started...', '🤖 Initializing AI agents...'])
         
-        // The JourneyProgress component will handle all the progress tracking
+        // Don't start multiple connections - let JourneyProgress handle it
         return
       } catch (error) {
         console.error('Error in fetch request:', error);
