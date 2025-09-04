@@ -173,7 +173,7 @@ export default function CreateJourneyPage() {
       }
       
       websocket.onerror = (error) => {
-        clearTimeout(connectionTimeout)
+              throw new Error('Cannot connect to the backend server. The backend may be sleeping on Render - please wait 30-60 seconds and try again.');
         console.log('WebSocket connection failed, falling back to polling')
         // Immediately start polling instead of WebSocket
         pollJobStatus(jobId)
@@ -299,7 +299,12 @@ export default function CreateJourneyPage() {
       const apiUrl = `${import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'}/api/journey/create`
       console.log('Sending request to:', apiUrl)
       console.log('Request headers:', JSON.stringify(headers, null, 2))
-      console.log('Request payload:', JSON.stringify(formData, null, 2))
+      
+      // Log form data entries for debugging
+      console.log('Form data entries:')
+      for (const [key, value] of formDataToSend.entries()) {
+        console.log(`${key}:`, value)
+      }
       
       let response;
       try {
@@ -307,8 +312,6 @@ export default function CreateJourneyPage() {
           method: 'POST',
           headers,
           body: formDataToSend,
-          credentials: 'include',
-          mode: 'cors'
         });
         
         console.log('Response status:', response.status, response.statusText);
@@ -373,7 +376,13 @@ export default function CreateJourneyPage() {
       }
       
       // Handle response status codes
-      const responseData = await response.json();
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (e) {
+        console.error('Failed to parse response as JSON:', e);
+        throw new Error('Invalid response from server');
+      }
       
       if (response.status === 402) {
         // Payment required - show upgrade modal
