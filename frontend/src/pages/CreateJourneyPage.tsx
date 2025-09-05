@@ -47,15 +47,28 @@ export default function CreateJourneyPage() {
   const [startTime, setStartTime] = useState<Date | null>(null)
   const [estimatedCompletion, setEstimatedCompletion] = useState<Date | null>(null)
 
-  // WebSocket connection for real-time updates
-  const [ws, setWs] = useState<WebSocket | null>(null)
-  
   // Upgrade modal state
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [usageInfo, setUsageInfo] = useState<{
     currentUsage: number
     limit: number
   } | null>(null)
+
+  // Handle job completion
+  const handleJobComplete = () => {
+    console.log('Job completed, cleaning up...')
+    setIsSubmitting(false)
+  }
+
+  // Handle job cancellation
+  const handleJobCancel = () => {
+    console.log('Job cancelled, resetting form...')
+    setIsSubmitting(false)
+    setJobStatus(null)
+    setProgressMessages([])
+    setStartTime(null)
+    setEstimatedCompletion(null)
+  }
 
   const industryOptions = [
     'Technology/SaaS', 'E-commerce/Retail', 'Healthcare', 'Financial Services', 
@@ -104,153 +117,6 @@ export default function CreateJourneyPage() {
         : [...prev[field], value]
     }))
   }
-
-  // Agent step configurations with estimated durations (in seconds)
-  const agentSteps = [
-    { name: 'Context Analysis', description: 'Analyzing business context and industry specifics', duration: 45, icon: '🧠' },
-    { name: 'Persona Creation', description: 'Creating detailed customer personas with demographics and goals', duration: 60, icon: '👥' },
-    { name: 'Journey Mapping', description: 'Mapping customer journey phases and touchpoints', duration: 75, icon: '🗺️' },
-    { name: 'Research Integration', description: 'Integrating uploaded research data and insights', duration: 30, icon: '📊' },
-    { name: 'Quote Generation', description: 'Generating authentic customer quotes and voice insights', duration: 45, icon: '💬' },
-    { name: 'Emotion Validation', description: 'Validating emotions and psychological drivers', duration: 40, icon: '❤️' },
-    { name: 'Output Formatting', description: 'Formatting professional outputs and recommendations', duration: 35, icon: '📝' },
-    { name: 'Quality Assurance', description: 'Final quality check and refinement', duration: 30, icon: '✅' }
-  ]
-
-  const calculateEstimatedTime = (currentStep: number) => {
-    const remainingSteps = agentSteps.slice(currentStep)
-    const totalRemainingTime = remainingSteps.reduce((sum, step) => sum + step.duration, 0)
-    return totalRemainingTime
-  }
-
-  const connectWebSocket = (jobId: string) => {
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'
-      const wsUrl = backendUrl.replace('https://', 'wss://').replace('http://', 'ws://') + `/ws/progress/${jobId}`
-      console.log('Connecting to WebSocket:', wsUrl)
-      
-      const websocket = new WebSocket(wsUrl)
-      
-      // Set a connection timeout
-      const connectionTimeout = setTimeout(() => {
-        console.log('WebSocket connection timeout, falling back to polling')
-        websocket.close()
-        pollJobStatus(jobId)
-      }, 10000) // 10 second timeout
-      
-      websocket.onopen = () => {
-        clearTimeout(connectionTimeout)
-        console.log('WebSocket connected')
-        setWs(websocket)
-      }
-      
-      websocket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          console.log('WebSocket message received:', data)
-          
-          if (data.progress) {
-            setJobStatus(prevStatus => ({
-              ...prevStatus!,
-              progress: data.progress,
-              status: data.status
-            }))
-            
-            const currentStepInfo = agentSteps[data.progress.currentStep - 1]
-            const message = `${currentStepInfo?.icon || '⚡'} ${data.progress.stepName}: ${data.progress.message}`
-            setProgressMessages(prev => [...prev, message])
-            
-            // Calculate estimated completion time
-            if (startTime) {
-              const estimatedRemainingSeconds = calculateEstimatedTime(data.progress.currentStep - 1)
-              const estimatedCompletion = new Date(Date.now() + estimatedRemainingSeconds * 1000)
-              setEstimatedCompletion(estimatedCompletion)
-            }
-          }
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error)
-        }
-      }
-      
-      websocket.onerror = (error) => {
-              throw new Error('Cannot connect to the backend server. The backend may be sleeping on Render - please wait 30-60 seconds and try again.');
-        console.log('WebSocket connection failed, falling back to polling')
-        // Immediately start polling instead of WebSocket
-        pollJobStatus(jobId)
-      }
-      
-      websocket.onclose = () => {
-        clearTimeout(connectionTimeout)
-        console.log('WebSocket disconnected')
-        setWs(null)
-      }
-      
-    } catch (error) {
-      console.log('WebSocket initialization failed, using polling instead')
-      pollJobStatus(jobId)
-    }
-  }
-
-  const pollJobStatus = async (jobId: string) => {
-    try {
-      console.log('Polling job status for:', jobId)
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/journey/status/${jobId}`)
-      if (response.ok) {
-        const status: JobStatus = await response.json()
-        console.log('Job status received:', status)
-        setJobStatus(status)
-        
-        if (status.progress) {
-          const currentStepInfo = agentSteps[status.progress.currentStep - 1]
-          const message = `${currentStepInfo?.icon || '⚡'} ${status.progress.stepName}: ${status.progress.message}`
-          setProgressMessages(prev => [...prev, message])
-          
-          // Calculate estimated completion time
-          if (startTime) {
-            const estimatedRemainingSeconds = calculateEstimatedTime(status.progress.currentStep - 1)
-            const estimatedCompletion = new Date(Date.now() + estimatedRemainingSeconds * 1000)
-            setEstimatedCompletion(estimatedCompletion)
-          }
-        }
-        
-        if (status.status === 'completed' && status.result) {
-          // Journey map completed, navigate to result
-          setProgressMessages(prev => [...prev, '🎉 Journey map completed successfully!'])
-          if (ws) {
-            ws.close()
-          }
-          setTimeout(() => {
-            navigate(`/journey/${status.result.id}`, { replace: true })
-          }, 3000) // Increased delay to show completion message
-        } else if (status.status === 'failed') {
-          if (ws) {
-            ws.close()
-          }
-          alert('Journey map generation failed. Please try again.')
-          setIsSubmitting(false)
-        } else if (status.status === 'processing' || status.status === 'queued') {
-          // Continue polling
-          setTimeout(() => pollJobStatus(jobId), 8000) // Reduced polling frequency
-        }
-      } else {
-        console.error('Failed to fetch job status')
-        setTimeout(() => pollJobStatus(jobId), 10000) // Longer delay on error
-      }
-    } catch (error) {
-      console.error('Error polling job status:', error)
-      // Continue polling on error
-      setTimeout(() => pollJobStatus(jobId), 12000) // Even longer delay on exception
-    }
-  }
-
-  // Cleanup WebSocket on component unmount
-  React.useEffect(() => {
-    return () => {
-      if (ws) {
-        ws.close()
-      }
-    }
-  }, [ws])
 
   // Function to generate a title based on form data
   const generateJourneyTitle = (data: FormData): string => {
@@ -357,14 +223,10 @@ export default function CreateJourneyPage() {
         // Success case - start tracking the job
         const job: JobStatus = responseData
         
-        setJobStatus({
-          ...job,
-          status: job.status || 'queued'
-        })
+        setJobStatus(job)
         
         setProgressMessages(['🚀 Journey map creation started...', '🤖 Initializing AI agents...'])
         
-        // Don't start multiple connections - let JourneyProgress handle it
         return
       } catch (error) {
         console.error('Error in fetch request:', error);
@@ -442,20 +304,9 @@ export default function CreateJourneyPage() {
             <JourneyProgress 
               jobId={jobStatus.id} 
               title={jobStatus.result?.title || formData.title || 'Untitled Journey'}
-              onComplete={() => setIsSubmitting(false)}
+              onComplete={handleJobComplete}
+              onCancel={handleJobCancel}
             />
-            {jobStatus?.progress && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-700">
-                  {jobStatus.progress.message}
-                </p>
-                {startTime && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Running for {Math.floor((Date.now() - startTime.getTime()) / 1000)}s
-                  </p>
-                )}
-              </div>
-            )}
           </motion.div>
         ) : (
           <motion.div
