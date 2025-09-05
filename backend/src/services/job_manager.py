@@ -11,9 +11,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Import safe_json from main module
 def safe_json(data):
     """Convert data to JSON-safe format, handling datetime objects"""
     return json.dumps(data, default=str)
+
 class JobManager:
     def __init__(self):
         self.jobs: Dict[str, Job] = {}

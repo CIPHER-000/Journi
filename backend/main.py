@@ -20,7 +20,6 @@ import json
 import traceback
 from io import BytesIO
 import base64
-from io import BytesIO
 from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -41,6 +40,11 @@ except ImportError as e:
 
 # Load environment variables
 load_dotenv()
+
+# Helper function for JSON serialization with datetime support
+def safe_json(data):
+    """Convert data to JSON-safe format, handling datetime objects"""
+    return json.dumps(data, default=str)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

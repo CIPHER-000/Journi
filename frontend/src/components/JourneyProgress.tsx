@@ -141,6 +141,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
         setError('Journey map generation failed');
       }
     }
+  }, [navigate, onComplete, startTime]);
 
   // Use the custom hook for connection management
   const cleanup = useJobProgress(jobId, handleProgressMessage);
@@ -383,9 +384,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-blue-900">{currentStepInfo.name}</h3>
                 <p className="text-blue-700 mb-2">{currentStepInfo.description}</p>
-                <p className="text-sm text-blue-600 font-medium">
-                  {currentMessage || progress?.message || 'Processing...'}
-                </p>
+                <p className="text-sm text-blue-600 font-medium">{progress?.message || 'Processing...'}</p>
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-blue-900">{Math.round(percentage)}%</div>
@@ -534,7 +533,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
                   <p className={`text-sm ${
                     isStepCurrent ? 'text-blue-700' : isStepCompleted ? 'text-green-700' : 'text-gray-500'
                   }`}>
-                    {currentMessage || progress.message || 'Processing...'}
+                    {step.description}
                   </p>
                   
                   {/* Current step progress message */}
