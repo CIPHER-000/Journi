@@ -8,6 +8,7 @@ class JobStatus(str, Enum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 class JourneyFormData(BaseModel):
     title: Optional[str]

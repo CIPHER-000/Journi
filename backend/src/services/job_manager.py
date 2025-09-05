@@ -1,4 +1,5 @@
 import asyncio
+import asyncio
 import uuid
 from datetime import datetime
 from typing import Dict, Callable, Optional, Any, List
@@ -237,7 +238,7 @@ class JobManager:
             return
 
         workflow_result = None
-        final_status = "failed"
+        final_status = JobStatus.FAILED
         error_message = None
 
         try:
@@ -249,98 +250,84 @@ class JobManager:
             form_data_dict = job.form_data.dict()
             logger.info(f"Form data prepared for workflow: {form_data_dict}")
             
-            # Add timeout for the entire workflow
-            import asyncio
-            
             crew_coordinator = CrewCoordinator(user)
 
             async def progress_callback(step: int, step_name: str, message: str):
                 await self._update_progress(job_id, step, step_name, message)
 
-            try:
-                # Add timeout to prevent hanging
-                workflow_task = asyncio.create_task(
-                    crew_coordinator.execute_workflow(form_data_dict, progress_callback, job_id)
-                )
-                
-                # Store the task so it can be cancelled
-                self._workflow_tasks[job_id] = workflow_task
-                
-                # Wait for completion with timeout (15 minutes max)
-                workflow_result = await asyncio.wait_for(workflow_task, timeout=900)
-                
-                journey_map = self._convert_to_journey_map(workflow_result)
-                job.result = journey_map
-                job.status = JobStatus.COMPLETED
-                job.updated_at = datetime.now()
-                final_status = "completed"
-                
-                logger.info(f"Workflow completed successfully for job {job_id}")
-                
-
-            except asyncio.CancelledError:
-                logger.info(f"Workflow cancelled for job {job_id}")
-                job.status = JobStatus.CANCELLED
-                final_status = "cancelled"
-                error_message = "Workflow cancelled by user"
-                job.updated_at = datetime.now()
-                logger.info(f"Job {job_id} was cancelled")
-                
-            except asyncio.TimeoutError:
-                logger.error(f"Workflow timeout for job {job_id}")
-                job.status = JobStatus.FAILED
-                final_status = "failed"
-                error_message = "Workflow timed out after 15 minutes"
-                job.updated_at = datetime.now()
-                logger.error(f"Job {job_id} timed out")
-                
-            except Exception as workflow_error:
-                logger.error(f"Workflow error for job {job_id}: {str(workflow_error)}")
-                job.status = JobStatus.FAILED
-                final_status = "failed"
-                error_message = str(workflow_error)
-                job.updated_at = datetime.now()
-                logger.error(f"Job {job_id} failed with error: {str(workflow_error)}")
-
-        except Exception as e:
-            logger.error(f"Job manager error for job {job_id}: {str(e)}")
+            # Add timeout to prevent hanging
+            workflow_task = asyncio.create_task(
+                crew_coordinator.execute_workflow(form_data_dict, progress_callback, job_id)
+            )
+            
+            # Store the task so it can be cancelled
+            self._workflow_tasks[job_id] = workflow_task
+            
+            # Wait for completion with timeout (15 minutes max)
+            workflow_result = await asyncio.wait_for(workflow_task, timeout=900)
+            
+            journey_map = self._convert_to_journey_map(workflow_result)
+            job.result = journey_map
+            job.status = JobStatus.COMPLETED
+            job.updated_at = datetime.now()
+            final_status = JobStatus.COMPLETED
+            
+            logger.info(f"Workflow completed successfully for job {job_id}")
+            
+        except asyncio.CancelledError:
+            logger.info(f"Workflow cancelled for job {job_id}")
+            job.status = JobStatus.CANCELLED
+            final_status = JobStatus.CANCELLED
+            error_message = "Workflow cancelled by user"
+            job.updated_at = datetime.now()
+            logger.info(f"Job {job_id} was cancelled")
+            
+        except asyncio.TimeoutError:
+            logger.error(f"Workflow timeout for job {job_id}")
             job.status = JobStatus.FAILED
-            final_status = "failed"
-            error_message = str(e)
-            logger.error(f"Job {job_id} failed with unexpected error: {str(e)}")
-        
+            final_status = JobStatus.FAILED
+            error_message = "Workflow timed out after 15 minutes"
+            job.updated_at = datetime.now()
+            logger.error(f"Job {job_id} timed out")
+            
+        except Exception as workflow_error:
+            logger.error(f"Workflow error for job {job_id}: {str(workflow_error)}")
+            job.status = JobStatus.FAILED
+            final_status = JobStatus.FAILED
+            error_message = str(workflow_error)
+            job.updated_at = datetime.now()
+            logger.error(f"Job {job_id} failed with error: {str(workflow_error)}")
+
         finally:
-            # CRITICAL: Always update database and send final progress, even if WebSocket fails
+            # CRITICAL: Always update database first - this must succeed
             try:
-                # Update job error message if there was one
-                if error_message:
-                    job.error_message = error_message
-                
-                # Always update database status - this is critical for dashboard consistency
-                if final_status == "completed" and workflow_result:
+                if final_status == JobStatus.COMPLETED and workflow_result:
                     await usage_service.update_journey_completion(
                         journey_id=job_id,
-                        status="completed",
+                        status=final_status.value,
                         result_data=workflow_result
                     )
                     logger.info(f"Database updated: Job {job_id} marked as completed")
                 else:
                     await usage_service.update_journey_status(
                         journey_id=job_id,
-                        status=final_status,
+                        status=final_status.value,
                         progress_data={"error": error_message} if error_message else None
                     )
-                    logger.info(f"Database updated: Job {job_id} marked as {final_status}")
-                
+                    logger.info(f"Database updated: Job {job_id} marked as {final_status.value}")
             except Exception as db_error:
                 logger.error(f"CRITICAL: Failed to update database for job {job_id}: {str(db_error)}")
-                # Even if DB update fails, we should still try to notify the frontend
+                # Continue to try WebSocket update even if DB fails
             
-            # Always try to send final progress update, but don't let it crash the workflow
+            # Update job error message if there was one
+            if error_message:
+                job.error_message = error_message
+            
+            # Try to send final progress update - this is secondary to DB update
             try:
-                if final_status == "completed":
+                if final_status == JobStatus.COMPLETED:
                     await self._update_progress(job_id, 8, "Completed", "Journey map generated successfully!")
-                elif final_status == "cancelled":
+                elif final_status == JobStatus.CANCELLED:
                     await self._update_progress(job_id, -1, "Cancelled", "Workflow cancelled by user")
                 else:
                     await self._update_progress(job_id, -1, "Failed", error_message or "Job failed")
@@ -348,8 +335,8 @@ class JobManager:
                 logger.info(f"Final progress update sent for job {job_id}")
                 
             except Exception as progress_error:
-                logger.error(f"Failed to send final progress update for job {job_id}: {str(progress_error)}")
-                # Don't raise - we've already done the critical database update
+                logger.warning(f"Failed to send final progress update for job {job_id}: {str(progress_error)}")
+                # This is non-critical since database was already updated
             
             # Clean up workflow task reference
             self._workflow_tasks.pop(job_id, None)
@@ -361,7 +348,7 @@ class JobManager:
                 self._cleanup_callbacks_after_delay(job_id)
             )
             
-            logger.info(f"Workflow cleanup completed for job {job_id} with final status: {final_status}")
+            logger.info(f"Workflow cleanup completed for job {job_id} with final status: {final_status.value}")
 
     def _convert_to_journey_map(self, journey_map_data: Dict[str, Any]) -> JourneyMap:
         personas = [Persona(**p) for p in journey_map_data.get('personas', [])]
