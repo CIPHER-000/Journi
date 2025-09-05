@@ -15,6 +15,7 @@ class JobManager:
         self.jobs: Dict[str, Job] = {}
         self.progress_callbacks: Dict[str, List[Callable]] = {}
         self._cleanup_tasks: Dict[str, asyncio.Task] = {}
+        self._workflow_tasks: Dict[str, asyncio.Task] = {}
         
     async def create_job(self, form_data: Dict[str, Any], user: UserProfile) -> Job:
         try:
