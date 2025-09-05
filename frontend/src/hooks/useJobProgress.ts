@@ -98,6 +98,7 @@ export function useJobProgress(
             status: data.status,
             progress: data.progress,
             result: data.result,
+            error: data.error || data.error_message,
             timestamp: new Date().toISOString()
           }
           

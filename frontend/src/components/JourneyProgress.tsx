@@ -118,8 +118,8 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
     }
     
     // Handle error messages from backend
-    if (message.error) {
-      setError(message.error);
+    if (message.error || (message.status === 'failed' && !error)) {
+      setError(message.error || 'Journey generation failed');
     }
     
     // Handle cancellation
@@ -455,7 +455,23 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
           <div className="text-center py-6">
             <div className="text-6xl mb-4">😞</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Generation Failed</h3>
-            <p className="text-gray-600">Something went wrong during the AI agent workflow.</p>
+            <div className="max-w-md mx-auto">
+              {error ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                  <p className="text-red-800 text-sm font-medium">{error}</p>
+                </div>
+              ) : (
+                <p className="text-gray-600 mb-4">Something went wrong during the AI agent workflow.</p>
+              )}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/create')}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300"
+              >
+                Try Again
+              </motion.button>
+            </div>
           </div>
         )}
 

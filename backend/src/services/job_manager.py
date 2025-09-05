@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Dict, Callable, Optional, Any, List
 import json
 import openai
+import traceback
 from litellm import RateLimitError, AuthenticationError
 from ..models.journey import Job, JobStatus, JobProgress, JourneyFormData, JourneyMap, Persona, JourneyPhase
 from ..models.auth import UserProfile
@@ -194,6 +195,11 @@ class JobManager:
             update_msg["cancelled"] = True
             update_msg["message"] = "Job cancelled by user"
         
+        # 🔹 Include error info for failed jobs
+        if job.status == JobStatus.FAILED and job.error_message:
+            update_msg["error"] = job.error_message
+            update_msg["error_message"] = job.error_message
+        
         # 🔹 WebSocket-safe callback handling - don't let this crash the workflow
         callbacks_sent = False
         if job_id in self.progress_callbacks:
@@ -320,9 +326,13 @@ class JobManager:
             logger.error(f"Job {job_id} timed out")
             
         except Exception as workflow_error:
-            logger.error(f"Workflow error for job {job_id}: {str(workflow_error)}")
+            # Capture full traceback for debugging
+            raw_trace = traceback.format_exc()
+            logger.error(f"Workflow error for job {job_id}: {workflow_error}\n{raw_trace}")
+            
             job.status = JobStatus.FAILED
             final_status = JobStatus.FAILED
+            
             # Provide user-friendly error messages for common issues
             error_str = str(workflow_error).lower()
             if "quota" in error_str or "billing" in error_str:
@@ -335,8 +345,11 @@ class JobManager:
                 error_message = "Network connection error. Please check your internet connection and try again."
             else:
                 error_message = f"Journey generation failed: {str(workflow_error)}"
+            
+            # Store both user-friendly message and debug info
             job.updated_at = datetime.now()
-            logger.error(f"Job {job_id} failed with error: {str(workflow_error)}")
+            logger.info(f"Job {job_id} failed - User message: {error_message}")
+            logger.debug(f"Job {job_id} debug info: {workflow_error}")
 
         finally:
             # CRITICAL: Update job error message first
@@ -353,13 +366,16 @@ class JobManager:
                     )
                     logger.info(f"Database updated: Job {job_id} marked as completed")
                 else:
+                    # Include error message in progress data for database storage
+                    progress_data = {"completed_at": datetime.now().isoformat()}
+                    if error_message:
+                        progress_data["error"] = error_message
+                        progress_data["user_friendly_error"] = error_message
+                    
                     await usage_service.update_journey_status(
                         journey_id=job_id,
                         status=final_status.value,
-                        progress_data={
-                            "error": error_message,
-                            "completed_at": datetime.now().isoformat()
-                        } if error_message else {"completed_at": datetime.now().isoformat()}
+                        progress_data=progress_data
                     )
                     logger.info(f"Database updated: Job {job_id} marked as {final_status.value}")
             except Exception as db_error:
@@ -373,6 +389,16 @@ class JobManager:
                 elif final_status == JobStatus.CANCELLED:
                     await self._update_progress(job_id, -1, "Cancelled", "Workflow cancelled by user")
                 else:
+                    # Send detailed error info via WebSocket
+                    error_update = {
+                        "job_id": job_id,
+                        "status": "failed",
+                        "error": error_message or "Journey generation failed",
+                        "error_message": error_message or "Journey generation failed",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                    
+                    # Send via progress update mechanism
                     await self._update_progress(job_id, -1, "Failed", error_message or "Journey generation failed")
                     
                 logger.info(f"Final progress update sent for job {job_id}")

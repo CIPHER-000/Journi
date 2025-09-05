@@ -371,6 +371,7 @@ async def get_journey_status(
         
         if job.error_message:
             response["error"] = job.error_message
+            response["error_message"] = job.error_message
         
         return response
         
