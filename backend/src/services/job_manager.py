@@ -1,5 +1,6 @@
 import asyncio
 import asyncio
+import asyncio
 import uuid
 from datetime import datetime
 from typing import Dict, Callable, Optional, Any, List
@@ -351,12 +352,13 @@ class JobManager:
             logger.debug(f"Job {job_id} debug info: {workflow_error}")
 
         finally:
-            # CRITICAL: Update job error message first
-            if error_message:
-                job.error_message = error_message
-            
-            # CRITICAL: Always update database - this must succeed regardless of WebSocket failures
+            # CRITICAL: Always update database first - this must succeed regardless of other failures
             try:
+                # Set error message in job object
+                if error_message:
+                    job.error_message = error_message
+                
+                # Update database with final status
                 if final_status == JobStatus.COMPLETED and workflow_result:
                     await usage_service.update_journey_completion(
                         journey_id=job_id,
@@ -379,44 +381,38 @@ class JobManager:
                     logger.info(f"Database updated: Job {job_id} marked as {final_status.value}")
             except Exception as db_error:
                 logger.error(f"CRITICAL: Failed to update database for job {job_id}: {str(db_error)}")
-                # Even if DB update fails, continue to try WebSocket update
             
-            # OPTIONAL: Try to send final progress update via WebSocket - this is secondary to DB update
+            # OPTIONAL: Try to send final progress update via WebSocket
             try:
                 if final_status == JobStatus.COMPLETED:
                     await self._update_progress(job_id, 8, "Completed", "Journey map generated successfully!")
                 elif final_status == JobStatus.CANCELLED:
                     await self._update_progress(job_id, -1, "Cancelled", "Workflow cancelled by user")
                 else:
-                    # Send detailed error info via WebSocket
-                    error_update = {
-                        "job_id": job_id,
-                        "status": "failed",
-                        "error": error_message or "Journey generation failed",
-                        "error_message": error_message or "Journey generation failed",
-                        "timestamp": datetime.utcnow().isoformat()
-                    }
-                    
-                    # Send via progress update mechanism
                     await self._update_progress(job_id, -1, "Failed", error_message or "Journey generation failed")
-                    
                 logger.info(f"Final progress update sent for job {job_id}")
-                
             except Exception as progress_error:
                 logger.warning(f"Failed to send final progress update for job {job_id}: {str(progress_error)}")
-                # This is non-critical since database update was already attempted
             
-            # Clean up workflow task reference
-            self._workflow_tasks.pop(job_id, None)
-            
-            # Schedule callback cleanup after delay
-            if job_id in self._cleanup_tasks and not self._cleanup_tasks[job_id].done():
-                self._cleanup_tasks[job_id].cancel()
-            self._cleanup_tasks[job_id] = asyncio.create_task(
-                self._cleanup_callbacks_after_delay(job_id)
-            )
+            # OPTIONAL: Cleanup tasks - don't let this block critical updates
+            try:
+                # Clean up workflow task reference
+                self._workflow_tasks.pop(job_id, None)
+                
+                # Schedule callback cleanup after delay
+                if job_id in self._cleanup_tasks and not self._cleanup_tasks[job_id].done():
+                    self._cleanup_tasks[job_id].cancel()
+                self._cleanup_tasks[job_id] = asyncio.create_task(
+                    self._cleanup_callbacks_after_delay(job_id)
+                )
+            except Exception as cleanup_error:
+                logger.warning(f"Cleanup failed for job {job_id}: {str(cleanup_error)}")
             
             logger.info(f"Workflow cleanup completed for job {job_id} with final status: {final_status.value}")
+        
+        # CRITICAL: Ensure job object always has error message set for API responses
+        if error_message and job_id in self.jobs:
+            self.jobs[job_id].error_message = error_message
 
     def _convert_to_journey_map(self, journey_map_data: Dict[str, Any]) -> JourneyMap:
         personas = [Persona(**p) for p in journey_map_data.get('personas', [])]
