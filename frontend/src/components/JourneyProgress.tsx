@@ -84,6 +84,8 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
   const [stepProgress, setStepProgress] = useState(0);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [currentStepName, setCurrentStepName] = useState('');
+  const [currentMessage, setCurrentMessage] = useState('');
   
   // Prevent duplicate navigation
   const handledNavRef = useRef(false);
@@ -96,6 +98,14 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
     setConnectionStatus('connected');
     setError(null);
     
+    // Update step info from message
+    if (message.step_name) {
+      setCurrentStepName(message.step_name);
+    }
+    if (message.message) {
+      setCurrentMessage(message.message);
+    }
+    
     if (message.progress) {
       setProgress(message.progress);
       setCurrentStep(message.progress.current_step || 0);
@@ -107,8 +117,16 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
       }
     }
     
+    // Handle cancellation
+    if (message.cancelled || message.status === 'cancelled') {
+      setStatus('cancelled');
+      setIsCancelling(false);
+      setShowCancelConfirm(false);
+      console.log('Job cancelled successfully');
+    }
+    
     // Handle completion - navigate only once
-    if ((message.status === 'completed' || message.status === 'failed') && !handledNavRef.current) {
+    if (['completed', 'failed'].includes(message.status) && !handledNavRef.current) {
       handledNavRef.current = true;
       
       if (message.status === 'completed' && message.result?.id) {
@@ -123,7 +141,6 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
         setError('Journey map generation failed');
       }
     }
-  }, [navigate, onComplete, startTime]);
 
   // Use the custom hook for connection management
   const cleanup = useJobProgress(jobId, handleProgressMessage);
@@ -179,20 +196,24 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
         }
       );
 
-      if (response.ok) {
+      const result = await response.json();
+      
+      if (response.ok && result.status === 'cancelled') {
         setStatus('cancelled');
+        setIsCancelling(false);
         cleanup(); // Clean up connections
         if (onCancel) {
           onCancel();
         }
       } else {
-        throw new Error('Failed to cancel job');
+        throw new Error(result.message || 'Failed to cancel job');
       }
     } catch (error) {
       console.error('Error cancelling job:', error);
       setError('Failed to cancel job');
-    } finally {
       setIsCancelling(false);
+    } finally {
+      setShowCancelConfirm(false);
     }
   };
 
@@ -362,7 +383,9 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-blue-900">{currentStepInfo.name}</h3>
                 <p className="text-blue-700 mb-2">{currentStepInfo.description}</p>
-                <p className="text-sm text-blue-600 font-medium">{progress?.message || 'Processing...'}</p>
+                <p className="text-sm text-blue-600 font-medium">
+                  {currentMessage || progress?.message || 'Processing...'}
+                </p>
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-blue-900">{Math.round(percentage)}%</div>
@@ -511,7 +534,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
                   <p className={`text-sm ${
                     isStepCurrent ? 'text-blue-700' : isStepCompleted ? 'text-green-700' : 'text-gray-500'
                   }`}>
-                    {step.description}
+                    {currentMessage || progress.message || 'Processing...'}
                   </p>
                   
                   {/* Current step progress message */}

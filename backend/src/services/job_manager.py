@@ -2,6 +2,7 @@ import asyncio
 import uuid
 from datetime import datetime
 from typing import Dict, Callable, Optional, Any, List
+import json
 from ..models.journey import Job, JobStatus, JobProgress, JourneyFormData, JourneyMap, Persona, JourneyPhase
 from ..models.auth import UserProfile
 from ..agents.crew_coordinator import CrewCoordinator
@@ -10,6 +11,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def safe_json(data):
+    """Convert data to JSON-safe format, handling datetime objects"""
+    return json.dumps(data, default=str)
 class JobManager:
     def __init__(self):
         self.jobs: Dict[str, Job] = {}
@@ -58,6 +62,57 @@ class JobManager:
         if job and user_id and job.user_id != user_id:
             return None
         return job
+    
+    async def cancel_job(self, job_id: str, user_id: Optional[str] = None) -> bool:
+        """Cancel a running job"""
+        job = self.jobs.get(job_id)
+        if not job:
+            logger.warning(f"Cancel requested for non-existent job: {job_id}")
+            return False
+            
+        # Check user permission
+        if user_id and job.user_id != user_id:
+            logger.warning(f"User {user_id} attempted to cancel job {job_id} owned by {job.user_id}")
+            return False
+            
+        # Only cancel if job is still running
+        if job.status not in [JobStatus.QUEUED, JobStatus.PROCESSING]:
+            logger.info(f"Job {job_id} already completed/failed, cannot cancel")
+            return False
+            
+        try:
+            # Cancel the workflow task if it exists
+            if job_id in self._workflow_tasks:
+                workflow_task = self._workflow_tasks[job_id]
+                if not workflow_task.done():
+                    workflow_task.cancel()
+                    logger.info(f"Cancelled workflow task for job {job_id}")
+                self._workflow_tasks.pop(job_id, None)
+            
+            # Update job status
+            job.status = JobStatus.CANCELLED
+            job.updated_at = datetime.now()
+            job.error_message = "Job cancelled by user"
+            
+            # Update database
+            try:
+                await usage_service.update_journey_status(
+                    journey_id=job_id,
+                    status="cancelled",
+                    progress_data={"cancelled_at": datetime.now().isoformat()}
+                )
+            except Exception as db_error:
+                logger.error(f"Failed to update cancelled job in database: {db_error}")
+            
+            # Send final progress update
+            await self._update_progress(job_id, -1, "Cancelled", "Job cancelled by user")
+            
+            logger.info(f"Successfully cancelled job {job_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error cancelling job {job_id}: {str(e)}")
+            return False
     
     def register_progress_callback(self, job_id: str, callback: Callable) -> bool:
         if job_id not in self.jobs:
@@ -111,7 +166,9 @@ class JobManager:
             "job_id": job_id,
             "progress": progress.dict(),
             "status": job.status.value,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
+            "step_name": step_name,
+            "message": message
         }
         
         # 🔹 Include result in final completion message
@@ -120,6 +177,11 @@ class JobManager:
                 update_msg["result"] = job.result.dict()
             except Exception as e:
                 logger.error(f"Failed to serialize job result for job {job_id}: {e}")
+        
+        # 🔹 Include cancellation info
+        if job.status == JobStatus.CANCELLED:
+            update_msg["cancelled"] = True
+            update_msg["message"] = "Job cancelled by user"
         
         try:
             await usage_service.update_journey_status(
@@ -144,9 +206,10 @@ class JobManager:
                             await result
                 except Exception as e:
                     logger.error(f"Error in callback for {job_id}: {e}")
-                    self.progress_callbacks[job_id].remove(cb)
+                    if cb in self.progress_callbacks[job_id]:
+                        self.progress_callbacks[job_id].remove(cb)
         
-        if job.status in [JobStatus.COMPLETED, JobStatus.FAILED]:
+        if job.status in [JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED]:
             if job_id in self._cleanup_tasks and not self._cleanup_tasks[job_id].done():
                 self._cleanup_tasks[job_id].cancel()
             self._cleanup_tasks[job_id] = asyncio.create_task(
@@ -219,6 +282,19 @@ class JobManager:
                 # Clean up the workflow task
                 self._workflow_tasks.pop(job_id, None)
 
+            except asyncio.CancelledError:
+                logger.info(f"Workflow cancelled for job {job_id}")
+                job.status = JobStatus.CANCELLED
+                job.error_message = "Workflow cancelled by user"
+                job.updated_at = datetime.now()
+                await usage_service.update_journey_status(
+                    journey_id=job_id,
+                    status="cancelled",
+                    progress_data={"cancelled_at": datetime.now().isoformat()}
+                )
+                await self._update_progress(job_id, -1, "Cancelled", "Workflow cancelled by user")
+                self._workflow_tasks.pop(job_id, None)
+                return
             except asyncio.TimeoutError:
                 logger.error(f"Workflow timeout for job {job_id}")
                 job.status = JobStatus.FAILED

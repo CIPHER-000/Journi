@@ -199,7 +199,7 @@ class ConnectionManager:
         if job_id in self.job_connections:
             for websocket in list(self.job_connections[job_id]):
                 try:
-                    await websocket.send_text(json.dumps(progress_data))
+                    await websocket.send_text(safe_json(progress_data))
                 except Exception as e:
                     logger.debug(f"WebSocket send failed; removing socket for job {job_id}: {e}")
                     # Clean up this socket
@@ -393,7 +393,7 @@ async def cancel_journey(
         if not success:
             raise HTTPException(status_code=404, detail="Job not found or cannot be cancelled")
         
-        return {"message": "Job cancelled successfully"}
+        return {"status": "cancelled", "message": "Job cancelled successfully"}
         
     except HTTPException:
         raise
@@ -539,7 +539,7 @@ async def websocket_progress(websocket: WebSocket, job_id: str):
                 "result": job.result.dict() if job.result else None,
                 "timestamp": datetime.utcnow().isoformat()
             }
-            await websocket.send_text(json.dumps(initial_status))
+            await websocket.send_text(safe_json(initial_status))
         
         # Keep connection alive and handle ping/pong
         while True:

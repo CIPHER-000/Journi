@@ -11,6 +11,9 @@ export interface ProgressMessage {
     percentage: number
     estimatedTimeRemaining?: number
   }
+  step_name?: string
+  message?: string
+  cancelled?: boolean
   result?: any
   error?: string
   timestamp?: string
@@ -176,7 +179,7 @@ export function useJobProgress(
 
             onMessage(data)
             
-            if (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled') {
+            if (['completed', 'failed', 'cancelled'].includes(data.status)) {
               console.log('Job finished via WebSocket, closing connection')
               completedRef.current = true
               try {
