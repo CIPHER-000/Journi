@@ -33,17 +33,16 @@ class JobManager:
             )
             self.jobs[job_id] = job
 
-            # Record it in Supabase with the SAME job_id
+            # Record it in Supabase - let Supabase auto-generate the ID
             try:
                 await usage_service.record_journey_creation(
                     user_id=user.id,
                     title=form_data.get('title', 'Untitled Journey'),
                     industry=form_data.get('industry', ''),
-                    form_data=form_data,
-                    journey_id=job_id  # <-- pass the job_id here
+                    form_data=form_data
                 )
             except Exception as db_err:
-                logger.error(f"Failed to record journey in DB for job {job_id}: {db_err}")
+                logger.error(f"Failed to record journey in DB: {db_err}")
 
             # Start workflow
             asyncio.create_task(self._run_agent_workflow(job_id, user))
@@ -175,6 +174,10 @@ class JobManager:
             job.status = JobStatus.PROCESSING
             job.updated_at = datetime.now()
             await self._update_progress(job_id, 0, "Starting", "Initializing journey mapping process...")
+            
+            # Convert form data to dictionary for crew coordinator
+            form_data_dict = job.form_data.dict()
+            logger.info(f"Form data prepared for workflow: {form_data_dict}")
             
             # Add timeout for the entire workflow
             import asyncio
