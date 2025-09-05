@@ -117,6 +117,11 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
       }
     }
     
+    // Handle error messages from backend
+    if (message.error) {
+      setError(message.error);
+    }
+    
     // Handle cancellation
     if (message.cancelled || message.status === 'cancelled') {
       setStatus('cancelled');
@@ -138,7 +143,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
           navigate(`/journey/${message.result.id}`, { replace: true });
         }, 2000);
       } else if (message.status === 'failed') {
-        setError('Journey map generation failed');
+        setError(message.error || 'Journey map generation failed');
       }
     }
   }, [navigate, onComplete, startTime]);

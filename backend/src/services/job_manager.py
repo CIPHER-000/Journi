@@ -4,6 +4,8 @@ import uuid
 from datetime import datetime
 from typing import Dict, Callable, Optional, Any, List
 import json
+import openai
+from litellm import RateLimitError, AuthenticationError
 from ..models.journey import Job, JobStatus, JobProgress, JourneyFormData, JourneyMap, Persona, JourneyPhase
 from ..models.auth import UserProfile
 from ..agents.crew_coordinator import CrewCoordinator
@@ -274,6 +276,32 @@ class JobManager:
             
             logger.info(f"Workflow completed successfully for job {job_id}")
             
+        except RateLimitError as e:
+            logger.error(f"OpenAI quota/rate limit exceeded for job {job_id}: {str(e)}")
+            job.status = JobStatus.FAILED
+            final_status = JobStatus.FAILED
+            error_message = "Your OpenAI API quota has been exceeded. Please check your plan and billing details, or upgrade your OpenAI account."
+            job.updated_at = datetime.now()
+            
+        except AuthenticationError as e:
+            logger.error(f"OpenAI authentication failed for job {job_id}: {str(e)}")
+            job.status = JobStatus.FAILED
+            final_status = JobStatus.FAILED
+            error_message = "OpenAI API key is invalid or expired. Please check your API key in settings."
+            job.updated_at = datetime.now()
+            
+        except openai.APIError as e:
+            logger.error(f"OpenAI API error for job {job_id}: {str(e)}")
+            job.status = JobStatus.FAILED
+            final_status = JobStatus.FAILED
+            if "quota" in str(e).lower():
+                error_message = "Your OpenAI API quota has been exceeded. Please check your plan and billing details."
+            elif "rate limit" in str(e).lower():
+                error_message = "OpenAI API rate limit exceeded. Please try again in a few minutes."
+            else:
+                error_message = f"OpenAI API error: {str(e)}"
+            job.updated_at = datetime.now()
+            
         except asyncio.CancelledError:
             logger.info(f"Workflow cancelled for job {job_id}")
             job.status = JobStatus.CANCELLED
@@ -286,7 +314,7 @@ class JobManager:
             logger.error(f"Workflow timeout for job {job_id}")
             job.status = JobStatus.FAILED
             final_status = JobStatus.FAILED
-            error_message = "Workflow timed out after 15 minutes"
+            error_message = "Journey generation timed out after 15 minutes. This may be due to complex requirements or API delays. Please try again with simpler inputs."
             job.updated_at = datetime.now()
             logger.error(f"Job {job_id} timed out")
             
@@ -294,12 +322,27 @@ class JobManager:
             logger.error(f"Workflow error for job {job_id}: {str(workflow_error)}")
             job.status = JobStatus.FAILED
             final_status = JobStatus.FAILED
-            error_message = str(workflow_error)
+            # Provide user-friendly error messages for common issues
+            error_str = str(workflow_error).lower()
+            if "quota" in error_str or "billing" in error_str:
+                error_message = "OpenAI API quota exceeded. Please check your billing details."
+            elif "rate limit" in error_str:
+                error_message = "API rate limit exceeded. Please try again in a few minutes."
+            elif "authentication" in error_str or "api key" in error_str:
+                error_message = "Invalid OpenAI API key. Please check your API key in settings."
+            elif "network" in error_str or "connection" in error_str:
+                error_message = "Network connection error. Please check your internet connection and try again."
+            else:
+                error_message = f"Journey generation failed: {str(workflow_error)}"
             job.updated_at = datetime.now()
             logger.error(f"Job {job_id} failed with error: {str(workflow_error)}")
 
         finally:
-            # CRITICAL: Always update database first - this must succeed
+            # CRITICAL: Update job error message first
+            if error_message:
+                job.error_message = error_message
+            
+            # CRITICAL: Always update database - this must succeed regardless of WebSocket failures
             try:
                 if final_status == JobStatus.COMPLETED and workflow_result:
                     await usage_service.update_journey_completion(
@@ -312,31 +355,30 @@ class JobManager:
                     await usage_service.update_journey_status(
                         journey_id=job_id,
                         status=final_status.value,
-                        progress_data={"error": error_message} if error_message else None
+                        progress_data={
+                            "error": error_message,
+                            "completed_at": datetime.now().isoformat()
+                        } if error_message else {"completed_at": datetime.now().isoformat()}
                     )
                     logger.info(f"Database updated: Job {job_id} marked as {final_status.value}")
             except Exception as db_error:
                 logger.error(f"CRITICAL: Failed to update database for job {job_id}: {str(db_error)}")
-                # Continue to try WebSocket update even if DB fails
+                # Even if DB update fails, continue to try WebSocket update
             
-            # Update job error message if there was one
-            if error_message:
-                job.error_message = error_message
-            
-            # Try to send final progress update - this is secondary to DB update
+            # OPTIONAL: Try to send final progress update via WebSocket - this is secondary to DB update
             try:
                 if final_status == JobStatus.COMPLETED:
                     await self._update_progress(job_id, 8, "Completed", "Journey map generated successfully!")
                 elif final_status == JobStatus.CANCELLED:
                     await self._update_progress(job_id, -1, "Cancelled", "Workflow cancelled by user")
                 else:
-                    await self._update_progress(job_id, -1, "Failed", error_message or "Job failed")
+                    await self._update_progress(job_id, -1, "Failed", error_message or "Journey generation failed")
                     
                 logger.info(f"Final progress update sent for job {job_id}")
                 
             except Exception as progress_error:
                 logger.warning(f"Failed to send final progress update for job {job_id}: {str(progress_error)}")
-                # This is non-critical since database was already updated
+                # This is non-critical since database update was already attempted
             
             # Clean up workflow task reference
             self._workflow_tasks.pop(job_id, None)
