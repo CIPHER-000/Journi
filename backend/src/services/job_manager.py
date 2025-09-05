@@ -12,7 +12,6 @@ from ..models.auth import UserProfile
 from ..agents.crew_coordinator import CrewCoordinator
 from ..services.usage_service import usage_service
 import logging
-import traceback
 
 logger = logging.getLogger(__name__)
 
