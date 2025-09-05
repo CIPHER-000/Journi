@@ -278,7 +278,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
             </div>
 
             {/* Stop Button */}
-            {!isCompleted && !isFailed && !isCancelled && (
+            {status !== 'completed' && status !== 'failed' && status !== 'cancelled' && (
               <div className="relative">
                 {showCancelConfirm ? (
                   <div className="flex items-center space-x-2">
@@ -287,7 +287,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleCancel}
-                      disabled={isCancelling}
+                      disabled={isCancelling || status === 'cancelled'}
                       className="bg-red-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-1"
                     >
                       {isCancelling ? (
@@ -314,6 +314,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowCancelConfirm(true)}
+                    disabled={status === 'cancelled'}
                     className="bg-red-100 text-red-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors flex items-center gap-2"
                   >
                     <X className="w-4 h-4" />
@@ -354,7 +355,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
         </div>
 
         {/* Current Agent Status */}
-        {!isCompleted && !isFailed && !isCancelled && currentStep > 0 && (
+        {status !== 'completed' && status !== 'failed' && status !== 'cancelled' && currentStep > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
             <div className="flex items-center space-x-4">
               <div className="text-3xl">{currentStepInfo.icon}</div>
@@ -376,7 +377,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
         )}
 
         {/* Time Information */}
-        {!isCompleted && !isFailed && !isCancelled && (
+        {status !== 'completed' && status !== 'failed' && status !== 'cancelled' && (
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-gray-50 rounded-lg p-4 text-center">
               <div className="text-lg font-bold text-gray-900">
@@ -408,7 +409,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
         )}
 
         {/* Completion Message */}
-        {isCompleted && (
+        {status === 'completed' && (
           <div className="text-center py-6">
             <div className="text-6xl mb-4">🎉</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Journey Map Complete!</h3>
@@ -421,7 +422,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
           </div>
         )}
 
-        {isFailed && (
+        {status === 'failed' && (
           <div className="text-center py-6">
             <div className="text-6xl mb-4">😞</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Generation Failed</h3>
@@ -429,7 +430,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
           </div>
         )}
 
-        {isCancelled && (
+        {status === 'cancelled' && (
           <div className="text-center py-6">
             <div className="text-6xl mb-4">🛑</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Process Cancelled</h3>
