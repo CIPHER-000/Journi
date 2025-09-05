@@ -384,7 +384,9 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-blue-900">{currentStepInfo.name}</h3>
                 <p className="text-blue-700 mb-2">{currentStepInfo.description}</p>
-                <p className="text-sm text-blue-600 font-medium">{progress?.message || 'Processing...'}</p>
+                <p className="text-sm text-blue-600 font-medium">
+                  {currentMessage || progress?.message || 'Processing...'}
+                </p>
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-blue-900">{Math.round(percentage)}%</div>
@@ -593,3 +595,16 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
     </div>
   );
 }
+
+// Helper function to format time display
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+const formatTimeRemaining = (seconds?: number) => {
+  if (!seconds) return null;
+  const minutes = Math.ceil(seconds / 60);
+  return `~${minutes} min${minutes !== 1 ? 's' : ''} remaining`;
+};
