@@ -194,6 +194,9 @@ class JobManager:
                     crew_coordinator.execute_workflow(form_data_dict, progress_callback, job_id)
                 )
                 
+                # Store the task so it can be cancelled
+                self._workflow_tasks[job_id] = workflow_task
+                
                 # Wait for completion with timeout (15 minutes max)
                 journey_map_data = await asyncio.wait_for(workflow_task, timeout=900)
                 
@@ -212,6 +215,9 @@ class JobManager:
                     logger.error(f"Completion update failed: {e}")
 
                 await self._update_progress(job_id, 8, "Completed", "Journey map generated successfully!")
+                
+                # Clean up the workflow task
+                self._workflow_tasks.pop(job_id, None)
 
             except asyncio.TimeoutError:
                 logger.error(f"Workflow timeout for job {job_id}")
