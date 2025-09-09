@@ -35,6 +35,9 @@ class UserJourney(BaseModel):
     created_at: datetime
     form_data: Optional[dict] = None
     result_data: Optional[dict] = None
+    job_id: Optional[str] = None  # Job tracking ID
+    error_message: Optional[str] = None  # Error message if failed
+    progress_data: Optional[dict] = None  # Progress tracking data
 
 class SubscriptionPlan(BaseModel):
     id: str
