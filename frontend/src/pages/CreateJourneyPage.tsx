@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Map, Upload, X, FileText, Users, Target, Lightbulb, Loader2, ArrowLeft } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 import UpgradeModal from '../components/UpgradeModal'
@@ -32,6 +32,7 @@ interface JobStatus {
 
 export default function CreateJourneyPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [formData, setFormData] = useState<FormData>({
     title: '',
     industry: '',
@@ -53,6 +54,23 @@ export default function CreateJourneyPage() {
     currentUsage: number
     limit: number
   } | null>(null)
+
+  // Reset state when coming from a retry
+  useEffect(() => {
+    if (location.state?.retry) {
+      // Reset all states to initial values
+      setIsSubmitting(false)
+      setJobStatus(null)
+      setProgressMessages([])
+      setStartTime(null)
+      setEstimatedCompletion(null)
+      
+      // Clear the navigation state to prevent re-triggering
+      navigate(location.pathname, { replace: true, state: {} })
+      
+      console.log('Form reset for retry attempt')
+    }
+  }, [location.state, navigate, location.pathname])
 
   // Handle job completion
   const handleJobComplete = () => {

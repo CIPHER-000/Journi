@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, Clock, Bot, AlertTriangle, Wifi, WifiOff, Loader2, X, ArrowLeft } from "lucide-react";
+import { CheckCircle, Clock, Bot, AlertTriangle, Wifi, WifiOff, Loader2, X, ArrowLeft, Home } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { useJobProgress, ProgressMessage } from '../hooks/useJobProgress';
 
@@ -492,14 +492,27 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
                 </div>
               )}
               
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate('/create')}
+                  onClick={() => {
+                    // Navigate with state to indicate we're retrying
+                    navigate('/create', { state: { retry: true } });
+                  }}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 w-full"
                 >
                   Try Again
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate('/dashboard')}
+                  className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all duration-300 w-full flex items-center justify-center gap-2"
+                >
+                  <Home className="w-4 h-4" />
+                  Go to Dashboard
                 </motion.button>
                 
                 <p className="text-xs text-gray-500 mt-2">
@@ -518,7 +531,10 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/create')}
+              onClick={() => {
+                // Navigate with state to indicate we're starting fresh
+                navigate('/create', { state: { retry: true } });
+              }}
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300"
             >
               Create New Journey
