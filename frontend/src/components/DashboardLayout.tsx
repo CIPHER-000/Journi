@@ -66,7 +66,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         `}
       >
         {/* Scrollable content within fixed sidebar */}
-        <div className="h-full flex flex-col overflow-y-auto">
+        <div className={`h-full flex flex-col ${isSidebarCollapsed ? 'overflow-hidden' : 'overflow-y-auto'}`}>
           {/* Sidebar Header */}
           <div className={`${isSidebarCollapsed ? 'p-3' : 'p-6'} border-b border-gray-100`}>
             <div className="flex items-center justify-between">
