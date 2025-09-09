@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { Map, Calendar, Users, Eye, Download, MoreVertical, Search, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -138,7 +139,11 @@ function JourneyRow({ map, onView }: { map: JourneyMap, onView: () => void }) {
   const industry = map.industry ?? 'General'
 
   return (
-    <div className="p-6">
+    <motion.div
+      whileHover={{ backgroundColor: '#f9fafb' }}
+      className="p-6 cursor-pointer transition-colors"
+      onClick={onView}
+    >
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
@@ -166,27 +171,42 @@ function JourneyRow({ map, onView }: { map: JourneyMap, onView: () => void }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={onView}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onView()
+            }}
             className="p-2 text-gray-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50"
           >
             <Eye className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => {}}
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={(e) => {
+              e.stopPropagation()
+              // TODO: Implement download functionality
+            }}
             className="p-2 text-gray-400 hover:text-green-600 transition-colors rounded-lg hover:bg-green-50"
           >
             <Download className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => {}}
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={(e) => {
+              e.stopPropagation()
+              // TODO: Implement more options menu
+            }}
             className="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-50"
           >
             <MoreVertical className="w-5 h-5" />
-          </button>
+          </motion.button>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
