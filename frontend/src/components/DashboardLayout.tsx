@@ -40,7 +40,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex relative">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isMobileSidebarOpen && (
@@ -54,19 +54,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed position */}
       <aside
         className={`
-          fixed lg:relative inset-y-0 left-0 z-50
+          fixed top-0 left-0 h-screen z-50
           bg-white border-r border-gray-200 shadow-xl lg:shadow-none
           flex flex-col transition-all duration-300
           ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           ${isSidebarCollapsed ? 'w-20' : 'w-72'}
         `}
       >
-        {/* Sidebar Header */}
-        <div className={`${isSidebarCollapsed ? 'p-3' : 'p-6'} border-b border-gray-100`}>
-          <div className="flex items-center justify-between">
+        {/* Scrollable content within fixed sidebar */}
+        <div className="h-full flex flex-col overflow-y-auto">
+          {/* Sidebar Header */}
+          <div className={`${isSidebarCollapsed ? 'p-3' : 'p-6'} border-b border-gray-100`}>
+            <div className="flex items-center justify-between">
             <Link to="/dashboard" className={`flex items-center ${isSidebarCollapsed ? 'justify-center w-full' : 'space-x-3'}`}>
               <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl">
                 <Map className="w-6 h-6 text-white" />
@@ -184,10 +186,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {!isSidebarCollapsed && <span>Sign Out</span>}
           </button>
         </div>
+        </div> {/* End scrollable container */}
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      {/* Main Content Area - Add margin to account for fixed sidebar */}
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'}`}>
         {/* Top Navigation Bar */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
           <div className="px-6 py-4">
