@@ -100,11 +100,11 @@ class UsageService:
                 plan_type="free"
             )
 
-    async def record_journey_creation(self, user_id: str, title: str, industry: str, form_data: Dict[str, Any]) -> UserJourney:
-        """Record a new journey creation - let Supabase auto-generate the ID"""
+    async def record_journey_creation(self, user_id: str, title: str, industry: str, form_data: Dict[str, Any], job_id: Optional[str] = None) -> UserJourney:
+        """Record a new journey creation with job_id for tracking"""
         if not self._is_available():
             return UserJourney(
-                id=f"mock_{user_id}_{int(datetime.now().timestamp())}",
+                id=job_id or f"mock_{user_id}_{int(datetime.now().timestamp())}",
                 user_id=user_id,
                 title=title,
                 industry=industry,
@@ -115,7 +115,7 @@ class UsageService:
             )
             
         try:
-            # Don't include 'id' - let Supabase auto-generate it
+            # Include job_id for tracking
             journey_data = {
                 "user_id": user_id,
                 "title": title,
@@ -123,6 +123,10 @@ class UsageService:
                 "status": "processing",
                 "form_data": form_data
             }
+            
+            # Add job_id if the column exists in the database
+            if job_id:
+                journey_data["job_id"] = job_id
             
             response = self.supabase.table("user_journeys").insert(journey_data).execute()
             if not response.data:
@@ -139,40 +143,114 @@ class UsageService:
 
     async def update_journey_status(self, journey_id: str, status: str, progress_data: Optional[Dict[str, Any]] = None):
         """
-        Update journey status and progress in the database by user_id and title match.
+        Update journey status and progress in the database.
+        Note: journey_id here is the job_id from job_manager, not the database id.
+        We'll update based on the most recent processing journey or use a custom column if available.
         """
         if not self._is_available():
             logger.info(f"Mock: Journey {journey_id} status updated to {status}")
             return True
 
         try:
-            # Since we can't match by job_id (different from DB id), 
-            # we'll update the most recent processing journey for this user
-            # This is a temporary workaround - ideally we'd store job_id separately
+            # Try to update by job_id if we have that column, otherwise update most recent processing
+            update_data = {
+                "status": status,
+                "updated_at": datetime.now().isoformat()
+            }
             
-            # For now, just log the attempt and return success
-            logger.info(f"Would update journey status to {status} for job {journey_id}")
-            return True
+            # Add progress data if provided (includes error messages)
+            if progress_data:
+                # Store error message in a dedicated column if available
+                if "error" in progress_data:
+                    update_data["error_message"] = progress_data["error"]
+                # Store full progress data as JSON
+                update_data["progress_data"] = progress_data
             
-            # TODO: Implement proper job_id tracking in database schema
-            # For now, we'll skip the database update to prevent errors
+            # First, try to update by job_id if available
+            try:
+                # Try updating by job_id first
+                response = self.supabase.table("user_journeys") \
+                    .update(update_data) \
+                    .eq("job_id", journey_id) \
+                    .execute()
+                
+                if response.data:
+                    logger.info(f"Updated journey status to {status} by job_id {journey_id}")
+                    return True
+            except Exception as e:
+                logger.debug(f"Could not update by job_id (column may not exist): {e}")
+            
+            # Fallback: update the most recent processing journey
+            recent_cutoff = datetime.now().timestamp() - 3600  # 1 hour ago
+            
+            response = self.supabase.table("user_journeys") \
+                .update(update_data) \
+                .eq("status", "processing") \
+                .gte("created_at", datetime.fromtimestamp(recent_cutoff).isoformat()) \
+                .order("created_at", desc=True) \
+                .limit(1) \
+                .execute()
+            
+            if response.data:
+                logger.info(f"Updated journey status to {status} for recent processing journey")
+                return True
+            else:
+                logger.warning(f"No processing journey found to update to {status}")
+                return False
 
         except Exception as e:
             logger.error(f"Failed to update journey status: {str(e)}")
+            # Log the full error for debugging
+            logger.error(f"Update data was: {update_data}")
             return False
 
     async def update_journey_completion(self, journey_id: str, status: str, result_data: Optional[Dict[str, Any]] = None):
         """
-        Update journey completion status - temporary workaround for ID mismatch.
+        Update journey completion status in the database.
         """
         if not self._is_available():
             logger.info(f"Mock: Journey {journey_id} completed with status {status}")
             return True
 
         try:
-            # Log completion for now - skip DB update due to ID mismatch
-            logger.info(f"Journey {journey_id} completed with status {status}")
-            return True
+            update_data = {
+                "status": status,
+                "updated_at": datetime.now().isoformat()
+            }
+            
+            if result_data:
+                update_data["result_data"] = result_data
+            
+            # First, try to update by job_id if available
+            try:
+                response = self.supabase.table("user_journeys") \
+                    .update(update_data) \
+                    .eq("job_id", journey_id) \
+                    .execute()
+                
+                if response.data:
+                    logger.info(f"Updated journey to {status} by job_id {journey_id}")
+                    return True
+            except Exception as e:
+                logger.debug(f"Could not update by job_id: {e}")
+            
+            # Fallback: update the most recent processing journey
+            recent_cutoff = datetime.now().timestamp() - 3600  # 1 hour ago
+            
+            response = self.supabase.table("user_journeys") \
+                .update(update_data) \
+                .eq("status", "processing") \
+                .gte("created_at", datetime.fromtimestamp(recent_cutoff).isoformat()) \
+                .order("created_at", desc=True) \
+                .limit(1) \
+                .execute()
+            
+            if response.data:
+                logger.info(f"Updated journey to {status} status with completion data")
+                return True
+            else:
+                logger.warning(f"No processing journey found to mark as {status}")
+                return False
 
         except Exception as e:
             logger.error(f"Failed to update journey completion: {str(e)}")

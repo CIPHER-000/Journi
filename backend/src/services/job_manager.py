@@ -48,13 +48,14 @@ class JobManager:
             )
             self.jobs[job_id] = job
 
-            # Record it in Supabase - let Supabase auto-generate the ID
+            # Record it in Supabase with job_id for tracking
             try:
                 await usage_service.record_journey_creation(
                     user_id=user.id,
                     title=form_data.get('title', 'Untitled Journey'),
                     industry=form_data.get('industry', ''),
-                    form_data=form_data
+                    form_data=form_data,
+                    job_id=job_id  # Pass job_id for tracking
                 )
             except Exception as db_err:
                 logger.error(f"Failed to record journey in DB: {db_err}")
