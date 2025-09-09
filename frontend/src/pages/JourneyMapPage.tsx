@@ -220,22 +220,26 @@ export default function JourneyMapPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => navigate('/dashboard')}
-              className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </motion.button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{journeyMap.title}</h1>
-              <p className="text-gray-600">{journeyMap.industry} • Created {journeyMap.createdAt.toLocaleDateString()}</p>
+    <div className="space-y-8">
+      {/* Page Header */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{journeyMap.title}</h1>
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <span className="flex items-center gap-1">
+                <FileText className="w-4 h-4" />
+                {journeyMap.industry}
+              </span>
+              <span className="flex items-center gap-1">
+                <Users className="w-4 h-4" />
+                {journeyMap.personas.length} Personas
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle className="w-4 h-4" />
+                {journeyMap.phases.length} Phases
+              </span>
+              <span>Created {journeyMap.createdAt.toLocaleDateString()}</span>
             </div>
           </div>
           <div className="flex gap-3">
@@ -296,58 +300,60 @@ export default function JourneyMapPage() {
           </div>
         </div>
 
-        {/* Personas Section */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-600" />
-            Customer Personas
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {journeyMap.personas.map((persona) => (
-              <PersonaCard key={persona.id} persona={persona} />
-            ))}
-          </div>
+      </div>
+
+      {/* Personas Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Users className="w-6 h-6 text-blue-600" />
+          Customer Personas
+        </h2>
+        <div className="grid md:grid-cols-2 gap-6">
+          {journeyMap.personas.map((persona) => (
+            <PersonaCard key={persona.id} persona={persona} />
+          ))}
         </div>
+      </div>
 
-        {/* Journey Map */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Customer Journey Map</h2>
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <div className="min-w-max">
-                {/* Phase Headers */}
-                <div className="flex border-b border-gray-200">
-                  {journeyMap.phases.map((phase, index) => (
-                    <div key={phase.id} className="flex-1 min-w-80 p-4 text-center border-r border-gray-200 last:border-r-0">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                          {index + 1}
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900">{phase.name}</h3>
+      {/* Journey Map */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Customer Journey Map</h2>
+        <div className="bg-gray-50 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <div className="min-w-max">
+              {/* Phase Headers */}
+              <div className="flex bg-gradient-to-r from-blue-50 to-purple-50 border-b-2 border-gray-200">
+                {journeyMap.phases.map((phase, index) => (
+                  <div key={phase.id} className="flex-1 min-w-80 p-6 text-center border-r border-gray-200 last:border-r-0">
+                    <div className="flex items-center justify-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center font-bold">
+                        {index + 1}
                       </div>
-                      <div className="flex justify-center">
-                        {getEmotionIcon(phase.emotions)}
-                      </div>
+                      <h3 className="text-xl font-semibold text-gray-900">{phase.name}</h3>
                     </div>
-                  ))}
-                </div>
+                    <div className="flex justify-center">
+                      {getEmotionIcon(phase.emotions)}
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-                {/* Journey Details */}
-                <div className="flex">
-                  {journeyMap.phases.map((phase) => (
-                    <div key={phase.id} className={`flex-1 min-w-80 p-4 border-r border-gray-200 last:border-r-0 ${getEmotionColor(phase.emotions)}`}>
-                      <JourneyPhaseDetails phase={phase} />
-                    </div>
-                  ))}
-                </div>
+              {/* Journey Details */}
+              <div className="flex bg-white">
+                {journeyMap.phases.map((phase) => (
+                  <div key={phase.id} className={`flex-1 min-w-80 p-6 border-r border-gray-200 last:border-r-0`}>
+                    <JourneyPhaseDetails phase={phase} />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Key Insights */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Key Insights & Recommendations</h2>
+      {/* Key Insights */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Key Insights & Recommendations</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <h3 className="text-lg font-semibold text-red-600 mb-3 flex items-center gap-2">
@@ -400,7 +406,7 @@ function PersonaCard({ persona }: { persona: Persona }) {
   return (
     <motion.div
       whileHover={{ y: -2 }}
-      className="bg-white rounded-lg shadow-lg p-6"
+      className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200"
     >
       <div className="flex items-center gap-4 mb-4">
         <div className="text-4xl">{persona.avatar}</div>
@@ -446,21 +452,24 @@ function PersonaCard({ persona }: { persona: Persona }) {
 
 function JourneyPhaseDetails({ phase }: { phase: JourneyPhase }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <h4 className="font-semibold text-gray-900 mb-2">Actions</h4>
-        <ul className="space-y-1">
+        <h4 className="font-semibold text-gray-900 mb-2 text-sm uppercase tracking-wider">Actions</h4>
+        <ul className="space-y-1.5">
           {phase.actions.map((action, index) => (
-            <li key={index} className="text-sm text-gray-700">• {action}</li>
+            <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+              <span className="text-blue-500 mt-0.5">→</span>
+              {action}
+            </li>
           ))}
         </ul>
       </div>
 
       <div>
-        <h4 className="font-semibold text-gray-900 mb-2">Touchpoints</h4>
-        <div className="flex flex-wrap gap-1">
+        <h4 className="font-semibold text-gray-900 mb-2 text-sm uppercase tracking-wider">Touchpoints</h4>
+        <div className="flex flex-wrap gap-2">
           {phase.touchpoints.map((touchpoint, index) => (
-            <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+            <span key={index} className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 px-3 py-1.5 rounded-lg text-xs font-medium">
               {touchpoint}
             </span>
           ))}
@@ -468,11 +477,11 @@ function JourneyPhaseDetails({ phase }: { phase: JourneyPhase }) {
       </div>
 
       <div>
-        <h4 className="font-semibold text-gray-900 mb-2">Pain Points</h4>
-        <ul className="space-y-1">
+        <h4 className="font-semibold text-gray-900 mb-2 text-sm uppercase tracking-wider">Pain Points</h4>
+        <ul className="space-y-1.5">
           {phase.painPoints.map((pain, index) => (
-            <li key={index} className="text-sm text-red-700 flex items-start gap-1">
-              <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+            <li key={index} className="text-sm text-red-700 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               {pain}
             </li>
           ))}
@@ -480,21 +489,21 @@ function JourneyPhaseDetails({ phase }: { phase: JourneyPhase }) {
       </div>
 
       <div>
-        <h4 className="font-semibold text-gray-900 mb-2">Opportunities</h4>
-        <ul className="space-y-1">
+        <h4 className="font-semibold text-gray-900 mb-2 text-sm uppercase tracking-wider">Opportunities</h4>
+        <ul className="space-y-1.5">
           {phase.opportunities.map((opportunity, index) => (
-            <li key={index} className="text-sm text-green-700 flex items-start gap-1">
-              <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+            <li key={index} className="text-sm text-green-700 flex items-start gap-2">
+              <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               {opportunity}
             </li>
           ))}
         </ul>
       </div>
 
-      <div className="bg-white/50 p-3 rounded border-l-4 border-blue-500">
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border-l-4 border-blue-500">
         <div className="flex items-start gap-2">
-          <Quote className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-gray-800 italic">"{phase.customerQuote}"</p>
+          <Quote className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-gray-800 italic font-medium">"{phase.customerQuote}"</p>
         </div>
       </div>
     </div>

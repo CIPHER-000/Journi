@@ -16,6 +16,7 @@ const supabase = createClient(
 
 interface UserProfile {
   id: string
+  name?: string
   email: string
   plan_type: string
   journey_count: number
@@ -40,7 +41,7 @@ interface AuthContextType {
   userProfile: UserProfile | null
   token: string | null
   loading: boolean
-  signUp: (email: string, password: string) => Promise<{ data: any, error: any }>
+  signUp: (email: string, password: string, name?: string) => Promise<{ data: any, error: any }>
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -75,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Create user profile from Supabase user data
       const userProfile: UserProfile = {
         id: user.id,
+        name: user.user_metadata?.full_name || user.email?.split('@')[0],
         email: user.email!,
         plan_type: 'free',
         journey_count: 0,
@@ -104,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session?.user) {
       const userProfile: UserProfile = {
         id: session.user.id,
+        name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
         email: session.user.email!,
         plan_type: 'free',
         journey_count: 0,
@@ -135,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Create profile directly from session data
         const userProfile: UserProfile = {
           id: session.user.id,
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
           email: session.user.email!,
           plan_type: 'free',
           journey_count: 0,
@@ -179,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Create profile directly from session data
         const userProfile: UserProfile = {
           id: session.user.id,
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
           email: session.user.email!,
           plan_type: 'free',
           journey_count: 0,
@@ -205,14 +210,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name?: string) => {
     try {
-      console.log('Starting signup process for:', email)
+      console.log('Starting signup process for:', email, name)
       
       // Use Supabase Auth directly for signup
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: name || email.split('@')[0]
+          }
+        }
       })
       
       if (error) {
@@ -240,6 +250,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const userProfile: UserProfile = {
           id: data.user.id,
+          name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
           email: data.user.email!,
           plan_type: 'free',
           journey_count: 0,
@@ -290,6 +301,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Create user profile directly from Supabase data
       const userProfile: UserProfile = {
         id: data.user.id,
+        name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
         email: data.user.email!,
         plan_type: 'free',
         journey_count: 0,

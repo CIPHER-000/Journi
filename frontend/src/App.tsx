@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Header } from './components/Header'
+import { DashboardLayout } from './components/DashboardLayout'
 import HomePage from './pages/HomePage'
 import SignUpPage from './pages/SignUpPage'
 import LoginPage from './pages/LoginPage'
@@ -29,32 +30,44 @@ function App() {
             {/* Protected routes */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <Header />
-                <DashboardPage />
+                <DashboardLayout>
+                  <DashboardPage />
+                </DashboardLayout>
               </ProtectedRoute>
             } />
             <Route path="/create" element={
               <ProtectedRoute>
-                <Header />
-                <CreateJourneyPage />
+                <DashboardLayout>
+                  <CreateJourneyPage />
+                </DashboardLayout>
               </ProtectedRoute>
             } />
             <Route path="/journey/:id" element={
               <ProtectedRoute>
-                <Header />
-                <JourneyMapPage />
+                <DashboardLayout>
+                  <JourneyMapPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/journeys" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <DashboardPage />
+                </DashboardLayout>
               </ProtectedRoute>
             } />
             <Route path="/upgrade" element={
               <ProtectedRoute>
-                <Header />
-                <UpgradePage />
+                <DashboardLayout>
+                  <UpgradePage />
+                </DashboardLayout>
               </ProtectedRoute>
             } />
             <Route path="/settings" element={
               <ProtectedRoute>
-                <Header />
-                <SettingsPage />
+                <DashboardLayout>
+                  <SettingsPage />
+                </DashboardLayout>
               </ProtectedRoute>
             } />
           </Routes>

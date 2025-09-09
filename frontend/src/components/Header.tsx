@@ -31,33 +31,35 @@ export function Header() {
           </Link>
 
           <nav className="flex items-center space-x-8">
-            {/* Center Navigation */}
-            <div className="hidden md:flex items-center space-x-1">
-              <Link
-                to="/"
-                className={`px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
-                  isActive('/') 
-                    ? 'bg-gray-100 text-gray-900' 
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                Home
-              </Link>
-              
-              <a
-                href="#how-it-works"
-                className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
-              >
-                How it Works
-              </a>
-              
-              <a
-                href="#pricing"
-                className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
-              >
-                Pricing
-              </a>
-            </div>
+            {/* Center Navigation - Only show for non-authenticated users */}
+            {!user && (
+              <div className="hidden md:flex items-center space-x-1">
+                <Link
+                  to="/"
+                  className={`px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                    isActive('/') 
+                      ? 'bg-gray-100 text-gray-900' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  Home
+                </Link>
+                
+                <a
+                  href="#how-it-works"
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
+                >
+                  How it Works
+                </a>
+                
+                <a
+                  href="#pricing"
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
+                >
+                  Pricing
+                </a>
+              </div>
+            )}
             
             {/* User Actions */}
             {user ? (
@@ -95,7 +97,7 @@ export function Header() {
                   <div className="flex items-center space-x-2 px-2 py-1 bg-gray-50 rounded-lg">
                     <User className="w-3.5 h-3.5 text-gray-600" />
                     <span className="text-sm font-medium text-gray-700">
-                      {user.email?.split('@')[0]}
+                      {user.name || user.email?.split('@')[0]}
                     </span>
                   </div>
                   <motion.button

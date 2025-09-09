@@ -2,12 +2,13 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { Map, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
+import { Map, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, User } from 'lucide-react'
 
 export default function SignUpPage() {
   const navigate = useNavigate()
   const { signUp } = useAuth()
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -37,8 +38,8 @@ export default function SignUpPage() {
     }
 
     try {
-      console.log('Attempting signup with:', formData.email)
-      const { data, error } = await signUp(formData.email, formData.password)
+      console.log('Attempting signup with:', formData.email, formData.name)
+      const { data, error } = await signUp(formData.email, formData.password, formData.name)
       
       console.log('Signup result:', { data, error })
       
@@ -114,6 +115,24 @@ export default function SignUpPage() {
           className="bg-white rounded-2xl shadow-lg p-8"
         >
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Full name
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="Enter your full name"
+                />
+              </div>
+            </div>
+
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

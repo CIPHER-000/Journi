@@ -93,47 +93,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Welcome back, {user?.email?.split('@')[0] || 'User'}! 👋
-            </h1>
-            <p className="text-xl text-gray-600">Manage your AI-powered customer journey maps</p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/settings')}
-              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center gap-2"
-            >
-              <Settings className="w-4 h-4" />
-              Settings
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSignOut}
-              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center gap-2"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/create')}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 flex items-center gap-2"
-            >
-              <Plus className="w-5 h-5" />
-              Create New Journey
-            </motion.button>
-          </div>
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Welcome back, {user?.name || user?.email?.split('@')[0] || 'User'}! 👋
+        </h1>
+        <p className="text-lg text-gray-600">Here's an overview of your journey mapping activity</p>
+      </div>
 
         {/* Plan Status & Usage */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -289,7 +256,6 @@ export default function DashboardPage() {
             </motion.button>
           </motion.div>
         )}
-      </div>
     </div>
   )
 }
@@ -313,6 +279,8 @@ function StatsCard({ title, value, icon, trend }: { title: string, value: string
 }
 
 function JourneyMapCard({ map, onView }: { map: JourneyMap, onView: () => void }) {
+  const [isHovered, setIsHovered] = useState(false);
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -332,10 +300,11 @@ function JourneyMapCard({ map, onView }: { map: JourneyMap, onView: () => void }
   const industry = map.industry ?? 'General';
 
   return (
-    <motion.div
-      whileHover={{ backgroundColor: '#f9fafb' }}
-      className="p-6 cursor-pointer transition-colors"
+    <div
+      className={`p-6 cursor-pointer transition-all duration-200 ${isHovered ? 'bg-gray-50' : 'bg-white'}`}
       onClick={onView}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex items-center justify-between">
         <div className="flex-1">
@@ -393,6 +362,6 @@ function JourneyMapCard({ map, onView }: { map: JourneyMap, onView: () => void }
           </motion.button>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
