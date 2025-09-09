@@ -396,7 +396,6 @@ export default function JourneyMapPage() {
               </ul>
             </div>
           </div>
-        </div>
       </div>
     </div>
   )
