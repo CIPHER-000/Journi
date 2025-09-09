@@ -211,7 +211,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     onClick={() => setIsSidebarCollapsed(false)}
                     className="hidden lg:flex items-center justify-center w-10 h-10 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all group"
                   >
-                    <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+<ChevronRight className="w-5 h-5 text-black group-hover:translate-x-0.5 transition-transform" />
                   </button>
                 )}
                 

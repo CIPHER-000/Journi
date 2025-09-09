@@ -121,6 +121,7 @@ export default function JourneysPage({ searchQuery = '' }: JourneysPageProps) {
 }
 
 function JourneyRow({ map, onView }: { map: JourneyMap, onView: () => void }) {
+  const [isHovered, setIsHovered] = React.useState(false)
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -139,10 +140,11 @@ function JourneyRow({ map, onView }: { map: JourneyMap, onView: () => void }) {
   const industry = map.industry ?? 'General'
 
   return (
-    <motion.div
-      whileHover={{ backgroundColor: '#f9fafb' }}
-      className="p-6 cursor-pointer transition-colors"
+    <div
+      className={`p-6 cursor-pointer transition-colors ${isHovered ? 'bg-gray-50' : 'bg-white'}`}
       onClick={onView}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex items-center justify-between">
         <div className="flex-1">
@@ -206,7 +208,7 @@ function JourneyRow({ map, onView }: { map: JourneyMap, onView: () => void }) {
           </motion.button>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
