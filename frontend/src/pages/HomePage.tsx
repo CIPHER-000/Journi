@@ -2,6 +2,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { Map, Users, Brain, Zap, ArrowRight, CheckCircle, Clock, FileText, Quote, Heart, Star, Shield, Rocket } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { Header } from '../components/Header'
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -9,57 +10,21 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <Map className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Journi</span>
-                <div className="text-xs text-gray-500 -mt-1">AI Journey Mapping</div>
-              </div>
-            </div>
-            
-            <nav className="hidden md:flex items-center space-x-8">
-              <a href="#home" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Home</a>
-              <a href="#how-it-works" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">How it Works</a>
-              <a href="#pricing" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Pricing</a>
-              <button 
-                onClick={() => navigate('/login')}
-                className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
-              >
-                Login
-              </button>
-            </nav>
-
-            <div className="flex items-center space-x-4">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300"
-                onClick={() => navigate('/signup')}
-              >
-                Sign Up Free
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
-      <main className="flex-1">
-        <section id="home" className="relative py-20 lg:py-32 overflow-hidden">
+      <main className="flex-1 w-full">
+        <section id="home" className="relative py-16 lg:py-24 overflow-hidden">
           {/* Background Elements */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50"></div>
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-6xl">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full">
             <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl"></div>
             <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl"></div>
           </div>
 
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-4xl mx-auto">
+          <div className="relative w-full px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center max-w-4xl mx-auto">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -120,18 +85,20 @@ export default function HomePage() {
                 </div>
               </motion.div>
             </div>
+            </div>
           </div>
         </section>
 
         {/* Features Section */}
-        <section className="py-20 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">Powered by AI Agents</h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">Our specialized AI agents work together to create comprehensive journey maps from your business context and research</p>
-            </div>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <section className="py-16 bg-gray-50 w-full">
+          <div className="w-full px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">Powered by AI Agents</h2>
+                <p className="text-xl text-gray-600 max-w-3xl mx-auto">Our specialized AI agents work together to create comprehensive journey maps from your business context and research</p>
+              </div>
+              
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               <FeatureCard
                 icon={<Brain className="w-8 h-8 text-blue-600" />}
                 title="Context Analysis"
@@ -153,13 +120,15 @@ export default function HomePage() {
                 description="Get actionable recommendations and opportunities in minutes"
               />
             </div>
+            </div>
           </div>
         </section>
 
         {/* How It Works Section */}
-        <section id="how-it-works" className="py-20 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
+        <section id="how-it-works" className="py-16 bg-white w-full">
+          <div className="w-full px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-16">
               <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">How It Works</h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">AI agents collaborate through an 8-step process to create your journey map</p>
             </div>
@@ -214,13 +183,15 @@ export default function HomePage() {
                 description="Final quality check and refinement"
               />
             </div>
+            </div>
           </div>
         </section>
 
         {/* Pricing Section */}
-        <section id="pricing" className="py-20 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
+        <section id="pricing" className="py-16 bg-gray-50 w-full">
+          <div className="w-full px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-16">
               <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">Simple, Transparent Pricing</h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">Start free, scale as you grow. No hidden fees or complex pricing tiers.</p>
             </div>
@@ -370,13 +341,15 @@ export default function HomePage() {
                 </motion.button>
               </motion.div>
             </div>
+            </div>
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
-          <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-            <motion.div
+        <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 w-full">
+          <div className="w-full text-center px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto">
+              <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
@@ -398,13 +371,14 @@ export default function HomePage() {
                 Start Free Trial
               </motion.button>
             </motion.div>
+            </div>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <footer className="bg-gray-900 text-white py-10 w-full">
+        <div className="w-full px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
