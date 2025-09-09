@@ -409,6 +409,9 @@ class JobManager:
                 elif final_status == JobStatus.CANCELLED:
                     await self._update_progress(job_id, -1, "Cancelled", "Workflow cancelled by user")
                 else:
+                    # For failed jobs, make sure the error message is set before sending progress update
+                    if error_message and job_id in self.jobs:
+                        self.jobs[job_id].error_message = error_message
                     await self._update_progress(job_id, -1, "Failed", error_message or "Journey generation failed")
                 logger.info(f"Final progress update sent for job {job_id}")
             except Exception as progress_error:

@@ -119,8 +119,11 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
     
     // Handle error messages from backend - prioritize backend error messages
     if (message.status === 'failed') {
-      // Use backend error message if available, otherwise use a specific fallback
-      const backendError = message.error || message.error_message;
+      // Check multiple possible locations for error messages
+      const backendError = message.error || 
+                           message.error_message || 
+                           (message.progress?.message && message.progress.step_name === 'Failed' ? message.progress.message : null);
+      
       if (backendError) {
         setError(backendError);
         console.log('❌ Backend error message:', backendError);
@@ -155,8 +158,10 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
           navigate(`/journey/${message.result.id}`, { replace: true });
         }, 2000);
       } else if (message.status === 'failed') {
-        // Ensure error message is set for failed jobs
-        const backendError = message.error || message.error_message;
+        // Ensure error message is set for failed jobs - check all possible locations
+        const backendError = message.error || 
+                           message.error_message || 
+                           (message.progress?.message && message.progress.step_name === 'Failed' ? message.progress.message : null);
         setError(backendError || 'Journey map generation failed');
         console.log('❌ Job failed with error:', backendError);
       }
