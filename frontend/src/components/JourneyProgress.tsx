@@ -117,9 +117,21 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
       }
     }
     
-    // Handle error messages from backend
-    if (message.error || (message.status === 'failed' && !error)) {
-      setError(message.error || 'Journey generation failed');
+    // Handle error messages from backend - prioritize backend error messages
+    if (message.status === 'failed') {
+      // Use backend error message if available, otherwise use a specific fallback
+      const backendError = message.error || message.error_message;
+      if (backendError) {
+        setError(backendError);
+        console.log('❌ Backend error message:', backendError);
+      } else {
+        setError('Something went wrong during the AI agent workflow. Please try again.');
+        console.log('❌ No specific error message from backend');
+      }
+    } else if (message.error) {
+      // Handle connection or other errors during processing
+      setError(message.error);
+      console.log('⚠️ Connection/processing error:', message.error);
     }
     
     // Handle cancellation
@@ -143,7 +155,10 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
           navigate(`/journey/${message.result.id}`, { replace: true });
         }, 2000);
       } else if (message.status === 'failed') {
-        setError(message.error || 'Journey map generation failed');
+        // Ensure error message is set for failed jobs
+        const backendError = message.error || message.error_message;
+        setError(backendError || 'Journey map generation failed');
+        console.log('❌ Job failed with error:', backendError);
       }
     }
   }, [navigate, onComplete, startTime]);
@@ -455,22 +470,37 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
           <div className="text-center py-6">
             <div className="text-6xl mb-4">😞</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Generation Failed</h3>
-            <div className="max-w-md mx-auto">
+            <div className="max-w-lg mx-auto">
               {error ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                  <p className="text-red-800 text-sm font-medium">{error}</p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-left">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-red-800 font-medium mb-1">Error Details:</p>
+                      <p className="text-red-700 text-sm">{error}</p>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <p className="text-gray-600 mb-4">Something went wrong during the AI agent workflow.</p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                  <p className="text-red-700 text-sm">Something went wrong during the AI agent workflow. Please try again.</p>
+                </div>
               )}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/create')}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300"
-              >
-                Try Again
-              </motion.button>
+              
+              <div className="space-y-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/create')}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 w-full"
+                >
+                  Try Again
+                </motion.button>
+                
+                <p className="text-xs text-gray-500 mt-2">
+                  If this error persists, please contact support with the error details above.
+                </p>
+              </div>
             </div>
           </div>
         )}

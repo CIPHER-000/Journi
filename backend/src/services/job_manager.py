@@ -333,7 +333,11 @@ class JobManager:
             
             # Provide user-friendly error messages for common issues
             error_str = str(workflow_error).lower()
-            if "quota" in error_str or "billing" in error_str:
+            if "jobstatus" in error_str and "attribute" in error_str:
+                error_message = "Internal system error: Job status handling issue. Our team has been notified."
+            elif "asyncio" in error_str and "unboundlocalerror" in error_str:
+                error_message = "Internal system error: Async processing issue. Please try again."
+            elif "quota" in error_str or "billing" in error_str:
                 error_message = "OpenAI API quota exceeded. Please check your billing details."
             elif "rate limit" in error_str:
                 error_message = "API rate limit exceeded. Please try again in a few minutes."
@@ -350,35 +354,53 @@ class JobManager:
             logger.debug(f"Job {job_id} debug info: {workflow_error}")
 
         finally:
-            # CRITICAL: Always update database first - this must succeed regardless of other failures
-            try:
-                # Set error message in job object
-                if error_message:
-                    job.error_message = error_message
-                
-                # Update database with final status
-                if final_status == JobStatus.COMPLETED and workflow_result:
-                    await usage_service.update_journey_completion(
-                        journey_id=job_id,
-                        status=final_status.value,
-                        result_data=workflow_result
-                    )
-                    logger.info(f"Database updated: Job {job_id} marked as completed")
-                else:
-                    # Include error message in progress data for database storage
-                    progress_data = {"completed_at": datetime.now().isoformat()}
+            # CRITICAL: Always ensure job object has correct final state first
+            if error_message:
+                job.error_message = error_message
+            job.status = final_status
+            job.updated_at = datetime.now()
+            
+            # CRITICAL: Always update database - this must succeed regardless of other failures
+            db_update_success = False
+            for attempt in range(3):  # Try 3 times
+                try:
+                    # Set error message in job object
                     if error_message:
-                        progress_data["error"] = error_message
-                        progress_data["user_friendly_error"] = error_message
+                        job.error_message = error_message
                     
-                    await usage_service.update_journey_status(
-                        journey_id=job_id,
-                        status=final_status.value,
-                        progress_data=progress_data
-                    )
-                    logger.info(f"Database updated: Job {job_id} marked as {final_status.value}")
-            except Exception as db_error:
-                logger.error(f"CRITICAL: Failed to update database for job {job_id}: {str(db_error)}")
+                    # Update database with final status
+                    if final_status == JobStatus.COMPLETED and workflow_result:
+                        await usage_service.update_journey_completion(
+                            journey_id=job_id,
+                            status=final_status.value,
+                            result_data=workflow_result
+                        )
+                        logger.info(f"Database updated: Job {job_id} marked as completed")
+                    else:
+                        # Include error message in progress data for database storage
+                        progress_data = {"completed_at": datetime.now().isoformat()}
+                        if error_message:
+                            progress_data["error"] = error_message
+                            progress_data["user_friendly_error"] = error_message
+                        
+                        await usage_service.update_journey_status(
+                            journey_id=job_id,
+                            status=final_status.value,
+                            progress_data=progress_data
+                        )
+                        logger.info(f"Database updated: Job {job_id} marked as {final_status.value}")
+                    
+                    db_update_success = True
+                    break  # Success, exit retry loop
+                    
+                except Exception as db_error:
+                    logger.error(f"Database update attempt {attempt + 1} failed for job {job_id}: {str(db_error)}")
+                    if attempt == 2:  # Last attempt
+                        logger.critical(f"CRITICAL: All database update attempts failed for job {job_id}: {str(db_error)}")
+                        # Even if DB fails, ensure in-memory state is correct for API responses
+                        job.error_message = error_message or f"Database update failed: {str(db_error)}"
+                    else:
+                        await asyncio.sleep(1)  # Wait before retry
             
             # OPTIONAL: Try to send final progress update via WebSocket
             try:

@@ -98,7 +98,7 @@ export function useJobProgress(
             status: data.status,
             progress: data.progress,
             result: data.result,
-            error: data.error || data.error_message,
+            error: data.error_message || data.error, // Prioritize error_message from backend
             timestamp: new Date().toISOString()
           }
           

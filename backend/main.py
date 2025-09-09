@@ -28,7 +28,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 
 try:
-    from src.models.journey import JourneyFormData, Job, JourneyMap
+    from src.models.journey import JourneyFormData, Job, JourneyMap, JobStatus
     from src.services.job_manager import JobManager
     from src.routes.auth_routes import router as auth_router
     from src.middleware.auth_middleware import require_auth
