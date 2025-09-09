@@ -83,9 +83,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {!isSidebarCollapsed && (
               <button
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                className="hidden lg:block p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="hidden lg:flex items-center justify-center w-8 h-8 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all group"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
               </button>
             )}
             <button
@@ -148,8 +148,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           })}
         </nav>
 
-        {/* Spacer to push bottom items down */}
-        <div className="flex-1"></div>
+        {/* Spacer to push bottom items down - minimal space */}
+        <div className="flex-1 min-h-[2rem]"></div>
 
         {/* Bottom Navigation */}
         <div className="p-4 border-t border-gray-100 space-y-1">
@@ -209,9 +209,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 {isSidebarCollapsed && (
                   <button
                     onClick={() => setIsSidebarCollapsed(false)}
-                    className="hidden lg:flex items-center justify-center w-10 h-10 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all group"
+                    className="hidden lg:flex items-center justify-center w-8 h-8 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all group"
                   >
-<ChevronRight className="w-5 h-5 text-black group-hover:translate-x-0.5 transition-transform" />
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   </button>
                 )}
                 
