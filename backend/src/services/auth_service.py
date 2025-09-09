@@ -62,7 +62,12 @@ class AuthService:
             # Use Supabase Auth to create user and send verification email
             auth_response = self.supabase.auth.sign_up({
                 "email": user_data.email,
-                "password": user_data.password
+                "password": user_data.password,
+                "options": {
+                    "data": {
+                        "full_name": user_data.name or user_data.email.split('@')[0]
+                    }
+                }
             })
             
             if auth_response.user is None:
@@ -74,7 +79,7 @@ class AuthService:
             profile_data = {
                 "id": user_id,
                 "email": user_data.email,
-                "password_hash": hashed_password,
+                "name": user_data.name or user_data.email.split('@')[0],
                 "plan_type": "free",
                 "journey_count": 0,
                 "is_active": True,

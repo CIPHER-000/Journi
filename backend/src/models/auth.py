@@ -5,6 +5,7 @@ from datetime import datetime
 class UserSignup(BaseModel):
     email: EmailStr
     password: str
+    name: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -13,6 +14,7 @@ class UserLogin(BaseModel):
 class UserProfile(BaseModel):
     id: str
     email: str
+    name: Optional[str] = None
     plan_type: str = 'free'
     journey_count: int = 0
     journey_limit: Optional[int] = 5
