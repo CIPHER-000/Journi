@@ -10,6 +10,7 @@ export function Header() {
   const { user, signOut } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
+  const isPublicPage = location.pathname === '/' || location.pathname === '/login' || location.pathname === '/signup';
 
   const handleSignOut = async () => {
     await signOut();
@@ -61,29 +62,34 @@ export function Header() {
             {/* User Actions */}
             {user ? (
               <div className="flex items-center space-x-3">
-                <Link
-                  to="/create"
-                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-200 text-sm font-medium ${
-                    isActive('/create') 
-                      ? 'bg-gray-100 text-gray-900' 
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create</span>
-                </Link>
-                
-                <Link
-                  to="/dashboard"
-                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-200 text-sm font-medium ${
-                    isActive('/dashboard') 
-                      ? 'bg-gray-100 text-gray-900' 
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Dashboard</span>
-                </Link>
+                {/* Only show Create and Dashboard buttons on non-public pages */}
+                {!isPublicPage && (
+                  <>
+                    <Link
+                      to="/create"
+                      className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        isActive('/create') 
+                          ? 'bg-gray-100 text-gray-900' 
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Create</span>
+                    </Link>
+                    
+                    <Link
+                      to="/dashboard"
+                      className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        isActive('/dashboard') 
+                          ? 'bg-gray-100 text-gray-900' 
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                  </>
+                )}
                 
                 <div className="flex items-center space-x-2 ml-2 pl-2 border-l border-gray-200">
                   <div className="flex items-center space-x-2 px-2 py-1 bg-gray-50 rounded-lg">

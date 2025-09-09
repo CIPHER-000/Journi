@@ -1,11 +1,20 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Map, Users, Brain, Zap, ArrowRight, CheckCircle, Clock, FileText, Quote, Heart, Star, Shield, Rocket } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
+import { useAuth } from '../context/AuthContext'
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const { user, loading } = useAuth()
+
+  useEffect(() => {
+    // Redirect authenticated users to dashboard
+    if (!loading && user) {
+      navigate('/dashboard')
+    }
+  }, [user, loading, navigate])
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
