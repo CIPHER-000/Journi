@@ -55,19 +55,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </AnimatePresence>
 
       {/* Sidebar */}
-      <motion.aside
-        initial={false}
-        animate={{ 
-          width: isSidebarCollapsed ? '80px' : '280px',
-          x: isMobileSidebarOpen ? 0 : '-100%'
-        }}
+      <aside
         className={`
           fixed lg:relative inset-y-0 left-0 z-50
           bg-white border-r border-gray-200 shadow-xl lg:shadow-none
           flex flex-col transition-all duration-300
           ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${isSidebarCollapsed ? 'w-20' : 'w-72'}
         `}
-        style={{ width: isSidebarCollapsed ? '80px' : '280px' }}
       >
         {/* Sidebar Header */}
         <div className="p-6 border-b border-gray-100">
@@ -184,7 +179,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {!isSidebarCollapsed && <span>Sign Out</span>}
           </button>
         </div>
-      </motion.aside>
+      </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen">
