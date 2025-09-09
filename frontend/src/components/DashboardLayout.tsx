@@ -65,9 +65,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         `}
       >
         {/* Sidebar Header */}
-        <div className="p-6 border-b border-gray-100">
+        <div className={`${isSidebarCollapsed ? 'p-3' : 'p-6'} border-b border-gray-100`}>
           <div className="flex items-center justify-between">
-            <Link to="/dashboard" className={`flex items-center space-x-3 ${isSidebarCollapsed ? 'justify-center' : ''}`}>
+            <Link to="/dashboard" className={`flex items-center ${isSidebarCollapsed ? 'justify-center w-full' : 'space-x-3'}`}>
               <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl">
                 <Map className="w-6 h-6 text-white" />
               </div>
@@ -77,12 +77,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </span>
               )}
             </Link>
-            <button
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="hidden lg:block p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              {isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-            </button>
+            {!isSidebarCollapsed && (
+              <button
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                className="hidden lg:block p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            )}
             <button
               onClick={() => setIsMobileSidebarOpen(false)}
               className="lg:hidden p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -120,7 +122,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="p-4 space-y-1">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -142,6 +144,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             );
           })}
         </nav>
+
+        {/* Spacer to push bottom items down */}
+        <div className="flex-1"></div>
 
         {/* Bottom Navigation */}
         <div className="p-4 border-t border-gray-100 space-y-1">
@@ -188,12 +193,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
+                {/* Mobile menu button */}
                 <button
                   onClick={() => setIsMobileSidebarOpen(true)}
                   className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <Menu className="w-5 h-5" />
                 </button>
+                
+                {/* Desktop expand button when sidebar is collapsed */}
+                {isSidebarCollapsed && (
+                  <button
+                    onClick={() => setIsSidebarCollapsed(false)}
+                    className="hidden lg:flex items-center justify-center w-10 h-10 bg-white border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-400 transition-all"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                )}
                 
                 {/* Search Bar */}
                 <div className="relative">
