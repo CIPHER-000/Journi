@@ -9,6 +9,7 @@ import SignUpPage from './pages/SignUpPage'
 import LoginPage from './pages/LoginPage'
 import CreateJourneyPage from './pages/CreateJourneyPage'
 import DashboardPage from './pages/DashboardPage'
+import JourneysPage from './pages/JourneysPage'
 import JourneyMapPage from './pages/JourneyMapPage'
 import SettingsPage from './pages/SettingsPage'
 import UpgradePage from './pages/UpgradePage'
@@ -52,7 +53,7 @@ function App() {
             <Route path="/journeys" element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <DashboardPage />
+                  <JourneysPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

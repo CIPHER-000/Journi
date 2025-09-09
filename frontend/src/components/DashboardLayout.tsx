@@ -18,6 +18,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, signOut } = useAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleSignOut = async () => {
     await signOut();
@@ -208,9 +209,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 {isSidebarCollapsed && (
                   <button
                     onClick={() => setIsSidebarCollapsed(false)}
-                    className="hidden lg:flex items-center justify-center w-10 h-10 bg-white border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-400 transition-all"
+                    className="hidden lg:flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg text-white hover:shadow-lg hover:shadow-blue-500/25 transition-all group"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
                   </button>
                 )}
                 
@@ -220,6 +221,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <input
                     type="text"
                     placeholder="Search journeys..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      // Navigate to journeys page if not already there
+                      if (location.pathname !== '/journeys' && e.target.value.trim()) {
+                        navigate('/journeys');
+                      }
+                    }}
+                    onFocus={() => {
+                      // Navigate to journeys page when focusing search
+                      if (location.pathname !== '/journeys') {
+                        navigate('/journeys');
+                      }
+                    }}
                     className="pl-10 pr-4 py-2 w-64 lg:w-96 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   />
                 </div>
@@ -246,9 +261,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        {/* Page Content */}
+        {/* Page Content - Pass search query as prop */}
         <main className="flex-1 p-6">
-          {children}
+          {React.cloneElement(children as React.ReactElement, { searchQuery })}
         </main>
       </div>
     </div>
