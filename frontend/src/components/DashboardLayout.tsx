@@ -83,9 +83,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {!isSidebarCollapsed && (
               <button
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                className="hidden lg:flex items-center justify-center w-8 h-8 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all group"
+                className="hidden lg:block p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
             )}
             <button
@@ -209,9 +209,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 {isSidebarCollapsed && (
                   <button
                     onClick={() => setIsSidebarCollapsed(false)}
-                    className="hidden lg:flex items-center justify-center w-8 h-8 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all group"
+                    className="hidden lg:block p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                    <ChevronRight className="w-5 h-5" />
                   </button>
                 )}
                 
