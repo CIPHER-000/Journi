@@ -29,6 +29,7 @@ export function useJobProgress(
   const completedRef = useRef(false)
   const reconnectAttemptsRef = useRef(0)
   const destroyedRef = useRef(false)
+  const connectionAttemptRef = useRef(false)
 
   useEffect(() => {
     if (!jobId) return
@@ -126,11 +127,13 @@ export function useJobProgress(
     const startWebSocket = () => {
       console.log('🔌 Attempting WebSocket connection for job:', jobId)
       
-      // Ensure only 1 WebSocket instance
-      if (wsRef.current) {
-        console.log('WebSocket already exists, skipping')
+      // Ensure only 1 WebSocket instance and no concurrent attempts
+      if (wsRef.current || connectionAttemptRef.current) {
+        console.log('WebSocket already exists or connection in progress, skipping')
         return
       }
+      
+      connectionAttemptRef.current = true
 
       try {
         const ws = new WebSocket(WS_URL)
@@ -139,6 +142,7 @@ export function useJobProgress(
         // Connection timeout
         const connectionTimeout = setTimeout(() => {
           console.log('WebSocket connection timeout, falling back to polling')
+          connectionAttemptRef.current = false
           try {
             ws.close(1000, 'timeout')
           } catch (e) {
@@ -149,6 +153,7 @@ export function useJobProgress(
 
         ws.onopen = () => {
           clearTimeout(connectionTimeout)
+          connectionAttemptRef.current = false
           console.log('✅ WebSocket connected for job:', jobId)
           reconnectAttemptsRef.current = 0
           
@@ -196,11 +201,13 @@ export function useJobProgress(
 
         ws.onerror = (error) => {
           clearTimeout(connectionTimeout)
+          connectionAttemptRef.current = false
           console.error('❌ WebSocket error:', error)
         }
 
         ws.onclose = (event) => {
           clearTimeout(connectionTimeout)
+          connectionAttemptRef.current = false
           console.log(`🔌 WebSocket closed: ${event.code} ${event.reason}`)
           wsRef.current = null
           
@@ -226,6 +233,7 @@ export function useJobProgress(
           }
         }
       } catch (error) {
+        connectionAttemptRef.current = false
         console.error('WebSocket setup failed:', error)
         startPolling()
       }
@@ -236,8 +244,9 @@ export function useJobProgress(
 
     // Cleanup function
     return () => {
-      console.log('🧹 Cleaning up job progress for:', jobId)
+      console.log('🧽 Cleaning up job progress for:', jobId)
       destroyedRef.current = true
+      connectionAttemptRef.current = false
       
       // Close WebSocket
       try {
@@ -263,6 +272,7 @@ export function useJobProgress(
   // Return cleanup function for manual cleanup if needed
   return () => {
     destroyedRef.current = true
+    connectionAttemptRef.current = false
     try { wsRef.current?.close(1000, 'manual-cleanup') } catch {}
     wsRef.current = null
     if (pollRef.current) {

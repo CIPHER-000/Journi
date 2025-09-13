@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
@@ -11,7 +11,7 @@ class JobStatus(str, Enum):
     CANCELLED = "cancelled"
 
 class JourneyFormData(BaseModel):
-    title: Optional[str]
+    title: Optional[str] = None
     industry: str
     business_goals: str = Field(..., alias="businessGoals")
     target_personas: List[str] = Field(..., alias="targetPersonas")
@@ -19,8 +19,7 @@ class JourneyFormData(BaseModel):
     additional_context: Optional[str] = Field(None, alias="additionalContext")
     files: Optional[List[dict]] = None
 
-    class Config:
-        populate_by_name = True
+    # model_config = ConfigDict(populate_by_name=True)
 
 
 class JobProgress(BaseModel):
@@ -42,6 +41,8 @@ class Persona(BaseModel):
     demographics: Optional[Dict[str, Any]] = None
     motivations: Optional[List[str]] = None
 
+    # model_config = ConfigDict(populate_by_name=True)
+
 class JourneyPhase(BaseModel):
     id: str
     name: str
@@ -52,6 +53,8 @@ class JourneyPhase(BaseModel):
     opportunities: List[str]
     customer_quote: str = Field(alias="customerQuote")
 
+    # model_config = ConfigDict(populate_by_name=True)
+
 class JourneyMap(BaseModel):
     id: str
     title: str
@@ -61,6 +64,8 @@ class JourneyMap(BaseModel):
     phases: List[JourneyPhase]
     insights: Optional[Dict[str, Any]] = None
     recommendations: Optional[List[str]] = None
+
+    # model_config = ConfigDict(populate_by_name=True)
 
 class Job(BaseModel):
     id: str
