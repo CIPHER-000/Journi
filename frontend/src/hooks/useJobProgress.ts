@@ -31,6 +31,8 @@ export function useJobProgress(
   const destroyedRef = useRef(false)
   const isPollingRef = useRef(false)
   const wsAttemptingRef = useRef(false)
+  const pingIntervalRef = useRef<number | null>(null)
+  const lastPongRef = useRef<number>(Date.now())
   
   // Store onMessage in a ref to avoid re-running effect
   const onMessageRef = useRef(onMessage)
@@ -187,42 +189,98 @@ export function useJobProgress(
           wsAttemptingRef.current = false
           console.log('✅ WebSocket connected for job:', jobId)
           reconnectAttemptsRef.current = 0
+          lastPongRef.current = Date.now()
           
-          // Send ping to keep connection alive
-          try {
-            ws.send('ping')
-          } catch (e) {
-            console.log('Error sending ping:', e)
+          // Start ping-pong mechanism
+          if (pingIntervalRef.current) {
+            clearInterval(pingIntervalRef.current)
           }
+          
+          pingIntervalRef.current = window.setInterval(() => {
+            if (destroyedRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+              if (pingIntervalRef.current) {
+                clearInterval(pingIntervalRef.current)
+                pingIntervalRef.current = null
+              }
+              return
+            }
+            
+            // Check if we've received a pong recently
+            const timeSinceLastPong = Date.now() - lastPongRef.current
+            if (timeSinceLastPong > 60000) { // 60 seconds without pong
+              console.log('⚠️ No pong received for 60s, reconnecting...')
+              ws.close(1000, 'pong-timeout')
+              return
+            }
+            
+            // Send ping
+            try {
+              ws.send(JSON.stringify({ type: 'ping' }))
+              console.log('🏓 Sent ping')
+            } catch (e) {
+              console.log('Error sending ping:', e)
+            }
+          }, 25000) // Send ping every 25 seconds
         }
 
         ws.onmessage = (event) => {
           if (destroyedRef.current) return
           
           try {
+            // Handle plain text pong for backward compatibility
             if (event.data === 'pong') {
-              console.log('🏓 Received pong')
+              console.log('🏓 Received pong (plain text)')
+              lastPongRef.current = Date.now()
               return
             }
             
             const data = JSON.parse(event.data)
-            console.log('📩 WebSocket message:', data)
             
-            // Validate message is for this job
-            if (data.job_id && data.job_id !== jobId) {
-              console.warn(`Received message for different job: ${data.job_id} (expected: ${jobId})`)
+            // Handle structured messages
+            if (data.type === 'ping') {
+              // Server is pinging us, respond with pong
+              try {
+                ws.send(JSON.stringify({ type: 'pong' }))
+                console.log('🏓 Responded to server ping')
+              } catch (e) {
+                console.log('Error sending pong:', e)
+              }
               return
             }
-
-            onMessageRef.current(data)
             
-            if (['completed', 'failed', 'cancelled'].includes(data.status)) {
-              console.log('Job finished via WebSocket, closing connection')
-              completedRef.current = true
-              try {
-                ws.close(1000, 'job-completed')
-              } catch (e) {
-                console.log('Error closing completed WebSocket:', e)
+            if (data.type === 'pong') {
+              console.log('🏓 Received pong (structured)')
+              lastPongRef.current = Date.now()
+              return
+            }
+            
+            console.log('📩 WebSocket message:', data)
+            
+            // Handle status updates
+            if (data.type === 'status' || data.job_id) {
+              // Validate message is for this job
+              if (data.job_id && data.job_id !== jobId) {
+                console.warn(`Received message for different job: ${data.job_id} (expected: ${jobId})`)
+                return
+              }
+
+              onMessageRef.current(data)
+              
+              if (['completed', 'failed', 'cancelled'].includes(data.status)) {
+                console.log('Job finished via WebSocket, closing connection')
+                completedRef.current = true
+                
+                // Clear ping interval
+                if (pingIntervalRef.current) {
+                  clearInterval(pingIntervalRef.current)
+                  pingIntervalRef.current = null
+                }
+                
+                try {
+                  ws.close(1000, 'job-completed')
+                } catch (e) {
+                  console.log('Error closing completed WebSocket:', e)
+                }
               }
             }
           } catch (error) {
@@ -280,6 +338,12 @@ export function useJobProgress(
       wsAttemptingRef.current = false
       isPollingRef.current = false
       
+      // Clear ping interval
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current)
+        pingIntervalRef.current = null
+      }
+      
       // Close WebSocket
       try {
         if (wsRef.current) {
@@ -309,12 +373,21 @@ export function useJobProgress(
     destroyedRef.current = true
     wsAttemptingRef.current = false
     isPollingRef.current = false
+    
+    // Clear ping interval
+    if (pingIntervalRef.current) {
+      clearInterval(pingIntervalRef.current)
+      pingIntervalRef.current = null
+    }
+    
     try { wsRef.current?.close(1000, 'manual-cleanup') } catch {}
     wsRef.current = null
+    
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current)
       pollIntervalRef.current = null
     }
+    
     if (pollControllerRef.current) {
       pollControllerRef.current.abort()
       pollControllerRef.current = null

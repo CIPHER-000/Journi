@@ -1,11 +1,12 @@
 {
   "mcpServers": {
-    "journi": {
+    "fresh-docs": {
       "command": "python",
-      "args": ["backend/journi_server.py"],
+      "args": ["backend/fresh_docs_server.py"],
       "cwd": "C:\\Users\\HP\\Journi",
       "env": {
-        "PYTHONPATH": "C:\\Users\\HP\\Journi\\backend"
+        "PYTHONPATH": "C:\\Users\\HP\\Journi\\backend",
+        "PYTHONIOENCODING": "utf-8"
       }
     }
   }
