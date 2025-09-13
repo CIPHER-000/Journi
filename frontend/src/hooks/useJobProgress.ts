@@ -162,6 +162,15 @@ export function useJobProgress(
     }
 
     const startWebSocket = () => {
+      // Check if we're on Render (production) - Render free tier doesn't support WebSockets
+      const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+      
+      if (isProduction) {
+        console.log('📊 Running in production (Render free tier) - using polling instead of WebSocket')
+        startPolling()
+        return
+      }
+      
       console.log('🔌 Attempting WebSocket connection for job:', jobId)
       
       // Ensure only 1 WebSocket instance and no concurrent attempts

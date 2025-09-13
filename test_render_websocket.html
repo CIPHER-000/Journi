@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Render WebSocket Test</title>
+</head>
+<body>
+    <h1>Testing WebSocket on Render</h1>
+    <div id="status">Connecting...</div>
+    <div id="messages"></div>
+    
+    <script>
+        const jobId = 'test-job-' + Date.now();
+        const wsUrl = `wss://journi-backend.onrender.com/ws/progress/${jobId}`;
+        
+        console.log('Attempting to connect to:', wsUrl);
+        document.getElementById('status').textContent = `Connecting to ${wsUrl}...`;
+        
+        try {
+            const ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function(event) {
+                console.log('✅ WebSocket opened!', event);
+                document.getElementById('status').textContent = '✅ Connected!';
+                
+                // Send a test ping
+                ws.send(JSON.stringify({ type: 'ping' }));
+            };
+            
+            ws.onmessage = function(event) {
+                console.log('📩 Message received:', event.data);
+                const msgDiv = document.createElement('div');
+                msgDiv.textContent = `Message: ${event.data}`;
+                document.getElementById('messages').appendChild(msgDiv);
+            };
+            
+            ws.onerror = function(error) {
+                console.error('❌ WebSocket error:', error);
+                document.getElementById('status').textContent = '❌ Error occurred';
+            };
+            
+            ws.onclose = function(event) {
+                console.log('🔌 WebSocket closed:', event.code, event.reason);
+                document.getElementById('status').textContent = `🔌 Closed: ${event.code} - ${event.reason}`;
+            };
+        } catch (error) {
+            console.error('Failed to create WebSocket:', error);
+            document.getElementById('status').textContent = `Failed: ${error.message}`;
+        }
+    </script>
+</body>
+</html>
