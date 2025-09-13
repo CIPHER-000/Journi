@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
+// Force rebuild: Use polling in production, WebSocket in development
 
 export interface ProgressMessage {
   job_id: string
