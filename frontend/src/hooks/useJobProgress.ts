@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 
 export interface ProgressMessage {
   job_id: string
@@ -24,12 +24,17 @@ export function useJobProgress(
   onMessage: (message: ProgressMessage) => void
 ) {
   const wsRef = useRef<WebSocket | null>(null)
-  const pollRef = useRef<number | null>(null)
-  const abortRef = useRef<AbortController | null>(null)
+  const pollIntervalRef = useRef<number | null>(null)
+  const pollControllerRef = useRef<AbortController | null>(null)
   const completedRef = useRef(false)
   const reconnectAttemptsRef = useRef(0)
   const destroyedRef = useRef(false)
-  const connectionAttemptRef = useRef(false)
+  const isPollingRef = useRef(false)
+  const wsAttemptingRef = useRef(false)
+  
+  // Store onMessage in a ref to avoid re-running effect
+  const onMessageRef = useRef(onMessage)
+  onMessageRef.current = onMessage
 
   useEffect(() => {
     if (!jobId) return
@@ -46,29 +51,42 @@ export function useJobProgress(
       console.log('🔄 Starting polling for job:', jobId)
       
       // Clear any prior WebSocket
-      try { 
-        wsRef.current?.close(1000, 'switching-to-polling')
-      } catch (e) {
-        console.log('Error closing WebSocket:', e)
+      if (wsRef.current) {
+        try { 
+          wsRef.current.close(1000, 'switching-to-polling')
+        } catch (e) {
+          console.log('Error closing WebSocket:', e)
+        }
+        wsRef.current = null
       }
-      wsRef.current = null
 
       // Prevent duplicate polling
-      if (pollRef.current) {
+      if (isPollingRef.current) {
         console.log('Polling already active, skipping')
         return
       }
+      
+      isPollingRef.current = true
 
       const poll = async () => {
         if (destroyedRef.current || completedRef.current) {
           console.log('Polling stopped: destroyed or completed')
+          isPollingRef.current = false
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current)
+            pollIntervalRef.current = null
+          }
           return
         }
 
-        // Abort previous request
-        abortRef.current?.abort()
+        // Create new controller for this poll
         const controller = new AbortController()
-        abortRef.current = controller
+        
+        // Only abort previous if it exists and we're starting a new one
+        if (pollControllerRef.current) {
+          pollControllerRef.current.abort()
+        }
+        pollControllerRef.current = controller
 
         try {
           const token = localStorage.getItem('auth_token')
@@ -99,19 +117,27 @@ export function useJobProgress(
             status: data.status,
             progress: data.progress,
             result: data.result,
-            error: data.error_message || data.error, // Prioritize error_message from backend
+            error: data.error_message || data.error,
             timestamp: new Date().toISOString()
           }
           
-          onMessage(progressMessage)
+          onMessageRef.current(progressMessage)
           
           if (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled') {
             console.log('Job finished, stopping polling')
             completedRef.current = true
+            isPollingRef.current = false
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current)
+              pollIntervalRef.current = null
+            }
           }
         } catch (error) {
           if (error instanceof Error && error.name === 'AbortError') {
-            console.log('Poll request aborted')
+            // Only log if not destroyed (normal abort during cleanup)
+            if (!destroyedRef.current) {
+              console.log('Poll request aborted')
+            }
             return
           }
           console.error('Polling error:', error)
@@ -119,21 +145,25 @@ export function useJobProgress(
         }
       }
 
-      // Start immediate poll, then set interval
+      // Start immediate poll
       poll()
-      pollRef.current = window.setInterval(poll, 8000) // 8 second intervals
+      
+      // Set interval for continuous polling
+      if (!pollIntervalRef.current && !completedRef.current) {
+        pollIntervalRef.current = window.setInterval(poll, 5000) // 5 second intervals for better UX
+      }
     }
 
     const startWebSocket = () => {
       console.log('🔌 Attempting WebSocket connection for job:', jobId)
       
       // Ensure only 1 WebSocket instance and no concurrent attempts
-      if (wsRef.current || connectionAttemptRef.current) {
+      if (wsRef.current || wsAttemptingRef.current) {
         console.log('WebSocket already exists or connection in progress, skipping')
         return
       }
       
-      connectionAttemptRef.current = true
+      wsAttemptingRef.current = true
 
       try {
         const ws = new WebSocket(WS_URL)
@@ -142,7 +172,8 @@ export function useJobProgress(
         // Connection timeout
         const connectionTimeout = setTimeout(() => {
           console.log('WebSocket connection timeout, falling back to polling')
-          connectionAttemptRef.current = false
+          wsAttemptingRef.current = false
+          wsRef.current = null
           try {
             ws.close(1000, 'timeout')
           } catch (e) {
@@ -153,7 +184,7 @@ export function useJobProgress(
 
         ws.onopen = () => {
           clearTimeout(connectionTimeout)
-          connectionAttemptRef.current = false
+          wsAttemptingRef.current = false
           console.log('✅ WebSocket connected for job:', jobId)
           reconnectAttemptsRef.current = 0
           
@@ -183,7 +214,7 @@ export function useJobProgress(
               return
             }
 
-            onMessage(data)
+            onMessageRef.current(data)
             
             if (['completed', 'failed', 'cancelled'].includes(data.status)) {
               console.log('Job finished via WebSocket, closing connection')
@@ -201,13 +232,13 @@ export function useJobProgress(
 
         ws.onerror = (error) => {
           clearTimeout(connectionTimeout)
-          connectionAttemptRef.current = false
+          wsAttemptingRef.current = false
           console.error('❌ WebSocket error:', error)
         }
 
         ws.onclose = (event) => {
           clearTimeout(connectionTimeout)
-          connectionAttemptRef.current = false
+          wsAttemptingRef.current = false
           console.log(`🔌 WebSocket closed: ${event.code} ${event.reason}`)
           wsRef.current = null
           
@@ -233,7 +264,7 @@ export function useJobProgress(
           }
         }
       } catch (error) {
-        connectionAttemptRef.current = false
+        wsAttemptingRef.current = false
         console.error('WebSocket setup failed:', error)
         startPolling()
       }
@@ -246,7 +277,8 @@ export function useJobProgress(
     return () => {
       console.log('🧽 Cleaning up job progress for:', jobId)
       destroyedRef.current = true
-      connectionAttemptRef.current = false
+      wsAttemptingRef.current = false
+      isPollingRef.current = false
       
       // Close WebSocket
       try {
@@ -258,27 +290,34 @@ export function useJobProgress(
         console.log('Error closing WebSocket during cleanup:', e)
       }
 
-      // Clear polling
-      if (pollRef.current) {
-        clearInterval(pollRef.current)
-        pollRef.current = null
+      // Clear polling interval
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
       }
 
       // Abort any pending requests
-      abortRef.current?.abort()
+      if (pollControllerRef.current) {
+        pollControllerRef.current.abort()
+        pollControllerRef.current = null
+      }
     }
-  }, [jobId, onMessage])
+  }, [jobId]) // Only re-run when jobId changes
 
   // Return cleanup function for manual cleanup if needed
   return () => {
     destroyedRef.current = true
-    connectionAttemptRef.current = false
+    wsAttemptingRef.current = false
+    isPollingRef.current = false
     try { wsRef.current?.close(1000, 'manual-cleanup') } catch {}
     wsRef.current = null
-    if (pollRef.current) {
-      clearInterval(pollRef.current)
-      pollRef.current = null
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current)
+      pollIntervalRef.current = null
     }
-    abortRef.current?.abort()
+    if (pollControllerRef.current) {
+      pollControllerRef.current.abort()
+      pollControllerRef.current = null
+    }
   }
 }
