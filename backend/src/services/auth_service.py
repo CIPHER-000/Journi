@@ -183,7 +183,9 @@ class AuthService:
             return None
             
         try:
-            # Verify token with Supabase Auth
+            # Verify token with Supabase Auth using the admin client
+            # The get_user method expects a JWT token
+            logger.info(f"Verifying token (first 20 chars): {token[:20]}...")
             auth_response = self.supabase_admin.auth.get_user(token)
             
             if auth_response.user is None:
