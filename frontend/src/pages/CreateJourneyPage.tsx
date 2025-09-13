@@ -147,6 +147,35 @@ export default function CreateJourneyPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('🚀 FORM SUBMITTED - Starting journey creation process')
+    
+    // Log form validation
+    console.log('Form validation:', {
+      hasIndustry: !!formData.industry,
+      hasBusinessGoals: !!formData.businessGoals,
+      hasPersonas: formData.targetPersonas.length > 0,
+      hasPhases: formData.journeyPhases.length > 0
+    })
+    
+    // Validate minimum requirements
+    if (!formData.industry) {
+      alert('Please select an industry');
+      return;
+    }
+    if (!formData.businessGoals) {
+      alert('Please enter your business goals');
+      return;
+    }
+    if (formData.targetPersonas.length === 0) {
+      alert('Please select at least one target persona');
+      return;
+    }
+    if (formData.journeyPhases.length === 0) {
+      alert('Please select at least one journey phase');
+      return;
+    }
+    
+    console.log('✅ Form validation passed')
     
     setIsSubmitting(true)
     setStartTime(new Date())
@@ -238,6 +267,18 @@ export default function CreateJourneyPage() {
         // If we get here, the response is OK and parsed as JSON
         console.log('Journey creation successful, job data:', responseData)
         
+        // Handle response status codes
+        if (response.status === 402) {
+          // Payment required - show upgrade modal
+          setUsageInfo({
+            currentUsage: responseData.detail.current_usage,
+            limit: responseData.detail.limit
+          });
+          setShowUpgradeModal(true);
+          setIsSubmitting(false);
+          return;
+        }
+        
         // Success case - start tracking the job
         const job: JobStatus = responseData
         
@@ -267,18 +308,6 @@ export default function CreateJourneyPage() {
             : 'Unknown error';
         throw new Error(`Failed to create journey: ${errorMessage}`);
       }
-      
-      // Handle response status codes
-      if (response.status === 402) {
-        // Payment required - show upgrade modal
-        setUsageInfo({
-          currentUsage: responseData.detail.current_usage,
-          limit: responseData.detail.limit
-        });
-        setShowUpgradeModal(true);
-        setIsSubmitting(false);
-        return;
-      } 
       
     } catch (error: unknown) {
       console.error('Error creating journey map:', error);
