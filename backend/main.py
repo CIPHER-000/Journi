@@ -572,20 +572,26 @@ async def websocket_progress(websocket: WebSocket, job_id: str, token: str = Non
     """WebSocket endpoint for real-time job progress updates with improved error handling"""
     global job_manager
     
-    # Validate job manager is available
-    if not job_manager:
-        await websocket.close(code=1011, reason="Service temporarily unavailable")
-        return
-    
     # Track connection state
     connection_active = False
     ping_task = None
     
     try:
-        # Accept WebSocket connection
+        # Accept WebSocket connection FIRST, before any validation
         await websocket.accept()
         connection_active = True
         logger.info(f"WebSocket connection accepted for job {job_id}")
+        
+        # Now check if job manager is available
+        if not job_manager:
+            logger.error("Job manager not initialized, closing WebSocket")
+            await websocket.send_text(json.dumps({
+                "type": "error",
+                "error": "Service temporarily unavailable",
+                "code": 503
+            }))
+            await websocket.close(code=1011, reason="Service temporarily unavailable")
+            return
         
         # Connect to manager
         await manager.connect(websocket, job_id)

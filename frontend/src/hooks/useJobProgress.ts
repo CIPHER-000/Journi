@@ -81,13 +81,14 @@ export function useJobProgress(
           return
         }
 
+        // Don't abort if we're already polling
+        if (pollControllerRef.current?.signal?.aborted === false) {
+          // A poll is already in progress, skip this one
+          return
+        }
+
         // Create new controller for this poll
         const controller = new AbortController()
-        
-        // Only abort previous if it exists and we're starting a new one
-        if (pollControllerRef.current) {
-          pollControllerRef.current.abort()
-        }
         pollControllerRef.current = controller
 
         try {
@@ -136,14 +137,18 @@ export function useJobProgress(
           }
         } catch (error) {
           if (error instanceof Error && error.name === 'AbortError') {
-            // Only log if not destroyed (normal abort during cleanup)
-            if (!destroyedRef.current) {
-              console.log('Poll request aborted')
-            }
+            // Silently ignore abort errors - they're expected during cleanup
             return
           }
-          console.error('Polling error:', error)
-          // Continue polling on error unless destroyed
+          if (!destroyedRef.current && !completedRef.current) {
+            console.error('Polling error:', error)
+            // Continue polling on error unless destroyed
+          }
+        } finally {
+          // Clear the controller reference if this was our request
+          if (pollControllerRef.current === controller) {
+            pollControllerRef.current = null
+          }
         }
       }
 
@@ -151,8 +156,8 @@ export function useJobProgress(
       poll()
       
       // Set interval for continuous polling
-      if (!pollIntervalRef.current && !completedRef.current) {
-        pollIntervalRef.current = window.setInterval(poll, 5000) // 5 second intervals for better UX
+      if (!pollIntervalRef.current && !completedRef.current && !destroyedRef.current) {
+        pollIntervalRef.current = window.setInterval(poll, 3000) // 3 second intervals for better UX
       }
     }
 
