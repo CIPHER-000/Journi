@@ -362,17 +362,27 @@ export function useJobProgress(
       }
     }
 
+    // VERSION 2.0 - POLLING ONLY IN PRODUCTION
+    console.log('🚀 JOB PROGRESS HOOK VERSION 2.0 - DEPLOYED', new Date().toISOString())
+    
     // Check environment and use appropriate method
     const isProduction = window.location.hostname.includes('netlify.app') || 
                         window.location.hostname.includes('render.com') ||
                         (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1'))
     
+    console.log('🔍 Environment check:', {
+      hostname: window.location.hostname,
+      isProduction,
+      willUsePolling: isProduction
+    })
+    
     if (isProduction) {
       // In production (Render), use polling directly to avoid WebSocket issues
-      console.log('📊 Production environment - using polling for real-time updates')
+      console.log('📊 PRODUCTION MODE: Using polling ONLY - NO WebSocket attempts')
       startPolling()
     } else {
       // In development, try WebSocket first
+      console.log('🔧 DEVELOPMENT MODE: Trying WebSocket with polling fallback')
       startWebSocket()
     }
 
