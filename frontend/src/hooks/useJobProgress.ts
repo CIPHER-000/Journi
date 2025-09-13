@@ -163,6 +163,17 @@ export function useJobProgress(
     }
 
     const startWebSocket = () => {
+      // Skip WebSocket entirely on production (Render) - use polling only
+      const isProduction = window.location.hostname.includes('netlify.app') || 
+                          window.location.hostname.includes('render.com') ||
+                          (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1'))
+      
+      if (isProduction) {
+        console.log('📊 Production environment detected - using polling for real-time updates')
+        startPolling()
+        return
+      }
+      
       console.log('🔌 Attempting WebSocket connection for job:', jobId)
       
       // Ensure only 1 WebSocket instance and no concurrent attempts
@@ -350,8 +361,19 @@ export function useJobProgress(
       }
     }
 
-    // Start with WebSocket, fallback to polling if needed
-    startWebSocket()
+    // Check environment and use appropriate method
+    const isProduction = window.location.hostname.includes('netlify.app') || 
+                        window.location.hostname.includes('render.com') ||
+                        (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1'))
+    
+    if (isProduction) {
+      // In production (Render), use polling directly to avoid WebSocket issues
+      console.log('📊 Production environment - using polling for real-time updates')
+      startPolling()
+    } else {
+      // In development, try WebSocket first
+      startWebSocket()
+    }
 
     // Cleanup function
     return () => {

@@ -569,7 +569,11 @@ async def export_to_pdf(journey_map: JourneyMap) -> Response:
 # WebSocket endpoint with modern error handling and connection management
 @app.websocket("/ws/progress/{job_id}")
 async def websocket_progress(websocket: WebSocket, job_id: str, token: str = None):
-    """WebSocket endpoint for real-time job progress updates with improved error handling"""
+    """WebSocket endpoint for real-time job progress updates with improved error handling
+    
+    Note: On Render's free tier, WebSocket connections may be unreliable.
+    The frontend should fallback to HTTP polling for production deployments.
+    """
     global job_manager
     
     # Track connection state
@@ -580,7 +584,7 @@ async def websocket_progress(websocket: WebSocket, job_id: str, token: str = Non
         # Accept WebSocket connection FIRST, before any validation
         await websocket.accept()
         connection_active = True
-        logger.info(f"WebSocket connection accepted for job {job_id}")
+        logger.info(f"WebSocket connection accepted for job {job_id}. Note: Consider using polling on Render free tier for stability.")
         
         # Now check if job manager is available
         if not job_manager:
