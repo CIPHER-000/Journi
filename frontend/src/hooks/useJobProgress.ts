@@ -33,6 +33,7 @@ export function useJobProgress(
   const wsAttemptingRef = useRef(false)
   const pingIntervalRef = useRef<number | null>(null)
   const lastPongRef = useRef<number>(Date.now())
+  const keepAliveIntervalRef = useRef<number | null>(null)
   
   // Store onMessage in a ref to avoid re-running effect
   const onMessageRef = useRef(onMessage)
@@ -162,15 +163,6 @@ export function useJobProgress(
     }
 
     const startWebSocket = () => {
-      // Check if we're on Render (production) - Render free tier doesn't support WebSockets
-      const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
-      
-      if (isProduction) {
-        console.log('📊 Running in production (Render free tier) - using polling instead of WebSocket')
-        startPolling()
-        return
-      }
-      
       console.log('🔌 Attempting WebSocket connection for job:', jobId)
       
       // Ensure only 1 WebSocket instance and no concurrent attempts
@@ -185,7 +177,7 @@ export function useJobProgress(
         const ws = new WebSocket(WS_URL)
         wsRef.current = ws
 
-        // Connection timeout
+        // Connection timeout - Render may take longer to establish connection
         const connectionTimeout = setTimeout(() => {
           console.log('WebSocket connection timeout, falling back to polling')
           wsAttemptingRef.current = false
@@ -196,7 +188,7 @@ export function useJobProgress(
             console.log('Error closing timed out WebSocket:', e)
           }
           startPolling()
-        }, 10000) // 10 second timeout
+        }, 5000) // 5 second timeout - shorter to fallback quicker on Render
 
         ws.onopen = () => {
           clearTimeout(connectionTimeout)
@@ -204,6 +196,22 @@ export function useJobProgress(
           console.log('✅ WebSocket connected for job:', jobId)
           reconnectAttemptsRef.current = 0
           lastPongRef.current = Date.now()
+          
+          // Start HTTP keep-alive to prevent Render from sleeping
+          if (keepAliveIntervalRef.current) {
+            clearInterval(keepAliveIntervalRef.current)
+          }
+          
+          // Send HTTP request every 5 minutes to keep Render service awake
+          keepAliveIntervalRef.current = window.setInterval(async () => {
+            try {
+              const healthUrl = `${import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'}/health`
+              await fetch(healthUrl, { method: 'GET' })
+              console.log('💓 Sent keep-alive ping to prevent service sleep')
+            } catch (e) {
+              console.log('Keep-alive ping failed:', e)
+            }
+          }, 4 * 60 * 1000) // Every 4 minutes (before the 5-minute timeout)
           
           // Start ping-pong mechanism
           if (pingIntervalRef.current) {
@@ -221,20 +229,20 @@ export function useJobProgress(
             
             // Check if we've received a pong recently
             const timeSinceLastPong = Date.now() - lastPongRef.current
-            if (timeSinceLastPong > 60000) { // 60 seconds without pong
-              console.log('⚠️ No pong received for 60s, reconnecting...')
+            if (timeSinceLastPong > 30000) { // 30 seconds without pong - more aggressive for Render
+              console.log('⚠️ No pong received for 30s, reconnecting...')
               ws.close(1000, 'pong-timeout')
               return
             }
             
-            // Send ping
+            // Send ping more frequently to keep connection alive on Render
             try {
               ws.send(JSON.stringify({ type: 'ping' }))
               console.log('🏓 Sent ping')
             } catch (e) {
               console.log('Error sending ping:', e)
             }
-          }, 25000) // Send ping every 25 seconds
+          }, 10000) // Send ping every 10 seconds - more frequent for Render free tier
         }
 
         ws.onmessage = (event) => {
@@ -319,11 +327,11 @@ export function useJobProgress(
             return
           }
 
-          // Exponential backoff for reconnection
+          // More aggressive reconnection for Render's 5-minute timeout issue
           const attempts = ++reconnectAttemptsRef.current
-          if (attempts <= 3) {
-            const delay = Math.min(1000 * Math.pow(2, attempts), 8000)
-            console.log(`🔄 Reconnecting WebSocket in ${delay}ms (attempt ${attempts}/3)`)
+          if (attempts <= 5) { // More attempts before giving up
+            const delay = Math.min(500 * Math.pow(1.5, attempts), 3000) // Faster reconnect
+            console.log(`🔄 Reconnecting WebSocket in ${delay}ms (attempt ${attempts}/5)`)
             
             setTimeout(() => {
               if (!destroyedRef.current && !completedRef.current) {
@@ -356,6 +364,12 @@ export function useJobProgress(
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current)
         pingIntervalRef.current = null
+      }
+      
+      // Clear keep-alive interval
+      if (keepAliveIntervalRef.current) {
+        clearInterval(keepAliveIntervalRef.current)
+        keepAliveIntervalRef.current = null
       }
       
       // Close WebSocket
