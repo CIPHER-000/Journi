@@ -157,9 +157,9 @@ export function useJobProgress(
       // Start immediate poll
       poll()
       
-      // Set interval for continuous polling
+      // Set interval for continuous polling - start immediately
       if (!pollIntervalRef.current && !completedRef.current && !destroyedRef.current) {
-        pollIntervalRef.current = window.setInterval(poll, 3000) // 3 second intervals for better UX
+        pollIntervalRef.current = window.setInterval(poll, 1500) // 1.5 second intervals for catching progress
       }
     }
 
