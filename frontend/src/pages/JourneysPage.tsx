@@ -122,6 +122,13 @@ export default function JourneysPage({ searchQuery = '' }: JourneysPageProps) {
 
 function JourneyRow({ map, onView }: { map: JourneyMap, onView: () => void }) {
   const [isHovered, setIsHovered] = React.useState(false)
+
+  // Log when processing journey is clicked
+  const handleViewClick = () => {
+    console.log('👆 Journey clicked:', map.title, 'status:', map.status, 'id:', map.id);
+    onView();
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -144,7 +151,7 @@ function JourneyRow({ map, onView }: { map: JourneyMap, onView: () => void }) {
   return (
     <div
       className={`p-6 cursor-pointer transition-colors ${isHovered ? 'bg-gray-50' : 'bg-white'}`}
-      onClick={onView}
+      onClick={handleViewClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

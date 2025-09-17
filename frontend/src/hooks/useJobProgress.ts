@@ -371,13 +371,13 @@ export function useJobProgress(
     }
 
     // VERSION 2.0 - POLLING ONLY (WebSocket functionality commented out)
-    console.log('🚀 JOB PROGRESS HOOK VERSION 2.0 - DEPLOYED (WebSocket disabled)', new Date().toISOString())
+    console.log('🚀 JOB PROGRESS HOOK VERSION 2.0 - DEPLOYED (WebSocket disabled) for jobId:', jobId, new Date().toISOString())
 
     // Always use polling - WebSocket functionality disabled
     console.log('📊 POLLING ONLY MODE: WebSocket functionality disabled for stability')
     // Small delay to let backend start processing
     setTimeout(() => {
-      console.log('⏳ Backend should be processing, starting polls now')
+      console.log('⏳ Backend should be processing, starting polls now for job:', jobId)
       startPolling()
     }, 500) // 500ms delay to let backend initialize
 

@@ -87,9 +87,14 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
   const [currentStepName, setCurrentStepName] = useState('');
   const [currentMessage, setCurrentMessage] = useState('');
   const [isFinalizing, setIsFinalizing] = useState(false);
-  
+
   // Prevent duplicate navigation
   const handledNavRef = useRef(false);
+
+  // Log when JourneyProgress component mounts
+  useEffect(() => {
+    console.log('🚀 JourneyProgress mounted with jobId:', jobId, 'title:', title);
+  }, [jobId, title]);
 
   // Handle progress messages from the hook
   const handleProgressMessage = useCallback(async (message: ProgressMessage) => {

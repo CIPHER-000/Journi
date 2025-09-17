@@ -28,10 +28,16 @@ export default function JourneyDetailPage() {
   const [isCompleting, setIsCompleting] = useState(false)
   const [isPolling, setIsPolling] = useState(false)
 
+  // Log when JourneyDetailPage mounts
+  useEffect(() => {
+    console.log('📍 JourneyDetailPage mounted with id:', id);
+  }, [id]);
+
   const refreshJourney = useCallback(async () => {
     if (!id || !token) return
 
     try {
+      console.log('🔄 Refreshing journey data for:', id);
       // Use the unified endpoint that works for both running and completed journeys
       const response = await fetch(`${API_BASE_URL}/api/journey/${id}/info`, {
         headers: {
@@ -42,11 +48,14 @@ export default function JourneyDetailPage() {
 
       if (response.ok) {
         const data = await response.json()
+        console.log('✅ Journey data received:', data);
         setJourney(data)
         setError(null)
       } else if (response.status === 404) {
+        console.log('❌ Journey not found:', id);
         setError('Journey not found')
       } else {
+        console.log('❌ Failed to load journey:', response.status);
         setError('Failed to load journey')
       }
     } catch (err) {
@@ -76,17 +85,21 @@ export default function JourneyDetailPage() {
 
   // Setup polling for processing journeys
   useEffect(() => {
+    console.log('🔄 Journey data updated:', journey);
     if (!journey || journey.status === 'completed' || journey.status === 'failed') {
+      console.log('🛑 Journey completed or failed, no polling needed');
       return;
     }
 
     if (journey.status === 'processing' || journey.status === 'queued') {
       const jobId = journey.job_id || journey.id;
+      console.log('🔄 Setting up polling for journey:', journey.id, 'with jobId:', jobId);
       setIsPolling(true);
 
       const cleanup = useJobProgress(jobId, handleProgressMessage);
 
       return () => {
+        console.log('🧽 Cleaning up polling for journey:', journey.id);
         setIsPolling(false);
         if (cleanup) cleanup();
       };
