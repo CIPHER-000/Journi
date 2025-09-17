@@ -133,21 +133,6 @@ export default function CreateJourneyPage() {
     'Usage', 'Support', 'Renewal', 'Advocacy'
   ]
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      'application/pdf': ['.pdf'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'text/csv': ['.csv'],
-      'text/plain': ['.txt']
-    },
-    onDrop: (acceptedFiles) => {
-      setFormData(prev => ({
-        ...prev,
-        files: [...prev.files, ...acceptedFiles]
-      }))
-    }
-  })
-
   const removeFile = (index: number) => {
     setFormData(prev => ({
       ...prev,
