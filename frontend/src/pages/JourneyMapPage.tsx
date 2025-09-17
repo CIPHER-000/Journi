@@ -319,17 +319,17 @@ export default function JourneyMapPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Customer Journey Map</h2>
         <div className="bg-gray-50 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-hidden">
             <div className="min-w-max">
               {/* Phase Headers */}
               <div className="flex bg-gradient-to-r from-blue-50 to-purple-50 border-b-2 border-gray-200">
                 {journeyMap.phases.map((phase, index) => (
-                  <div key={phase.id} className="flex-1 min-w-80 p-6 text-center border-r border-gray-200 last:border-r-0">
+                  <div key={phase.id} className="flex-shrink-0 w-80 sm:w-96 p-4 sm:p-6 text-center border-r border-gray-200 last:border-r-0">
                     <div className="flex items-center justify-center gap-3 mb-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center font-bold">
                         {index + 1}
                       </div>
-                      <h3 className="text-xl font-semibold text-gray-900">{phase.name}</h3>
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{phase.name}</h3>
                     </div>
                     <div className="flex justify-center">
                       {getEmotionIcon(phase.emotions)}
@@ -341,13 +341,18 @@ export default function JourneyMapPage() {
               {/* Journey Details */}
               <div className="flex bg-white">
                 {journeyMap.phases.map((phase) => (
-                  <div key={phase.id} className={`flex-1 min-w-80 p-6 border-r border-gray-200 last:border-r-0`}>
+                  <div key={phase.id} className={`flex-shrink-0 w-80 sm:w-96 p-4 sm:p-6 border-r border-gray-200 last:border-r-0`}>
                     <JourneyPhaseDetails phase={phase} />
                   </div>
                 ))}
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Mobile-friendly scroll indicator */}
+        <div className="mt-4 text-center text-sm text-gray-500">
+          ← Scroll horizontally to view all phases →
         </div>
       </div>
 
@@ -451,24 +456,24 @@ function PersonaCard({ persona }: { persona: Persona }) {
 
 function JourneyPhaseDetails({ phase }: { phase: JourneyPhase }) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 max-h-[600px] overflow-y-auto">
       <div>
-        <h4 className="font-semibold text-gray-900 mb-2 text-sm uppercase tracking-wider">Actions</h4>
-        <ul className="space-y-1.5">
+        <h4 className="font-semibold text-gray-900 mb-2 text-xs sm:text-sm uppercase tracking-wider">Actions</h4>
+        <ul className="space-y-1">
           {phase.actions.map((action, index) => (
-            <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-              <span className="text-blue-500 mt-0.5">→</span>
-              {action}
+            <li key={index} className="text-xs sm:text-sm text-gray-700 flex items-start gap-2">
+              <span className="text-blue-500 mt-0.5 flex-shrink-0">→</span>
+              <span className="break-words">{action}</span>
             </li>
           ))}
         </ul>
       </div>
 
       <div>
-        <h4 className="font-semibold text-gray-900 mb-2 text-sm uppercase tracking-wider">Touchpoints</h4>
-        <div className="flex flex-wrap gap-2">
+        <h4 className="font-semibold text-gray-900 mb-2 text-xs sm:text-sm uppercase tracking-wider">Touchpoints</h4>
+        <div className="flex flex-wrap gap-1 sm:gap-2">
           {phase.touchpoints.map((touchpoint, index) => (
-            <span key={index} className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 px-3 py-1.5 rounded-lg text-xs font-medium">
+            <span key={index} className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 px-2 sm:px-3 py-1 rounded-lg text-xs font-medium break-words">
               {touchpoint}
             </span>
           ))}
@@ -476,33 +481,33 @@ function JourneyPhaseDetails({ phase }: { phase: JourneyPhase }) {
       </div>
 
       <div>
-        <h4 className="font-semibold text-gray-900 mb-2 text-sm uppercase tracking-wider">Pain Points</h4>
-        <ul className="space-y-1.5">
+        <h4 className="font-semibold text-gray-900 mb-2 text-xs sm:text-sm uppercase tracking-wider">Pain Points</h4>
+        <ul className="space-y-1">
           {phase.painPoints.map((pain, index) => (
-            <li key={index} className="text-sm text-red-700 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              {pain}
+            <li key={index} className="text-xs sm:text-sm text-red-700 flex items-start gap-2">
+              <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5 flex-shrink-0" />
+              <span className="break-words">{pain}</span>
             </li>
           ))}
         </ul>
       </div>
 
       <div>
-        <h4 className="font-semibold text-gray-900 mb-2 text-sm uppercase tracking-wider">Opportunities</h4>
-        <ul className="space-y-1.5">
+        <h4 className="font-semibold text-gray-900 mb-2 text-xs sm:text-sm uppercase tracking-wider">Opportunities</h4>
+        <ul className="space-y-1">
           {phase.opportunities.map((opportunity, index) => (
-            <li key={index} className="text-sm text-green-700 flex items-start gap-2">
-              <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              {opportunity}
+            <li key={index} className="text-xs sm:text-sm text-green-700 flex items-start gap-2">
+              <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5 flex-shrink-0" />
+              <span className="break-words">{opportunity}</span>
             </li>
           ))}
         </ul>
       </div>
 
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border-l-4 border-blue-500">
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 sm:p-4 rounded-xl border-l-4 border-blue-500">
         <div className="flex items-start gap-2">
-          <Quote className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-gray-800 italic font-medium">"{phase.customerQuote}"</p>
+          <Quote className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <p className="text-xs sm:text-sm text-gray-800 italic font-medium break-words">"{phase.customerQuote}"</p>
         </div>
       </div>
     </div>

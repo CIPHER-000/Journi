@@ -11,6 +11,7 @@ import CreateJourneyPage from './pages/CreateJourneyPage'
 import DashboardPage from './pages/DashboardPage'
 import JourneysPage from './pages/JourneysPage'
 import JourneyMapPage from './pages/JourneyMapPage'
+import JourneyDetailPage from './pages/JourneyDetailPage'
 import SettingsPage from './pages/SettingsPage'
 import UpgradePage from './pages/UpgradePage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
@@ -46,7 +47,7 @@ function App() {
             <Route path="/journey/:id" element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <JourneyMapPage />
+                  <JourneyDetailPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
