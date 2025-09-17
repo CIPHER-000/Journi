@@ -75,9 +75,11 @@ export default function CreateJourneyPage() {
 
   // EFFECTS COME AFTER ALL HOOKS
 
-  // Reset state when coming from a retry
+  // Handle navigation state for retry and journey restoration
   useEffect(() => {
     console.log('CreateJourneyPage: useEffect - checking location state', location.state)
+
+    // Handle retry state
     if (location.state?.retry) {
       console.log('CreateJourneyPage: Resetting state for retry')
       // Reset all states to initial values
@@ -94,16 +96,52 @@ export default function CreateJourneyPage() {
       // Refetch active journey status
       refetchActiveJourney()
     }
+
+    // Handle journey restoration state
+    if (location.state?.restoreJourney && location.state?.journeyId) {
+      console.log('CreateJourneyPage: Restoring journey progress for', location.state.journeyId)
+
+      // Set up job status to show JourneyProgress component
+      const restoredJobStatus: JobStatus = {
+        id: location.state.journeyId,
+        status: 'processing',
+        result: {
+          title: location.state.journeyTitle || 'Restored Journey'
+        }
+      }
+
+      console.log('CreateJourneyPage: Setting up restored job status:', restoredJobStatus)
+
+      // Ensure states are set correctly to show JourneyProgress
+      setIsSubmitting(true)
+      jobStatusRef.current = restoredJobStatus
+      setJobStatus(restoredJobStatus)
+      setProgressMessages(['🔄 Restoring journey progress...', '🤖 Reconnecting to AI agents...'])
+
+      // Clear the navigation state to prevent re-triggering
+      setTimeout(() => {
+        navigate(location.pathname, { replace: true, state: {} })
+      }, 100)
+    }
   }, [location.state, navigate, location.pathname, refetchActiveJourney])
 
-  // Handle job completion
-  const handleJobComplete = useCallback(() => {
-    console.log('Job completed, updating states')
-    setIsSubmitting(false)
-    jobStatusRef.current = null
-    setJobStatus(null)
-    refetchActiveJourney() // Update active journey status
-  }, [refetchActiveJourney])
+  // Handle job completion - keep progress visible, don't reset states
+  const handleJobComplete = useCallback(async () => {
+    console.log('Job completed, keeping progress visible with results')
+    // Don't reset isSubmitting or jobStatus - keep JourneyProgress visible
+    // Don't call refetchActiveJourney() here to prevent state disruption
+    // The JourneyProgress component will handle showing the completed results
+
+    // Force the component to stay in progress view by ensuring isSubmitting remains true
+    // This prevents the form from reappearing
+    return new Promise<void>((resolve) => {
+      // Small delay to ensure state updates properly
+      setTimeout(() => {
+        console.log('📍 Journey completion handled - staying on progress view')
+        resolve()
+      }, 100)
+    })
+  }, [])
 
   // Handle job cancellation
   const handleJobCancel = useCallback(() => {
@@ -346,10 +384,19 @@ export default function CreateJourneyPage() {
           <p className="text-xl text-gray-600">Tell us about your business and we'll generate a comprehensive customer journey map</p>
         </div>
 
-        {/* Progress Display */}
+        {/* Progress Display - only show when actively submitting or completed */}
         {(() => {
-          console.log('CreateJourneyPage: Checking JourneyProgress display condition:', { isSubmitting, jobStatus, jobStatusId: jobStatus?.id })
-          return isSubmitting && jobStatus
+          console.log('CreateJourneyPage: Checking JourneyProgress display condition:', {
+            isSubmitting,
+            jobStatus,
+            jobStatusId: jobStatus?.id,
+            jobStatusResult: jobStatus?.result,
+            status: jobStatus?.status
+          })
+          // Keep progress visible if: actively submitting OR job exists and is not failed/cancelled
+          const shouldShowProgress = isSubmitting || (jobStatus && !['failed', 'cancelled'].includes(jobStatus.status))
+          console.log('CreateJourneyPage: Should show progress:', shouldShowProgress)
+          return shouldShowProgress
         })() ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

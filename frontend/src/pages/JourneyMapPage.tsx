@@ -45,39 +45,125 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
 
   // Load journey data if not provided as props
   useEffect(() => {
-    if (propJourneyData) {
-      // If journey data is provided as props, use it
-      if (propJourneyData.result) {
-        setJourneyMap(propJourneyData.result)
+    const loadData = async () => {
+      if (propJourneyData) {
+        console.log('🗺️ JourneyMapPage: Received journey data as props:', propJourneyData)
+
+        // Handle different prop data formats
+        let finalJourneyMap = null
+
+        if (propJourneyData.result) {
+          // Direct result from job completion
+          finalJourneyMap = propJourneyData.result
+        } else if (propJourneyData.journey_data) {
+          // Journey data from database
+          finalJourneyMap = propJourneyData.journey_data
+        } else if (propJourneyData.personas || propJourneyData.phases) {
+          // Already processed journey data
+          finalJourneyMap = propJourneyData
+        } else if (propJourneyData.id) {
+          // Need to load full data using ID
+          await loadJourneyData()
+          return
+        } else {
+          console.warn('⚠️ JourneyMapPage: No valid journey data or ID provided')
+          setLoading(false)
+          return
+        }
+
+        console.log('🗺️ JourneyMapPage: Setting journey map from props:', finalJourneyMap)
+        setJourneyMap(finalJourneyMap)
+        setLoading(false)
       } else {
-        // Try to load the full journey data
-        loadJourneyData()
+        await loadJourneyData()
       }
-      setLoading(false)
-    } else {
-      loadJourneyData()
     }
+
+    loadData()
   }, [propJourneyData])
 
   const loadJourneyData = async () => {
     if (!id || !token) return
 
     try {
-      // Load the completed journey data using the original endpoint
-      const response = await fetch(`${API_BASE_URL}/api/journey/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      console.log('🗺️ JourneyMapPage: Loading journey data for ID:', id)
 
-      if (response.ok) {
-        const data = await response.json()
-        setJourneyMap(data)
+      let data = null
+      let response = null
+
+      // Try multiple endpoints in order of preference
+      const endpoints = [
+        `${API_BASE_URL}/api/journey/${id}`,
+        `${API_BASE_URL}/api/journey/${id}/info`,
+        `${API_BASE_URL}/api/journey/${journeyId}` // Fallback with different param name
+      ]
+
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`🔄 JourneyMapPage: Trying endpoint: ${endpoint}`)
+          response = await fetch(endpoint, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          })
+
+          if (response.ok) {
+            data = await response.json()
+            console.log('✅ JourneyMapPage: Data loaded from endpoint:', endpoint)
+            break
+          }
+        } catch (err) {
+          console.warn(`⚠️ JourneyMapPage: Endpoint failed: ${endpoint}`, err)
+        }
+      }
+
+      if (data) {
+        console.log('✅ JourneyMapPage: Journey data loaded successfully:', data)
+
+        // Handle multiple response format variations
+        let finalJourneyMap = null
+
+        if (data.result) {
+          // Job result format
+          finalJourneyMap = data.result
+        } else if (data.journey_data) {
+          // Database format
+          finalJourneyMap = data.journey_data
+        } else if (data.personas && data.phases) {
+          // Direct journey format
+          finalJourneyMap = data
+        } else if (data.id && data.title && (data.industry || data.status)) {
+          // Journey info format - need to fetch full data
+          console.log('🔄 JourneyMapPage: Got journey info, fetching full data...')
+          if (data.result?.id) {
+            finalJourneyMap = data.result
+          } else {
+            // Try to extract or reconstruct journey data
+            finalJourneyMap = {
+              id: data.id,
+              title: data.title,
+              industry: data.industry || 'Unknown',
+              personas: data.personas || [],
+              phases: data.phases || [],
+              createdAt: data.created_at || new Date().toISOString()
+            }
+          }
+        } else {
+          console.warn('⚠️ JourneyMapPage: Unrecognized data format:', data)
+        }
+
+        if (finalJourneyMap) {
+          console.log('🗺️ JourneyMapPage: Setting final journey map:', finalJourneyMap)
+          setJourneyMap(finalJourneyMap)
+        } else {
+          console.warn('⚠️ JourneyMapPage: Could not extract journey data from response')
+        }
+      } else {
+        console.error('❌ JourneyMapPage: All endpoints failed for journey ID:', id)
       }
     } catch (err) {
       console.error('Error loading journey map data:', err)
-      // Fall back to mock data on error
     } finally {
       setLoading(false)
     }
@@ -253,8 +339,8 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
     try {
       if (navigator.share) {
         await navigator.share({
-          title: displayData.title,
-          text: `Check out this customer journey map for ${displayData.industry}`,
+          title: finalDisplayData.title,
+          text: `Check out this customer journey map for ${finalDisplayData.industry}`,
           url: shareUrl
         })
       } else if (navigator.clipboard) {
@@ -270,7 +356,19 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
   }
 
   // Use real data if available, otherwise fall back to mock data
-  const displayData = journeyMap || mockJourneyMap
+  const rawData = journeyMap || mockJourneyMap
+
+  // Ensure data has the expected structure
+  const finalDisplayData = {
+    ...rawData,
+    personas: rawData.personas || [],
+    phases: rawData.phases || [],
+    title: rawData.title || 'Untitled Journey',
+    industry: rawData.industry || 'Unknown',
+    createdAt: rawData.createdAt || new Date().toISOString()
+  }
+
+  console.log('🗺️ JourneyMapPage: Final display data:', finalDisplayData)
 
   if (loading) {
     return (
@@ -289,21 +387,21 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{displayData.title}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{finalDisplayData.title}</h1>
             <div className="flex items-center gap-4 text-sm text-gray-600">
               <span className="flex items-center gap-1">
                 <FileText className="w-4 h-4" />
-                {displayData.industry}
+                {finalDisplayData.industry}
               </span>
               <span className="flex items-center gap-1">
                 <Users className="w-4 h-4" />
-                {displayData.personas.length} Personas
+                {finalDisplayData.personas.length} Personas
               </span>
               <span className="flex items-center gap-1">
                 <CheckCircle className="w-4 h-4" />
-                {displayData.phases.length} Phases
+                {finalDisplayData.phases.length} Phases
               </span>
-              <span>Created {new Date(displayData.createdAt).toLocaleDateString()}</span>
+              <span>Created {new Date(finalDisplayData.createdAt).toLocaleDateString()}</span>
             </div>
           </div>
           <div className="flex gap-3">
@@ -373,7 +471,7 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
           Customer Personas
         </h2>
         <div className="grid md:grid-cols-2 gap-6">
-          {displayData.personas.map((persona) => (
+          {finalDisplayData.personas.map((persona) => (
             <PersonaCard key={persona.id} persona={persona} />
           ))}
         </div>
@@ -387,7 +485,7 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
             <div className="min-w-max">
               {/* Phase Headers */}
               <div className="flex bg-gradient-to-r from-blue-50 to-purple-50 border-b-2 border-gray-200">
-                {displayData.phases.map((phase, index) => (
+                {finalDisplayData.phases.map((phase, index) => (
                   <div key={phase.id} className="flex-shrink-0 w-80 sm:w-96 p-4 sm:p-6 text-center border-r border-gray-200 last:border-r-0">
                     <div className="flex items-center justify-center gap-3 mb-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center font-bold">
@@ -404,7 +502,7 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
 
               {/* Journey Details */}
               <div className="flex bg-white">
-                {displayData.phases.map((phase) => (
+                {finalDisplayData.phases.map((phase) => (
                   <div key={phase.id} className={`flex-shrink-0 w-80 sm:w-96 p-4 sm:p-6 border-r border-gray-200 last:border-r-0`}>
                     <JourneyPhaseDetails phase={phase} />
                   </div>
