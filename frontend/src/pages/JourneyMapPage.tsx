@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useParams, useNavigate } from 'react-router-dom'
-import { 
-  ArrowLeft, Download, Share2, Users, Heart, Frown, 
-  Smile, Meh, AlertCircle, CheckCircle, Star, Quote, FileText
+import { useAuth } from '../context/AuthContext'
+import {
+  ArrowLeft, Download, Share2, Users, Heart, Frown,
+  Smile, Meh, AlertCircle, CheckCircle, Star, Quote, FileText, Loader2
 } from 'lucide-react'
 
 interface Persona {
@@ -28,13 +29,62 @@ interface JourneyPhase {
   customerQuote: string
 }
 
-export default function JourneyMapPage() {
+interface JourneyMapPageProps {
+  journeyData?: any
+}
+
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'
+
+export default function JourneyMapPage({ journeyData: propJourneyData }: JourneyMapPageProps) {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { token } = useAuth()
   const [showExportMenu, setShowExportMenu] = useState(false)
+  const [journeyMap, setJourneyMap] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Mock data for the journey map
-  const journeyMap = {
+  // Load journey data if not provided as props
+  useEffect(() => {
+    if (propJourneyData) {
+      // If journey data is provided as props, use it
+      if (propJourneyData.result) {
+        setJourneyMap(propJourneyData.result)
+      } else {
+        // Try to load the full journey data
+        loadJourneyData()
+      }
+      setLoading(false)
+    } else {
+      loadJourneyData()
+    }
+  }, [propJourneyData])
+
+  const loadJourneyData = async () => {
+    if (!id || !token) return
+
+    try {
+      // Load the completed journey data using the original endpoint
+      const response = await fetch(`${API_BASE_URL}/api/journey/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setJourneyMap(data)
+      }
+    } catch (err) {
+      console.error('Error loading journey map data:', err)
+      // Fall back to mock data on error
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Mock data as fallback
+  const mockJourneyMap = {
     id: id || '1',
     title: 'E-commerce Customer Journey',
     industry: 'E-commerce',
@@ -199,12 +249,12 @@ export default function JourneyMapPage() {
 
   const handleShare = async () => {
     const shareUrl = window.location.href
-    
+
     try {
       if (navigator.share) {
         await navigator.share({
-          title: journeyMap.title,
-          text: `Check out this customer journey map for ${journeyMap.industry}`,
+          title: displayData.title,
+          text: `Check out this customer journey map for ${displayData.industry}`,
           url: shareUrl
         })
       } else if (navigator.clipboard) {
@@ -219,27 +269,41 @@ export default function JourneyMapPage() {
     }
   }
 
+  // Use real data if available, otherwise fall back to mock data
+  const displayData = journeyMap || mockJourneyMap
+
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading journey map...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{journeyMap.title}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{displayData.title}</h1>
             <div className="flex items-center gap-4 text-sm text-gray-600">
               <span className="flex items-center gap-1">
                 <FileText className="w-4 h-4" />
-                {journeyMap.industry}
+                {displayData.industry}
               </span>
               <span className="flex items-center gap-1">
                 <Users className="w-4 h-4" />
-                {journeyMap.personas.length} Personas
+                {displayData.personas.length} Personas
               </span>
               <span className="flex items-center gap-1">
                 <CheckCircle className="w-4 h-4" />
-                {journeyMap.phases.length} Phases
+                {displayData.phases.length} Phases
               </span>
-              <span>Created {journeyMap.createdAt.toLocaleDateString()}</span>
+              <span>Created {new Date(displayData.createdAt).toLocaleDateString()}</span>
             </div>
           </div>
           <div className="flex gap-3">
@@ -309,7 +373,7 @@ export default function JourneyMapPage() {
           Customer Personas
         </h2>
         <div className="grid md:grid-cols-2 gap-6">
-          {journeyMap.personas.map((persona) => (
+          {displayData.personas.map((persona) => (
             <PersonaCard key={persona.id} persona={persona} />
           ))}
         </div>
@@ -323,7 +387,7 @@ export default function JourneyMapPage() {
             <div className="min-w-max">
               {/* Phase Headers */}
               <div className="flex bg-gradient-to-r from-blue-50 to-purple-50 border-b-2 border-gray-200">
-                {journeyMap.phases.map((phase, index) => (
+                {displayData.phases.map((phase, index) => (
                   <div key={phase.id} className="flex-shrink-0 w-80 sm:w-96 p-4 sm:p-6 text-center border-r border-gray-200 last:border-r-0">
                     <div className="flex items-center justify-center gap-3 mb-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center font-bold">
@@ -340,7 +404,7 @@ export default function JourneyMapPage() {
 
               {/* Journey Details */}
               <div className="flex bg-white">
-                {journeyMap.phases.map((phase) => (
+                {displayData.phases.map((phase) => (
                   <div key={phase.id} className={`flex-shrink-0 w-80 sm:w-96 p-4 sm:p-6 border-r border-gray-200 last:border-r-0`}>
                     <JourneyPhaseDetails phase={phase} />
                   </div>

@@ -367,6 +367,66 @@ async def get_journey(
         logger.error(f"Journey retrieval error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Journey retrieval failed: {str(e)}")
 
+# Unified journey endpoint - works for both running and completed journeys
+@app.get("/api/journey/{journey_id}/info")
+async def get_journey_info(
+    journey_id: str,
+    current_user: UserProfile = Depends(require_auth)
+):
+    """Get journey information regardless of status (running or completed)"""
+    global job_manager
+
+    if not job_manager:
+        raise HTTPException(status_code=503, detail="Job manager not initialized")
+
+    try:
+        job = await job_manager.get_job_async(journey_id, current_user.id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Journey not found")
+
+        # Return basic journey info that works for both running and completed journeys
+        response = {
+            "id": job.id,
+            "title": getattr(job, 'title', f"Journey {job.id}"),
+            "status": job.status.value,
+            "job_id": job.id,  # For compatibility with frontend
+            "industry": getattr(job, 'industry', None),
+            "created_at": job.created_at.isoformat(),
+            "updated_at": job.updated_at.isoformat()
+        }
+
+        # Include progress information if available
+        if job.progress:
+            response["progress"] = {
+                "current_step": job.progress.current_step,
+                "total_steps": job.progress.total_steps,
+                "step_name": job.progress.step_name,
+                "message": job.progress.message,
+                "percentage": job.progress.percentage
+            }
+            if hasattr(job.progress, 'estimatedTimeRemaining'):
+                response["progress"]["estimatedTimeRemaining"] = job.progress.estimatedTimeRemaining
+
+        # Include result only if completed
+        if job.status.value == "completed" and job.result:
+            response["result"] = {
+                "id": job.result.id,
+                "title": job.result.title
+            }
+
+        # Include error message if failed
+        if job.status.value == "failed" and job.error_message:
+            response["error"] = job.error_message
+            response["error_message"] = job.error_message
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Journey info retrieval error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Journey info retrieval failed: {str(e)}")
+
 # Export endpoints
 @app.get("/api/journey/{journey_id}/export/{format}")
 async def export_journey(

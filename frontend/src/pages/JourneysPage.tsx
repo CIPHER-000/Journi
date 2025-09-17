@@ -10,7 +10,7 @@ interface JourneyMap {
   title: string
   industry?: string
   createdAt: Date | string
-  status: 'completed' | 'processing' | 'failed' | string
+  status: 'completed' | 'processing' | 'failed' | 'queued' | string
   personas?: number
   phases?: number
 }
@@ -47,7 +47,7 @@ export default function JourneysPage({ searchQuery = '' }: JourneysPageProps) {
               title: j.title,
               industry: j.industry || 'Unknown',
               createdAt: new Date(j.created_at),
-              status: j.status as 'completed' | 'processing' | 'failed',
+              status: j.status as 'completed' | 'processing' | 'failed' | 'queued',
               personas: 2,
               phases: 5
             }))
@@ -128,6 +128,8 @@ function JourneyRow({ map, onView }: { map: JourneyMap, onView: () => void }) {
         return 'bg-green-100 text-green-800'
       case 'processing':
         return 'bg-yellow-100 text-yellow-800'
+      case 'queued':
+        return 'bg-blue-100 text-blue-800'
       case 'failed':
         return 'bg-red-100 text-red-800'
       default:

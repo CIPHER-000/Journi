@@ -32,7 +32,8 @@ export default function JourneyDetailPage() {
     if (!id || !token) return
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/journey/${id}`, {
+      // Use the unified endpoint that works for both running and completed journeys
+      const response = await fetch(`${API_BASE_URL}/api/journey/${id}/info`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -194,7 +195,7 @@ export default function JourneyDetailPage() {
       </motion.div>
 
       {/* Journey map view */}
-      <JourneyMapPage />
+      <JourneyMapPage journeyData={journey} />
     </div>
   )
 }
