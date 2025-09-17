@@ -42,6 +42,7 @@ export default function CreateJourneyPage() {
   useEffect(() => {
     console.log('🔍 CreateJourneyPage - hasActiveJourney:', hasActiveJourney, 'loading:', loading)
   }, [hasActiveJourney, loading])
+
   const [formData, setFormData] = useState<FormData>({
     title: '',
     industry: '',
