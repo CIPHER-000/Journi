@@ -277,7 +277,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
   const isCompleted = status === "completed";
   const isFailed = status === "failed";
   const isCancelled = status === "cancelled";
-  const isFinalizing = status === "completed" && isFinalizing;
+    const isCompletedAndFinalizing = status === "completed" && isFinalizing;
   const percentage = stepProgress;
 
   return (
