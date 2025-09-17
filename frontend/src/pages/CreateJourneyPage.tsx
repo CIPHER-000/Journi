@@ -189,7 +189,8 @@ export default function CreateJourneyPage() {
     }
     
     console.log('✅ Form validation passed')
-    
+
+    console.log('🚀 Setting isSubmitting to true')
     setIsSubmitting(true)
     setStartTime(new Date())
     setProgressMessages([])
@@ -302,11 +303,13 @@ export default function CreateJourneyPage() {
         
         // Success case - start tracking the job
         const job: JobStatus = responseData
-        
+
+        console.log('✅ Setting job status:', job)
         setJobStatus(job)
-        
+        console.log('📊 Job status set, isSubmitting:', isSubmitting)
+
         setProgressMessages(['🚀 Journey map creation started...', '🤖 Initializing AI agents...'])
-        
+
         return
       } catch (error) {
         console.error('Error in fetch request:', error);
@@ -363,6 +366,7 @@ export default function CreateJourneyPage() {
         </div>
 
         {/* Progress Display */}
+        {console.log('🎨 Render check - isSubmitting:', isSubmitting, 'jobStatus:', !!jobStatus)}
         {isSubmitting && jobStatus ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
