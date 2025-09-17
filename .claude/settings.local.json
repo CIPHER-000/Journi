@@ -14,7 +14,8 @@
       "Bash(npm install:*)",
       "Bash(npm run build)",
       "Bash(node:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "WebFetch(domain:api.anthropic.com)"
     ],
     "deny": [],
     "ask": []

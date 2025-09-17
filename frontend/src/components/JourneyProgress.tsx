@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, Clock, Bot, AlertTriangle, Wifi, WifiOff, Loader2, X, ArrowLeft, Home } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
@@ -184,7 +184,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
   const cleanup = useJobProgress(jobId, handleProgressMessage);
 
   // Update elapsed time every second
-  React.useEffect(() => {
+  useEffect(() => {
     if (!startTime || status === 'completed' || status === 'failed' || status === 'cancelled') return;
 
     const interval = setInterval(() => {
@@ -195,12 +195,12 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
   }, [startTime, status]);
 
   // Calculate estimated completion time
-  React.useEffect(() => {
+  useEffect(() => {
     if (progress && startTime) {
       const currentStepIndex = progress.current_step - 1;
       const remainingSteps = AGENT_STEPS.slice(currentStepIndex + 1);
       const remainingTime = remainingSteps.reduce((sum, step) => sum + step.estimatedDuration, 0);
-      
+
       // Add current step remaining time (estimate based on progress)
       const currentStepInfo = AGENT_STEPS[currentStepIndex];
       if (currentStepInfo) {
