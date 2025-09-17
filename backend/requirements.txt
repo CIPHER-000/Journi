@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-websockets
+# websockets - Commented out in favor of HTTP polling
 crewai
 langchain
 langchain-openai

@@ -8,7 +8,7 @@ project_root = str(Path(__file__).parent.parent.resolve())
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, WebSocketException, status, UploadFile, File, Depends, Request, Form
+from fastapi import FastAPI, HTTPException, status, UploadFile, File, Depends, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse, Response
 from typing import List, Dict, Any, Optional, Callable
@@ -130,132 +130,8 @@ async def shutdown_event():
     except Exception as e:
         logger.error(f"Error during shutdown: {str(e)}")
 
-# WebSocket connection manager with modern patterns
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: Dict[str, List[WebSocket]] = {}
-        self._locks: Dict[str, asyncio.Lock] = {}
-        self._callback_refs: Dict[str, Dict[WebSocket, Callable]] = {}
-
-    def _get_lock(self, job_id: str) -> asyncio.Lock:
-        """Get or create a lock for thread-safe operations on a job"""
-        if job_id not in self._locks:
-            self._locks[job_id] = asyncio.Lock()
-        return self._locks[job_id]
-
-    async def connect(self, websocket: WebSocket, job_id: str) -> None:
-        """Connect a WebSocket for a specific job with proper async handling"""
-        async with self._get_lock(job_id):
-            # Initialize structures if needed
-            if job_id not in self.active_connections:
-                self.active_connections[job_id] = []
-                self._callback_refs[job_id] = {}
-
-            # Add the WebSocket connection
-            self.active_connections[job_id].append(websocket)
-
-            # Create async callback for job updates
-            async def ws_callback(update_msg: Dict[str, Any]) -> None:
-                try:
-                    # Ensure the WebSocket is still in our active list before sending
-                    if websocket in self.active_connections.get(job_id, []):
-                        await websocket.send_text(json.dumps(update_msg))
-                except WebSocketDisconnect:
-                    # Connection closed normally, remove it
-                    await self.disconnect(job_id, websocket)
-                except Exception as e:
-                    logger.warning(f"Failed to send WebSocket message for job {job_id}: {e}")
-                    await self.disconnect(job_id, websocket)
-
-            # Register callback with job manager if available
-            if job_manager:
-                job_manager.register_progress_callback(job_id, ws_callback)
-                self._callback_refs[job_id][websocket] = ws_callback
-
-            logger.info(f"WebSocket connected for job {job_id}")
-
-    async def disconnect(self, job_id: str, websocket: Optional[WebSocket] = None) -> None:
-        """Disconnect WebSocket(s) for a job with proper cleanup"""
-        async with self._get_lock(job_id):
-            if job_id not in self.active_connections:
-                return
-
-            if websocket:
-                # Remove specific WebSocket
-                if websocket in self.active_connections[job_id]:
-                    self.active_connections[job_id].remove(websocket)
-                    
-                    # Unregister callback if exists
-                    if job_id in self._callback_refs:
-                        callback = self._callback_refs[job_id].pop(websocket, None)
-                        if callback and job_manager:
-                            job_manager.unregister_progress_callback(job_id, callback)
-            else:
-                # Remove all WebSockets for this job
-                if job_id in self._callback_refs:
-                    for ws, callback in self._callback_refs[job_id].items():
-                        if callback and job_manager:
-                            job_manager.unregister_progress_callback(job_id, callback)
-                    del self._callback_refs[job_id]
-                
-                if job_id in self.active_connections:
-                    del self.active_connections[job_id]
-
-            # Cleanup empty structures
-            if job_id in self.active_connections and not self.active_connections[job_id]:
-                del self.active_connections[job_id]
-            if job_id in self._callback_refs and not self._callback_refs[job_id]:
-                del self._callback_refs[job_id]
-            if job_id in self._locks and job_id not in self.active_connections:
-                del self._locks[job_id]
-
-            logger.debug(f"WebSocket disconnected for job {job_id}")
-
-    async def send_progress_update(self, job_id: str, progress_data: Dict[str, Any]) -> None:
-        """Send progress update to all connected WebSockets for a job"""
-        if job_id not in self.active_connections:
-            return
-            
-        disconnected = []
-        for websocket in self.active_connections[job_id]:
-            try:
-                await websocket.send_text(safe_json(progress_data))
-            except WebSocketDisconnect:
-                disconnected.append(websocket)
-            except Exception as e:
-                logger.warning(f"Failed to send update to WebSocket: {e}")
-                disconnected.append(websocket)
-        
-        # Clean up disconnected sockets
-        for ws in disconnected:
-            await self.disconnect(job_id, ws)
-    
-    async def send_personal_message(self, message: str, websocket: WebSocket) -> None:
-        """Send a message to a specific WebSocket connection"""
-        try:
-            await websocket.send_text(message)
-        except WebSocketDisconnect:
-            logger.debug("WebSocket disconnected while sending personal message")
-        except Exception as e:
-            logger.warning(f"Failed to send personal message: {e}")
-    
-    async def broadcast(self, job_id: str, message: str) -> None:
-        """Broadcast a message to all connections for a specific job"""
-        if job_id in self.active_connections:
-            disconnected = []
-            for connection in self.active_connections[job_id]:
-                try:
-                    await connection.send_text(message)
-                except WebSocketDisconnect:
-                    disconnected.append(connection)
-                except Exception:
-                    disconnected.append(connection)
-            
-            # Clean up disconnected sockets
-            for ws in disconnected:
-                await self.disconnect(job_id, ws)
-
-manager = ConnectionManager()
+# Note: WebSocket support has been removed in favor of HTTP polling
+# This provides better reliability, especially on free-tier hosting platforms
 
 @app.get("/")
 async def root():
@@ -566,134 +442,72 @@ async def export_to_pdf(journey_map: JourneyMap) -> Response:
         logger.error(f"PDF export error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"PDF export failed: {str(e)}")
 
-# WebSocket endpoint with modern error handling and connection management
-@app.websocket("/ws/progress/{job_id}")
-async def websocket_progress(websocket: WebSocket, job_id: str, token: str = None):
-    """WebSocket endpoint for real-time job progress updates with improved error handling
+# Enhanced polling endpoint for real-time updates
+@app.get("/api/journey/poll/{job_id}")
+async def poll_journey_status(
+    job_id: str,
+    current_user: UserProfile = Depends(require_auth)
+):
+    """Optimized polling endpoint for real-time job progress updates.
     
-    Note: On Render's free tier, WebSocket connections may be unreliable.
-    The frontend should fallback to HTTP polling for production deployments.
+    This endpoint is designed for efficient polling with minimal overhead.
+    Returns condensed progress information suitable for frequent polling.
     """
     global job_manager
     
-    # Track connection state
-    connection_active = False
-    ping_task = None
+    if not job_manager:
+        raise HTTPException(status_code=503, detail="Job manager not initialized")
     
     try:
-        # Accept WebSocket connection FIRST, before any validation
-        await websocket.accept()
-        connection_active = True
-        logger.info(f"WebSocket connection accepted for job {job_id}. Note: Consider using polling on Render free tier for stability.")
+        job = job_manager.get_job(job_id, current_user.id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
         
-        # Now check if job manager is available
-        if not job_manager:
-            logger.error("Job manager not initialized, closing WebSocket")
-            await websocket.send_text(json.dumps({
-                "type": "error",
-                "error": "Service temporarily unavailable",
-                "code": 503
-            }))
-            await websocket.close(code=1011, reason="Service temporarily unavailable")
-            return
+        # Build optimized response for polling
+        response = {
+            "job_id": job_id,
+            "status": job.status.value,
+            "timestamp": datetime.utcnow().isoformat()
+        }
         
-        # Connect to manager
-        await manager.connect(websocket, job_id)
+        # Include progress information if available
+        if job.progress:
+            response["progress"] = {
+                "current_step": job.progress.current_step,
+                "total_steps": job.progress.total_steps,
+                "step_name": job.progress.step_name,
+                "message": job.progress.message,
+                "percentage": job.progress.percentage
+            }
+            if hasattr(job.progress, 'estimatedTimeRemaining'):
+                response["progress"]["estimatedTimeRemaining"] = job.progress.estimatedTimeRemaining
         
-        # Send initial job status if available
-        try:
-            job = job_manager.get_job(job_id)
-            if job:
-                initial_status = {
-                    "type": "status",
-                    "job_id": job_id,
-                    "status": job.status.value,
-                    "progress": job.progress.dict() if job.progress else None,
-                    "result": job.result.dict() if job.result else None,
-                    "error": job.error_message if hasattr(job, 'error_message') else None,
-                    "timestamp": datetime.utcnow().isoformat()
-                }
-                await websocket.send_text(safe_json(initial_status))
-        except Exception as e:
-            logger.warning(f"Could not send initial status for job {job_id}: {e}")
+        # Include result only if completed
+        if job.status.value == "completed" and job.result:
+            response["result"] = {
+                "id": job.result.id,
+                "title": job.result.title
+            }
         
-        # Create ping task for keepalive
-        async def send_pings():
-            while connection_active:
-                try:
-                    await asyncio.sleep(25)  # Send ping every 25 seconds
-                    if connection_active:
-                        await websocket.send_text(json.dumps({"type": "ping"}))
-                except Exception:
-                    break
+        # Include error message if failed
+        if job.status.value == "failed" and job.error_message:
+            response["error"] = job.error_message
+            response["error_message"] = job.error_message
         
-        ping_task = asyncio.create_task(send_pings())
+        # Add cache control headers to prevent stale data
+        headers = {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
         
-        # Handle incoming messages
-        while connection_active:
-            try:
-                # Wait for client messages with timeout
-                message = await asyncio.wait_for(
-                    websocket.receive_text(), 
-                    timeout=60.0  # 60 second timeout for client activity
-                )
-                
-                # Parse and handle message
-                try:
-                    data = json.loads(message) if message else {}
-                    msg_type = data.get("type", "")
-                    
-                    if msg_type == "ping":
-                        await websocket.send_text(json.dumps({"type": "pong"}))
-                    elif msg_type == "pong":
-                        # Client responded to our ping
-                        pass
-                    else:
-                        # Handle other message types if needed
-                        logger.debug(f"Received message type: {msg_type} for job {job_id}")
-                        
-                except json.JSONDecodeError:
-                    # Handle plain text messages for backward compatibility
-                    if message == "ping":
-                        await websocket.send_text("pong")
-                    
-            except asyncio.TimeoutError:
-                # No activity from client, but connection might still be alive
-                logger.debug(f"No client activity for job {job_id}, connection still open")
-                continue
-                
-            except WebSocketDisconnect as e:
-                logger.info(f"WebSocket disconnected for job {job_id}: code={e.code} reason={e.reason}")
-                break
-                
-            except Exception as e:
-                logger.error(f"Unexpected WebSocket error for job {job_id}: {e}")
-                break
-    
+        return JSONResponse(content=response, headers=headers)
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"WebSocket setup error for job {job_id}: {e}")
-    
-    finally:
-        connection_active = False
-        
-        # Cancel ping task
-        if ping_task and not ping_task.done():
-            ping_task.cancel()
-            try:
-                await ping_task
-            except asyncio.CancelledError:
-                pass
-        
-        # Disconnect from manager
-        await manager.disconnect(job_id, websocket)
-        
-        # Close WebSocket if still open
-        try:
-            await websocket.close(code=1000, reason="Normal closure")
-        except Exception:
-            pass
-        
-        logger.info(f"WebSocket cleanup completed for job {job_id}")
+        logger.error(f"Polling error for job {job_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Polling failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

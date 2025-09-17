@@ -1,3 +1,4 @@
+<!--
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,37 +8,37 @@
     <h1>Testing WebSocket on Render</h1>
     <div id="status">Connecting...</div>
     <div id="messages"></div>
-    
+
     <script>
         const jobId = 'test-job-' + Date.now();
         const wsUrl = `wss://journi-backend.onrender.com/ws/progress/${jobId}`;
-        
+
         console.log('Attempting to connect to:', wsUrl);
         document.getElementById('status').textContent = `Connecting to ${wsUrl}...`;
-        
+
         try {
             const ws = new WebSocket(wsUrl);
-            
+
             ws.onopen = function(event) {
                 console.log('✅ WebSocket opened!', event);
                 document.getElementById('status').textContent = '✅ Connected!';
-                
+
                 // Send a test ping
                 ws.send(JSON.stringify({ type: 'ping' }));
             };
-            
+
             ws.onmessage = function(event) {
                 console.log('📩 Message received:', event.data);
                 const msgDiv = document.createElement('div');
                 msgDiv.textContent = `Message: ${event.data}`;
                 document.getElementById('messages').appendChild(msgDiv);
             };
-            
+
             ws.onerror = function(error) {
                 console.error('❌ WebSocket error:', error);
                 document.getElementById('status').textContent = '❌ Error occurred';
             };
-            
+
             ws.onclose = function(event) {
                 console.log('🔌 WebSocket closed:', event.code, event.reason);
                 document.getElementById('status').textContent = `🔌 Closed: ${event.code} - ${event.reason}`;
@@ -47,5 +48,44 @@
             document.getElementById('status').textContent = `Failed: ${error.message}`;
         }
     </script>
+</body>
+</html>
+-->
+
+<!-- COMMENTED OUT - WebSocket functionality disabled in favor of HTTP polling -->
+<!-- Original functionality can be restored by uncommenting the HTML above -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test - Disabled</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .message { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Test - Disabled</h1>
+    <div class="message">
+        <h3>📊 WebSocket Functionality Disabled</h3>
+        <p>This test file has been commented out because WebSocket functionality has been disabled in favor of HTTP polling for better stability.</p>
+
+        <h4>What this means:</h4>
+        <ul>
+            <li>The application now uses HTTP polling instead of WebSockets for real-time updates</li>
+            <li>This approach is more reliable on hosting platforms like Render</li>
+            <li>All WebSocket-related dependencies have been commented out</li>
+        </ul>
+
+        <h4>Files affected:</h4>
+        <ul>
+            <li><code>backend/requirements.txt</code> - websockets dependency commented out</li>
+            <li><code>backend/src/services/job_manager.py</code> - WebSocket callback handling commented out</li>
+            <li><code>frontend/src/hooks/useJobProgress.ts</code> - WebSocket code commented out</li>
+            <li><code>test_websocket_integration.py</code> - Entire file commented out</li>
+        </ul>
+
+        <p><em>To restore WebSocket functionality, uncomment the relevant code in all affected files.</em></p>
+    </div>
 </body>
 </html>

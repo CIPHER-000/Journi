@@ -200,25 +200,27 @@ class JobManager:
             update_msg["error_message"] = job.error_message
         
         # 🔹 WebSocket-safe callback handling - don't let this crash the workflow
-        callbacks_sent = False
-        if job_id in self.progress_callbacks:
-            callbacks = self.progress_callbacks[job_id].copy()
-            for cb in callbacks:
-                try:
-                    if asyncio.iscoroutinefunction(cb):
-                        await cb(update_msg)
-                    else:
-                        result = cb(update_msg)
-                        if asyncio.iscoroutine(result):
-                            await result
-                    callbacks_sent = True
-                except Exception as e:
-                    logger.warning(f"WebSocket callback failed for {job_id}: {e}")
-                    if cb in self.progress_callbacks[job_id]:
-                        self.progress_callbacks[job_id].remove(cb)
-        
-        if not callbacks_sent:
-            logger.debug(f"No active WebSocket callbacks for job {job_id}")
+        # Commented out in favor of HTTP polling
+        # callbacks_sent = False
+        # if job_id in self.progress_callbacks:
+        #     callbacks = self.progress_callbacks[job_id].copy()
+        #     for cb in callbacks:
+        #         try:
+        #             if asyncio.iscoroutinefunction(cb):
+        #                 await cb(update_msg)
+        #             else:
+        #                 result = cb(update_msg)
+        #                 if asyncio.iscoroutine(result):
+        #                     await result
+        #             callbacks_sent = True
+        #         except Exception as e:
+        #             logger.warning(f"WebSocket callback failed for {job_id}: {e}")
+        #             if cb in self.progress_callbacks[job_id]:
+        #                 self.progress_callbacks[job_id].remove(cb)
+        #
+        # if not callbacks_sent:
+        #     logger.debug(f"No active WebSocket callbacks for job {job_id}")
+        logger.debug(f"WebSocket callback handling commented out - using HTTP polling instead")
         
         if job.status in [JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED]:
             if job_id in self._cleanup_tasks and not self._cleanup_tasks[job_id].done():

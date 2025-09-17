@@ -24,17 +24,17 @@ export function useJobProgress(
   jobId: string, 
   onMessage: (message: ProgressMessage) => void
 ) {
-  const wsRef = useRef<WebSocket | null>(null)
+  const wsRef = useRef<WebSocket | null>(null) // Commented out - WebSocket disabled
   const pollIntervalRef = useRef<number | null>(null)
   const pollControllerRef = useRef<AbortController | null>(null)
   const completedRef = useRef(false)
-  const reconnectAttemptsRef = useRef(0)
+  const reconnectAttemptsRef = useRef(0) // Commented out - WebSocket disabled
   const destroyedRef = useRef(false)
   const isPollingRef = useRef(false)
-  const wsAttemptingRef = useRef(false)
-  const pingIntervalRef = useRef<number | null>(null)
-  const lastPongRef = useRef<number>(Date.now())
-  const keepAliveIntervalRef = useRef<number | null>(null)
+  const wsAttemptingRef = useRef(false) // Commented out - WebSocket disabled
+  const pingIntervalRef = useRef<number | null>(null) // Commented out - WebSocket disabled
+  const lastPongRef = useRef<number>(Date.now()) // Commented out - WebSocket disabled
+  const keepAliveIntervalRef = useRef<number | null>(null) // Commented out - WebSocket disabled
   
   // Store onMessage in a ref to avoid re-running effect
   const onMessageRef = useRef(onMessage)
@@ -52,17 +52,17 @@ export function useJobProgress(
     const HTTP_URL = `${import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'}/api/journey/status/${jobId}`
 
     const startPolling = () => {
-      console.log('🔄 Starting polling for job:', jobId)
+      console.log('🔄 Starting IMMEDIATE polling for job:', jobId)
       
-      // Clear any prior WebSocket
-      if (wsRef.current) {
-        try { 
-          wsRef.current.close(1000, 'switching-to-polling')
-        } catch (e) {
-          console.log('Error closing WebSocket:', e)
-        }
-        wsRef.current = null
-      }
+      // Clear any prior WebSocket (commented out - WebSocket disabled)
+      // if (wsRef.current) {
+      //   try {
+      //     wsRef.current.close(1000, 'switching-to-polling')
+      //   } catch (e) {
+      //     console.log('Error closing WebSocket:', e)
+      //   }
+      //   wsRef.current = null
+      // }
 
       // Prevent duplicate polling
       if (isPollingRef.current) {
@@ -154,35 +154,42 @@ export function useJobProgress(
         }
       }
 
-      // Start immediate poll
+      // Start immediate poll - CRITICAL for catching initial progress
+      console.log('🎯 Starting first poll immediately')
       poll()
       
-      // Set interval for continuous polling - start immediately
+      // Set interval for continuous polling - poll frequently to catch all 8 steps
       if (!pollIntervalRef.current && !completedRef.current && !destroyedRef.current) {
-        pollIntervalRef.current = window.setInterval(poll, 1500) // 1.5 second intervals for catching progress
+        pollIntervalRef.current = window.setInterval(poll, 1000) // 1 second intervals to catch all agent steps
       }
     }
 
     const startWebSocket = () => {
+      // WebSocket functionality commented out in favor of HTTP polling
+      console.log('🔌 WebSocket functionality disabled - using polling only')
+      startPolling()
+      return
+
+      /* Original WebSocket code commented out:
       // Skip WebSocket entirely on production (Render) - use polling only
-      const isProduction = window.location.hostname.includes('netlify.app') || 
+      const isProduction = window.location.hostname.includes('netlify.app') ||
                           window.location.hostname.includes('render.com') ||
                           (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1'))
-      
+
       if (isProduction) {
         console.log('📊 Production environment detected - using polling for real-time updates')
         startPolling()
         return
       }
-      
+
       console.log('🔌 Attempting WebSocket connection for job:', jobId)
-      
+
       // Ensure only 1 WebSocket instance and no concurrent attempts
       if (wsRef.current || wsAttemptingRef.current) {
         console.log('WebSocket already exists or connection in progress, skipping')
         return
       }
-      
+
       wsAttemptingRef.current = true
 
       try {
@@ -208,12 +215,12 @@ export function useJobProgress(
           console.log('✅ WebSocket connected for job:', jobId)
           reconnectAttemptsRef.current = 0
           lastPongRef.current = Date.now()
-          
+
           // Start HTTP keep-alive to prevent Render from sleeping
           if (keepAliveIntervalRef.current) {
             clearInterval(keepAliveIntervalRef.current)
           }
-          
+
           // Send HTTP request every 5 minutes to keep Render service awake
           keepAliveIntervalRef.current = window.setInterval(async () => {
             try {
@@ -224,12 +231,12 @@ export function useJobProgress(
               console.log('Keep-alive ping failed:', e)
             }
           }, 4 * 60 * 1000) // Every 4 minutes (before the 5-minute timeout)
-          
+
           // Start ping-pong mechanism
           if (pingIntervalRef.current) {
             clearInterval(pingIntervalRef.current)
           }
-          
+
           pingIntervalRef.current = window.setInterval(() => {
             if (destroyedRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
               if (pingIntervalRef.current) {
@@ -238,7 +245,7 @@ export function useJobProgress(
               }
               return
             }
-            
+
             // Check if we've received a pong recently
             const timeSinceLastPong = Date.now() - lastPongRef.current
             if (timeSinceLastPong > 30000) { // 30 seconds without pong - more aggressive for Render
@@ -246,7 +253,7 @@ export function useJobProgress(
               ws.close(1000, 'pong-timeout')
               return
             }
-            
+
             // Send ping more frequently to keep connection alive on Render
             try {
               ws.send(JSON.stringify({ type: 'ping' }))
@@ -259,7 +266,7 @@ export function useJobProgress(
 
         ws.onmessage = (event) => {
           if (destroyedRef.current) return
-          
+
           try {
             // Handle plain text pong for backward compatibility
             if (event.data === 'pong') {
@@ -267,9 +274,9 @@ export function useJobProgress(
               lastPongRef.current = Date.now()
               return
             }
-            
+
             const data = JSON.parse(event.data)
-            
+
             // Handle structured messages
             if (data.type === 'ping') {
               // Server is pinging us, respond with pong
@@ -281,15 +288,15 @@ export function useJobProgress(
               }
               return
             }
-            
+
             if (data.type === 'pong') {
               console.log('🏓 Received pong (structured)')
               lastPongRef.current = Date.now()
               return
             }
-            
+
             console.log('📩 WebSocket message:', data)
-            
+
             // Handle status updates
             if (data.type === 'status' || data.job_id) {
               // Validate message is for this job
@@ -299,17 +306,17 @@ export function useJobProgress(
               }
 
               onMessageRef.current(data)
-              
+
               if (['completed', 'failed', 'cancelled'].includes(data.status)) {
                 console.log('Job finished via WebSocket, closing connection')
                 completedRef.current = true
-                
+
                 // Clear ping interval
                 if (pingIntervalRef.current) {
                   clearInterval(pingIntervalRef.current)
                   pingIntervalRef.current = null
                 }
-                
+
                 try {
                   ws.close(1000, 'job-completed')
                 } catch (e) {
@@ -333,7 +340,7 @@ export function useJobProgress(
           wsAttemptingRef.current = false
           console.log(`🔌 WebSocket closed: ${event.code} ${event.reason}`)
           wsRef.current = null
-          
+
           if (destroyedRef.current || completedRef.current) {
             console.log('WebSocket closed: component destroyed or job completed')
             return
@@ -344,7 +351,7 @@ export function useJobProgress(
           if (attempts <= 5) { // More attempts before giving up
             const delay = Math.min(500 * Math.pow(1.5, attempts), 3000) // Faster reconnect
             console.log(`🔄 Reconnecting WebSocket in ${delay}ms (attempt ${attempts}/5)`)
-            
+
             setTimeout(() => {
               if (!destroyedRef.current && !completedRef.current) {
                 startWebSocket()
@@ -360,31 +367,19 @@ export function useJobProgress(
         console.error('WebSocket setup failed:', error)
         startPolling()
       }
+      */
     }
 
-    // VERSION 2.0 - POLLING ONLY IN PRODUCTION
-    console.log('🚀 JOB PROGRESS HOOK VERSION 2.0 - DEPLOYED', new Date().toISOString())
-    
-    // Check environment and use appropriate method
-    const isProduction = window.location.hostname.includes('netlify.app') || 
-                        window.location.hostname.includes('render.com') ||
-                        (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1'))
-    
-    console.log('🔍 Environment check:', {
-      hostname: window.location.hostname,
-      isProduction,
-      willUsePolling: isProduction
-    })
-    
-    if (isProduction) {
-      // In production (Render), use polling directly to avoid WebSocket issues
-      console.log('📊 PRODUCTION MODE: Using polling ONLY - NO WebSocket attempts')
+    // VERSION 2.0 - POLLING ONLY (WebSocket functionality commented out)
+    console.log('🚀 JOB PROGRESS HOOK VERSION 2.0 - DEPLOYED (WebSocket disabled)', new Date().toISOString())
+
+    // Always use polling - WebSocket functionality disabled
+    console.log('📊 POLLING ONLY MODE: WebSocket functionality disabled for stability')
+    // Small delay to let backend start processing
+    setTimeout(() => {
+      console.log('⏳ Backend should be processing, starting polls now')
       startPolling()
-    } else {
-      // In development, try WebSocket first
-      console.log('🔧 DEVELOPMENT MODE: Trying WebSocket with polling fallback')
-      startWebSocket()
-    }
+    }, 500) // 500ms delay to let backend initialize
 
     // Cleanup function
     return () => {
@@ -393,27 +388,27 @@ export function useJobProgress(
       wsAttemptingRef.current = false
       isPollingRef.current = false
       
-      // Clear ping interval
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current)
-        pingIntervalRef.current = null
-      }
-      
-      // Clear keep-alive interval
-      if (keepAliveIntervalRef.current) {
-        clearInterval(keepAliveIntervalRef.current)
-        keepAliveIntervalRef.current = null
-      }
-      
-      // Close WebSocket
-      try {
-        if (wsRef.current) {
-          wsRef.current.close(1000, 'cleanup')
-          wsRef.current = null
-        }
-      } catch (e) {
-        console.log('Error closing WebSocket during cleanup:', e)
-      }
+      // Clear ping interval (commented out - WebSocket disabled)
+      // if (pingIntervalRef.current) {
+      //   clearInterval(pingIntervalRef.current)
+      //   pingIntervalRef.current = null
+      // }
+
+      // Clear keep-alive interval (commented out - WebSocket disabled)
+      // if (keepAliveIntervalRef.current) {
+      //   clearInterval(keepAliveIntervalRef.current)
+      //   keepAliveIntervalRef.current = null
+      // }
+
+      // Close WebSocket (commented out - WebSocket disabled)
+      // try {
+      //   if (wsRef.current) {
+      //     wsRef.current.close(1000, 'cleanup')
+      //     wsRef.current = null
+      //   }
+      // } catch (e) {
+      //   console.log('Error closing WebSocket during cleanup:', e)
+      // }
 
       // Clear polling interval
       if (pollIntervalRef.current) {
@@ -435,14 +430,14 @@ export function useJobProgress(
     wsAttemptingRef.current = false
     isPollingRef.current = false
     
-    // Clear ping interval
-    if (pingIntervalRef.current) {
-      clearInterval(pingIntervalRef.current)
-      pingIntervalRef.current = null
-    }
-    
-    try { wsRef.current?.close(1000, 'manual-cleanup') } catch {}
-    wsRef.current = null
+    // Clear ping interval (commented out - WebSocket disabled)
+    // if (pingIntervalRef.current) {
+    //   clearInterval(pingIntervalRef.current)
+    //   pingIntervalRef.current = null
+    // }
+
+    // try { wsRef.current?.close(1000, 'manual-cleanup') } catch {}
+    // wsRef.current = null
     
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current)
