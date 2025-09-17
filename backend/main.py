@@ -30,9 +30,13 @@ from reportlab.lib.units import inch
 try:
     from src.models.journey import JourneyFormData, Job, JourneyMap, JobStatus
     from src.services.job_manager import JobManager
+    from src.services.usage_service import UsageService
     from src.routes.auth_routes import router as auth_router
     from src.middleware.auth_middleware import require_auth
-    from src.models.auth import UserProfile
+    from src.models.auth import UserProfile, UserJourney, UsageLimitResponse
+
+    # Initialize services
+    usage_service = UsageService()
 except ImportError as e:
     print(f"Import error: {e}")
     print("Please ensure all dependencies are installed: pip install -r requirements.txt")
@@ -425,7 +429,23 @@ async def get_journey_info(
                     raise HTTPException(status_code=404, detail="Journey not found")
             except Exception as db_error:
                 logger.error(f"Database lookup failed for journey {journey_id}: {db_error}")
-                raise HTTPException(status_code=404, detail="Journey not found")
+                logger.error(f"Database lookup traceback: {traceback.format_exc()}")
+                # Don't raise 404 immediately - try to return a basic response
+                try:
+                    # Try to get any basic info we can
+                    return {
+                        "id": journey_id,
+                        "title": f"Journey {journey_id}",
+                        "status": "unknown",
+                        "job_id": journey_id,
+                        "industry": "Unknown",
+                        "created_at": datetime.now().isoformat(),
+                        "updated_at": datetime.now().isoformat(),
+                        "error": "Journey data temporarily unavailable"
+                    }
+                except Exception:
+                    # If even that fails, then return 404
+                    raise HTTPException(status_code=404, detail="Journey not found")
 
         # Return basic journey info that works for both running and completed journeys
         response = {
