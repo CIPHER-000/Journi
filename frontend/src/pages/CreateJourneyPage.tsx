@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Map, Upload, X, FileText, Users, Target, Lightbulb, Loader2, ArrowLeft, AlertCircle } from 'lucide-react'
@@ -49,6 +49,7 @@ export default function CreateJourneyPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null)
+  const jobStatusRef = useRef<JobStatus | null>(null) // Ref to track job status for immediate access
   const [progressMessages, setProgressMessages] = useState<string[]>([])
   const [startTime, setStartTime] = useState<Date | null>(null)
   const [estimatedCompletion, setEstimatedCompletion] = useState<Date | null>(null)
@@ -81,6 +82,7 @@ export default function CreateJourneyPage() {
       console.log('CreateJourneyPage: Resetting state for retry')
       // Reset all states to initial values
       setIsSubmitting(false)
+      jobStatusRef.current = null
       setJobStatus(null)
       setProgressMessages([])
       setStartTime(null)
@@ -98,6 +100,7 @@ export default function CreateJourneyPage() {
   const handleJobComplete = useCallback(() => {
     console.log('Job completed, updating states')
     setIsSubmitting(false)
+    jobStatusRef.current = null
     setJobStatus(null)
     refetchActiveJourney() // Update active journey status
   }, [refetchActiveJourney])
@@ -106,6 +109,7 @@ export default function CreateJourneyPage() {
   const handleJobCancel = useCallback(() => {
     console.log('Job cancelled, updating states')
     setIsSubmitting(false)
+    jobStatusRef.current = null
     setJobStatus(null)
     setProgressMessages([])
     setStartTime(null)
@@ -181,7 +185,8 @@ export default function CreateJourneyPage() {
     setIsSubmitting(true)
     setStartTime(new Date())
     setProgressMessages([])
-    setJobStatus(null)  // Clear any previous job status
+    jobStatusRef.current = null
+      setJobStatus(null)  // Clear any previous job status
 
     try {
       // Generate title automatically
@@ -276,6 +281,7 @@ export default function CreateJourneyPage() {
         const job: JobStatus = responseData
         console.log('CreateJourneyPage: Job started successfully', job)
 
+        jobStatusRef.current = job
         setJobStatus(job)
         setProgressMessages(['🚀 Journey map creation started...', '🤖 Initializing AI agents...'])
         console.log('CreateJourneyPage: Job status set, JourneyProgress should now display')
@@ -322,7 +328,7 @@ export default function CreateJourneyPage() {
       setIsSubmitting(false)
     } finally {
       // Ensure isSubmitting is reset if job wasn't started
-      if (!jobStatus) {
+      if (!jobStatusRef.current) {
         setIsSubmitting(false)
       }
     }
