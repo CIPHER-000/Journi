@@ -75,9 +75,11 @@ export default function CreateJourneyPage() {
 
   // EFFECTS COME AFTER ALL HOOKS
 
-  // Reset state when coming from a retry
+  // Handle navigation state for retry and journey restoration
   useEffect(() => {
     console.log('CreateJourneyPage: useEffect - checking location state', location.state)
+
+    // Handle retry state
     if (location.state?.retry) {
       console.log('CreateJourneyPage: Resetting state for retry')
       // Reset all states to initial values
@@ -94,15 +96,36 @@ export default function CreateJourneyPage() {
       // Refetch active journey status
       refetchActiveJourney()
     }
+
+    // Handle journey restoration state
+    if (location.state?.restoreJourney && location.state?.journeyId) {
+      console.log('CreateJourneyPage: Restoring journey progress for', location.state.journeyId)
+
+      // Set up job status to show JourneyProgress component
+      const restoredJobStatus: JobStatus = {
+        id: location.state.journeyId,
+        status: 'processing',
+        result: {
+          title: location.state.journeyTitle || 'Restored Journey'
+        }
+      }
+
+      setIsSubmitting(true)
+      jobStatusRef.current = restoredJobStatus
+      setJobStatus(restoredJobStatus)
+      setProgressMessages(['🔄 Restoring journey progress...', '🤖 Reconnecting to AI agents...'])
+
+      // Clear the navigation state to prevent re-triggering
+      navigate(location.pathname, { replace: true, state: {} })
+    }
   }, [location.state, navigate, location.pathname, refetchActiveJourney])
 
-  // Handle job completion
+  // Handle job completion - keep progress visible to show results
   const handleJobComplete = useCallback(() => {
-    console.log('Job completed, updating states')
-    setIsSubmitting(false)
-    jobStatusRef.current = null
-    setJobStatus(null)
-    refetchActiveJourney() // Update active journey status
+    console.log('Job completed, keeping progress visible to show results')
+    // Don't reset states - let JourneyProgress show the completed results
+    // Only update active journey status in background
+    refetchActiveJourney()
   }, [refetchActiveJourney])
 
   // Handle job cancellation

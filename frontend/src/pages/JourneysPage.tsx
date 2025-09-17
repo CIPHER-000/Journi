@@ -126,7 +126,22 @@ function JourneyRow({ map, onView }: { map: JourneyMap, onView: () => void }) {
   // Log when processing journey is clicked
   const handleViewClick = () => {
     console.log('👆 Journey clicked:', map.title, 'status:', map.status, 'id:', map.id);
-    onView();
+
+    // For processing journeys, navigate to create page with state to restore progress
+    if (map.status === 'processing' || map.status === 'queued') {
+      console.log('🔄 Processing journey clicked, navigating to restore progress...');
+      // Navigate to create page with journey ID to restore progress
+      navigate('/create', {
+        state: {
+          restoreJourney: true,
+          journeyId: map.id,
+          journeyTitle: map.title
+        }
+      });
+    } else {
+      // For completed journeys, use the default view behavior
+      onView();
+    }
   };
 
   const getStatusColor = (status: string) => {

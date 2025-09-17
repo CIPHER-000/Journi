@@ -63,17 +63,39 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
     if (!id || !token) return
 
     try {
-      // Load the completed journey data using the original endpoint
-      const response = await fetch(`${API_BASE_URL}/api/journey/${id}`, {
+      // Try the main journey endpoint first
+      let response = await fetch(`${API_BASE_URL}/api/journey/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       })
 
+      // If that fails, try the info endpoint
+      if (!response.ok) {
+        console.log('🔄 Main endpoint failed, trying info endpoint...')
+        response = await fetch(`${API_BASE_URL}/api/journey/${id}/info`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      }
+
       if (response.ok) {
         const data = await response.json()
-        setJourneyMap(data)
+        console.log('✅ Journey data loaded:', data)
+
+        // Handle different response formats
+        if (data.result) {
+          setJourneyMap(data.result)
+        } else if (data.journey_data) {
+          setJourneyMap(data.journey_data)
+        } else {
+          setJourneyMap(data)
+        }
+      } else {
+        console.error('❌ Failed to load journey data:', response.status)
       }
     } catch (err) {
       console.error('Error loading journey map data:', err)
