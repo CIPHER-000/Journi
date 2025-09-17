@@ -378,8 +378,8 @@ export default function CreateJourneyPage() {
             jobStatusResult: jobStatus?.result,
             status: jobStatus?.status
           })
-          // Keep progress visible if: actively submitting OR job exists and is not failed/cancelled
-          const shouldShowProgress = isSubmitting || (jobStatus && !['failed', 'cancelled'].includes(jobStatus.status))
+          // Keep progress visible if: actively submitting AND job exists OR job exists and is not failed/cancelled
+          const shouldShowProgress = (isSubmitting && jobStatus) || (jobStatus && !['failed', 'cancelled'].includes(jobStatus.status))
           console.log('CreateJourneyPage: Should show progress:', shouldShowProgress)
           return shouldShowProgress
         })() ? (
@@ -388,9 +388,9 @@ export default function CreateJourneyPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <JourneyProgress 
-              jobId={jobStatus.id} 
-              title={jobStatus.result?.title || formData.title || 'Untitled Journey'}
+            <JourneyProgress
+              jobId={jobStatus!.id}
+              title={jobStatus?.result?.title || formData.title || 'Untitled Journey'}
               onComplete={handleJobComplete}
               onCancel={handleJobCancel}
             />

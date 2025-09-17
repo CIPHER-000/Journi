@@ -73,6 +73,26 @@ interface JourneyProgressProps {
 }
 
 export default function JourneyProgress({ jobId, title, onComplete, onCancel }: JourneyProgressProps) {
+  // Guard clause for invalid jobId
+  if (!jobId) {
+    console.error('❌ JourneyProgress: Invalid jobId provided');
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-red-800 mb-2">Invalid Job ID</h3>
+        <p className="text-red-600 mb-4">
+          Unable to track journey progress due to invalid job identifier.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Refresh Page
+        </button>
+      </div>
+    );
+  }
+
   const navigate = useNavigate();
   const [status, setStatus] = useState<string>("connecting");
   const [progress, setProgress] = useState<any>(null);
