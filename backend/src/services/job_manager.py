@@ -199,28 +199,44 @@ class JobManager:
             update_msg["error"] = job.error_message
             update_msg["error_message"] = job.error_message
         
-        # 🔹 WebSocket-safe callback handling - don't let this crash the workflow
-        # Commented out in favor of HTTP polling
-        # callbacks_sent = False
-        # if job_id in self.progress_callbacks:
-        #     callbacks = self.progress_callbacks[job_id].copy()
-        #     for cb in callbacks:
-        #         try:
-        #             if asyncio.iscoroutinefunction(cb):
-        #                 await cb(update_msg)
-        #             else:
-        #                 result = cb(update_msg)
-        #                 if asyncio.iscoroutine(result):
-        #                     await result
-        #             callbacks_sent = True
-        #         except Exception as e:
-        #             logger.warning(f"WebSocket callback failed for {job_id}: {e}")
-        #             if cb in self.progress_callbacks[job_id]:
-        #                 self.progress_callbacks[job_id].remove(cb)
-        #
-        # if not callbacks_sent:
-        #     logger.debug(f"No active WebSocket callbacks for job {job_id}")
-        logger.debug(f"WebSocket callback handling commented out - using HTTP polling instead")
+        # 🔹 HTTP Polling-safe callback handling - store progress in job data
+        callbacks_sent = False
+        if job_id in self.progress_callbacks:
+            callbacks = self.progress_callbacks[job_id].copy()
+            for cb in callbacks:
+                try:
+                    if asyncio.iscoroutinefunction(cb):
+                        await cb(update_msg)
+                    else:
+                        result = cb(update_msg)
+                        if asyncio.iscoroutine(result):
+                            await result
+                    callbacks_sent = True
+                except Exception as e:
+                    logger.warning(f"Progress callback failed for {job_id}: {e}")
+                    if cb in self.progress_callbacks[job_id]:
+                        self.progress_callbacks[job_id].remove(cb)
+
+        # Always store progress update in job data for HTTP polling
+        try:
+            job.progress_history = getattr(job, 'progress_history', [])
+            job.progress_history.append({
+                "timestamp": datetime.utcnow().isoformat(),
+                "step": step,
+                "step_name": step_name,
+                "message": message,
+                "percentage": percentage,
+                "status": job.status.value
+            })
+            # Keep only last 50 progress updates to prevent memory bloat
+            if len(job.progress_history) > 50:
+                job.progress_history = job.progress_history[-50:]
+            logger.debug(f"Progress update stored in job data for HTTP polling: {step_name} - {message}")
+        except Exception as e:
+            logger.error(f"Failed to store progress in job data: {e}")
+
+        if not callbacks_sent:
+            logger.debug(f"No active progress callbacks for job {job_id} - using HTTP polling")
         
         if job.status in [JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED]:
             if job_id in self._cleanup_tasks and not self._cleanup_tasks[job_id].done():

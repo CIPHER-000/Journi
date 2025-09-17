@@ -77,3 +77,4 @@ class Job(BaseModel):
     progress: Optional[JobProgress] = None
     result: Optional[JourneyMap] = None
     error_message: Optional[str] = None
+    progress_history: Optional[List[Dict[str, Any]]] = Field(default_factory=list)

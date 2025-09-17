@@ -49,114 +49,202 @@ class CrewCoordinator:
             
             # Step 1: Context Analysis
             if progress_callback:
-                await progress_callback(1, "Context Analysis", "Analyzing business context and goals")
-            
+                await progress_callback(1, "Context Analysis", "Starting business context analysis...")
+
+            if progress_callback:
+                await progress_callback(1, "Context Analysis", "Processing business goals and objectives...")
+
             context_task = self.context_agent.create_task(form_data)
             context_crew = Crew(
                 agents=[self.context_agent.agent],
                 tasks=[context_task],
                 verbose=True
             )
+
+            if progress_callback:
+                await progress_callback(1, "Context Analysis", "Analyzing industry and market context...")
+
             context_result = context_crew.kickoff()
             context_analysis = str(context_result)
+
+            if progress_callback:
+                await progress_callback(1, "Context Analysis", "Context analysis completed successfully")
+
             logger.info("Step 1 completed: Context Analysis")
             
             # Step 2: Persona Creation
             if progress_callback:
-                await progress_callback(2, "Persona Creation", "Creating detailed customer personas")
-            
+                await progress_callback(2, "Persona Creation", "Starting customer persona development...")
+
+            if progress_callback:
+                await progress_callback(2, "Persona Creation", "Analyzing target audience segments...")
+
             persona_task = self.persona_agent.create_task(form_data, context_analysis)
             persona_crew = Crew(
                 agents=[self.persona_agent.agent],
                 tasks=[persona_task],
                 verbose=True
             )
+
+            if progress_callback:
+                await progress_callback(2, "Persona Creation", "Creating detailed persona profiles...")
+
             persona_result = persona_crew.kickoff()
             personas = str(persona_result)
+
+            if progress_callback:
+                await progress_callback(2, "Persona Creation", "Customer personas completed successfully")
+
             logger.info("Step 2 completed: Persona Creation")
             
             # Step 3: Journey Mapping
             if progress_callback:
-                await progress_callback(3, "Journey Mapping", "Mapping customer journey phases")
-            
+                await progress_callback(3, "Journey Mapping", "Starting customer journey mapping...")
+
+            if progress_callback:
+                await progress_callback(3, "Journey Mapping", "Identifying key journey phases...")
+
             journey_task = self.journey_agent.create_task(form_data, context_analysis, personas)
             journey_crew = Crew(
                 agents=[self.journey_agent.agent],
                 tasks=[journey_task],
                 verbose=True
             )
+
+            if progress_callback:
+                await progress_callback(3, "Journey Mapping", "Creating detailed journey map...")
+
             journey_result = journey_crew.kickoff()
             journey_phases = str(journey_result)
+
+            if progress_callback:
+                await progress_callback(3, "Journey Mapping", "Journey mapping completed successfully")
+
             logger.info("Step 3 completed: Journey Mapping")
             
             # Step 4: Research Integration
             if progress_callback:
-                await progress_callback(4, "Research Integration", "Integrating uploaded research data")
-            
+                await progress_callback(4, "Research Integration", "Starting research data integration...")
+
+            if progress_callback:
+                await progress_callback(4, "Research Integration", "Processing uploaded research materials...")
+
             research_task = self.research_agent.create_task(form_data, context_analysis, personas, journey_phases)
             research_crew = Crew(
                 agents=[self.research_agent.agent],
                 tasks=[research_task],
                 verbose=True
             )
+
+            if progress_callback:
+                await progress_callback(4, "Research Integration", "Extracting key research insights...")
+
             research_result = research_crew.kickoff()
             research_insights = str(research_result)
+
+            if progress_callback:
+                await progress_callback(4, "Research Integration", "Research integration completed successfully")
+
             logger.info("Step 4 completed: Research Integration")
             
             # Step 5: Quote Generation
             if progress_callback:
-                await progress_callback(5, "Quote Generation", "Generating authentic customer quotes")
-            
+                await progress_callback(5, "Quote Generation", "Starting customer quote generation...")
+
+            if progress_callback:
+                await progress_callback(5, "Quote Generation", "Analyzing persona voice and tone...")
+
             quote_task = self.quote_agent.create_task(form_data, context_analysis, personas, journey_phases, research_insights)
             quote_crew = Crew(
                 agents=[self.quote_agent.agent],
                 tasks=[quote_task],
                 verbose=True
             )
+
+            if progress_callback:
+                await progress_callback(5, "Quote Generation", "Creating authentic customer quotes...")
+
             quote_result = quote_crew.kickoff()
             customer_quotes = str(quote_result)
+
+            if progress_callback:
+                await progress_callback(5, "Quote Generation", "Customer quotes generated successfully")
+
             logger.info("Step 5 completed: Quote Generation")
             
             # Step 6: Emotion Validation
             if progress_callback:
-                await progress_callback(6, "Emotion Validation", "Validating emotions and pain points")
-            
+                await progress_callback(6, "Emotion Validation", "Starting emotion and pain point validation...")
+
+            if progress_callback:
+                await progress_callback(6, "Emotion Validation", "Analyzing emotional journey aspects...")
+
             emotion_task = self.emotion_agent.create_task(form_data, context_analysis, personas, journey_phases, research_insights, customer_quotes)
             emotion_crew = Crew(
                 agents=[self.emotion_agent.agent],
                 tasks=[emotion_task],
                 verbose=True
             )
+
+            if progress_callback:
+                await progress_callback(6, "Emotion Validation", "Validating emotional authenticity...")
+
             emotion_result = emotion_crew.kickoff()
             emotion_validation = str(emotion_result)
+
+            if progress_callback:
+                await progress_callback(6, "Emotion Validation", "Emotion validation completed successfully")
+
             logger.info("Step 6 completed: Emotion Validation")
             
             # Step 7: Output Formatting
             if progress_callback:
-                await progress_callback(7, "Output Formatting", "Formatting professional outputs")
-            
+                await progress_callback(7, "Output Formatting", "Starting professional output formatting...")
+
+            if progress_callback:
+                await progress_callback(7, "Output Formatting", "Structuring journey map data...")
+
             formatting_task = self.formatting_agent.create_task(form_data, context_analysis, personas, journey_phases, research_insights, customer_quotes, emotion_validation)
             formatting_crew = Crew(
                 agents=[self.formatting_agent.agent],
                 tasks=[formatting_task],
                 verbose=True
             )
+
+            if progress_callback:
+                await progress_callback(7, "Output Formatting", "Applying professional formatting standards...")
+
             formatting_result = formatting_crew.kickoff()
             formatted_output = str(formatting_result)
+
+            if progress_callback:
+                await progress_callback(7, "Output Formatting", "Output formatting completed successfully")
+
             logger.info("Step 7 completed: Output Formatting")
             
             # Step 8: Quality Assurance
             if progress_callback:
-                await progress_callback(8, "Quality Assurance", "Final quality check and refinement")
-            
+                await progress_callback(8, "Quality Assurance", "Starting final quality check...")
+
+            if progress_callback:
+                await progress_callback(8, "Quality Assurance", "Performing comprehensive quality review...")
+
             qa_task = self.qa_agent.create_task(form_data, formatted_output)
             qa_crew = Crew(
                 agents=[self.qa_agent.agent],
                 tasks=[qa_task],
                 verbose=True
             )
+
+            if progress_callback:
+                await progress_callback(8, "Quality Assurance", "Refining and finalizing journey map...")
+
             qa_result = qa_crew.kickoff()
             final_output = str(qa_result)
+
+            if progress_callback:
+                await progress_callback(8, "Quality Assurance", "Quality assurance completed successfully")
+
             logger.info("Step 8 completed: Quality Assurance")
             
             # Parse the final output to extract structured data

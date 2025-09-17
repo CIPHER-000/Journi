@@ -284,13 +284,17 @@ async def get_journey_status(
             "created_at": job.created_at.isoformat(),
             "updated_at": job.updated_at.isoformat()
         }
-        
+
         if job.progress:
             response["progress"] = job.progress.dict()
-        
+
+        # Include progress history for detailed progress tracking
+        if hasattr(job, 'progress_history') and job.progress_history:
+            response["progress_history"] = job.progress_history[-10:]  # Return last 10 progress updates
+
         if job.result:
             response["result"] = job.result.dict()
-        
+
         if job.error_message:
             response["error"] = job.error_message
             response["error_message"] = job.error_message
@@ -481,6 +485,10 @@ async def poll_journey_status(
             }
             if hasattr(job.progress, 'estimatedTimeRemaining'):
                 response["progress"]["estimatedTimeRemaining"] = job.progress.estimatedTimeRemaining
+
+        # Include progress history for detailed progress tracking
+        if hasattr(job, 'progress_history') and job.progress_history:
+            response["progress_history"] = job.progress_history[-10:]  # Return last 10 progress updates
         
         # Include result only if completed
         if job.status.value == "completed" and job.result:
