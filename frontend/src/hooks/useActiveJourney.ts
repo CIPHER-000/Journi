@@ -28,12 +28,15 @@ export function useActiveJourney() {
 
       if (response.ok) {
         const data = await response.json()
+        console.log('🔍 Active journey check response:', data)
         // Check if any recent journeys are in processing/queued state
         const activeJourneys = data.usage?.recent_journeys?.filter(
           (j: any) => j.status === 'processing' || j.status === 'queued'
         )
+        console.log('🔍 Active journeys found:', activeJourneys)
         setHasActiveJourney(activeJourneys && activeJourneys.length > 0)
       } else {
+        console.log('❌ Failed to check active journeys:', response.status)
         setError('Failed to check journey status')
       }
     } catch (err) {

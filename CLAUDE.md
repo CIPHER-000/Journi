@@ -1,0 +1,1 @@
+- no we're not building for development, only and always for prod, so cancel all the dev servers running, any change you make should be pushed to the GitHub repo: https://github.com/CIPHER-000/Journi

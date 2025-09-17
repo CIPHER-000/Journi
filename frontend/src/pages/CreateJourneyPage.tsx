@@ -36,7 +36,12 @@ export default function CreateJourneyPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { token } = useAuth()
-  const { hasActiveJourney, refetch: refetchActiveJourney } = useActiveJourney()
+  const { hasActiveJourney, loading, refetch: refetchActiveJourney } = useActiveJourney()
+
+  // Debug active journey state
+  useEffect(() => {
+    console.log('🔍 CreateJourneyPage - hasActiveJourney:', hasActiveJourney, 'loading:', loading)
+  }, [hasActiveJourney, loading])
   const [formData, setFormData] = useState<FormData>({
     title: '',
     industry: '',
