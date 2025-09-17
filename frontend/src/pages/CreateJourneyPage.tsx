@@ -73,10 +73,6 @@ export default function CreateJourneyPage() {
   })
 
   // EFFECTS COME AFTER ALL HOOKS
-  // Debug active journey state
-  useEffect(() => {
-    console.log('🔍 CreateJourneyPage - hasActiveJourney:', hasActiveJourney, 'loading:', loading)
-  }, [hasActiveJourney, loading])
 
   // Reset state when coming from a retry
   useEffect(() => {
@@ -94,20 +90,17 @@ export default function CreateJourneyPage() {
       // Refetch active journey status
       refetchActiveJourney()
 
-      console.log('Form reset for retry attempt')
-    }
-  }, [location.state, navigate, location.pathname, refetchActiveJourney])
+      }
+  }, [location.state, navigate, location.pathname])
 
   // Handle job completion
   const handleJobComplete = () => {
-    console.log('Job completed, cleaning up...')
     setIsSubmitting(false)
     refetchActiveJourney() // Update active journey status
   }
 
   // Handle job cancellation
   const handleJobCancel = () => {
-    console.log('Job cancelled, resetting form...')
     setIsSubmitting(false)
     setJobStatus(null)
     setProgressMessages([])
@@ -160,16 +153,7 @@ export default function CreateJourneyPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('🚀 FORM SUBMITTED - Starting journey creation process')
-    
-    // Log form validation
-    console.log('Form validation:', {
-      hasIndustry: !!formData.industry,
-      hasBusinessGoals: !!formData.businessGoals,
-      hasPersonas: formData.targetPersonas.length > 0,
-      hasPhases: formData.journeyPhases.length > 0
-    })
-    
+
     // Validate minimum requirements
     if (!formData.industry) {
       alert('Please select an industry');
@@ -187,10 +171,7 @@ export default function CreateJourneyPage() {
       alert('Please select at least one journey phase');
       return;
     }
-    
-    console.log('✅ Form validation passed')
 
-    console.log('🚀 Setting isSubmitting to true')
     setIsSubmitting(true)
     setStartTime(new Date())
     setProgressMessages([])
@@ -222,17 +203,9 @@ export default function CreateJourneyPage() {
       if (token) {
         headers['Authorization'] = `Bearer ${token}`
       }
-      
+  
       const apiUrl = `${import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'}/api/journey/create`
-      console.log('Sending request to:', apiUrl)
-      console.log('Request headers:', JSON.stringify(headers, null, 2))
-      
-      // Log form data entries for debugging
-      console.log('Form data entries:')
-      for (const [key, value] of formDataToSend.entries()) {
-        console.log(`${key}:`, value)
-      }
-      
+
       let response;
       try {
         response = await fetch(apiUrl, {
@@ -242,16 +215,14 @@ export default function CreateJourneyPage() {
         });
         
         console.log('Response status:', response.status, response.statusText);
-        
+
         // Clone the response to read it as text first for debugging
         const responseClone = response.clone();
         let responseData;
         try {
           responseData = await response.json();
-          console.log('Response data (JSON):', responseData);
         } catch (e) {
           const responseText = await responseClone.text();
-          console.log('Response is not JSON, raw text:', responseText);
           // If we get here, the response might be HTML or an error page
           if (responseText.includes('<html') || responseText.includes('<!DOCTYPE')) {
             console.error('Received HTML response instead of JSON. This might be a server error page.');
@@ -262,12 +233,6 @@ export default function CreateJourneyPage() {
         
         // Handle non-OK responses
         if (!response.ok) {
-          console.error('API Error Response:', {
-            status: response.status,
-            statusText: response.statusText,
-            data: responseData
-          });
-          
           // Special handling for CORS errors
           if (response.status === 0) {
             throw new Error('Network error or CORS issue. Check if the backend is running and CORS is configured correctly.');
@@ -277,10 +242,9 @@ export default function CreateJourneyPage() {
           const errorMessage = responseData?.detail || responseData?.message || response.statusText || 'Unknown error';
           throw new Error(`HTTP ${response.status}: ${errorMessage}`);
         }
-        
+
         // If we get here, the response is OK and parsed as JSON
-        console.log('Journey creation successful, job data:', responseData)
-        
+
         // Handle response status codes
         if (response.status === 402) {
           // Payment required - show upgrade modal
@@ -304,15 +268,12 @@ export default function CreateJourneyPage() {
         // Success case - start tracking the job
         const job: JobStatus = responseData
 
-        console.log('✅ Setting job status:', job)
         setJobStatus(job)
-        console.log('📊 Job status set, isSubmitting:', isSubmitting)
 
         setProgressMessages(['🚀 Journey map creation started...', '🤖 Initializing AI agents...'])
 
         return
       } catch (error) {
-        console.error('Error in fetch request:', error);
         
         // Check for network errors
         if (error instanceof TypeError) {
@@ -334,8 +295,6 @@ export default function CreateJourneyPage() {
       }
       
     } catch (error: unknown) {
-      console.error('Error creating journey map:', error);
-      
       let errorMessage = 'Failed to create journey map';
       
       if (error instanceof Error) {
@@ -366,7 +325,6 @@ export default function CreateJourneyPage() {
         </div>
 
         {/* Progress Display */}
-        {console.log('🎨 Render check - isSubmitting:', isSubmitting, 'jobStatus:', !!jobStatus)}
         {isSubmitting && jobStatus ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
