@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Loader2, AlertTriangle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import JourneyProgress from '../components/JourneyProgress'
 import JourneyMapPage from './JourneyMapPage'
+import { useJobProgress, ProgressMessage } from '../hooks/useJobProgress'
 
 interface Journey {
   id: string
@@ -24,30 +25,71 @@ export default function JourneyDetailPage() {
   const [journey, setJourney] = useState<Journey | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isCompleting, setIsCompleting] = useState(false)
+  const [isPolling, setIsPolling] = useState(false)
+
+  const refreshJourney = useCallback(async () => {
+    if (!id || !token) return
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/journey/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setJourney(data)
+        setError(null)
+      } else if (response.status === 404) {
+        setError('Journey not found')
+      } else {
+        setError('Failed to load journey')
+      }
+    } catch (err) {
+      console.error('Error fetching journey:', err)
+      setError('Failed to load journey')
+    }
+  }, [id, token])
+
+  // Handle progress messages for journey polling
+  const handleProgressMessage = useCallback(async (message: ProgressMessage) => {
+    console.log('📩 Journey progress message:', message);
+
+    if (['completed', 'failed'].includes(message.status)) {
+      // Journey completed or failed, refresh the journey data
+      setIsPolling(false);
+      await refreshJourney();
+    }
+  }, [refreshJourney]);
+
+  // Setup polling for processing journeys
+  useEffect(() => {
+    if (!journey || journey.status === 'completed' || journey.status === 'failed') {
+      return;
+    }
+
+    if (journey.status === 'processing' || journey.status === 'queued') {
+      const jobId = journey.job_id || journey.id;
+      setIsPolling(true);
+
+      const cleanup = useJobProgress(jobId, handleProgressMessage);
+
+      return () => {
+        setIsPolling(false);
+        if (cleanup) cleanup();
+      };
+    }
+  }, [journey, handleProgressMessage]);
 
   useEffect(() => {
     const fetchJourney = async () => {
       if (!id || !token) return
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/journey/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          setJourney(data)
-        } else if (response.status === 404) {
-          setError('Journey not found')
-        } else {
-          setError('Failed to load journey')
-        }
-      } catch (err) {
-        console.error('Error fetching journey:', err)
-        setError('Failed to load journey')
+        await refreshJourney()
       } finally {
         setLoading(false)
       }
@@ -56,12 +98,16 @@ export default function JourneyDetailPage() {
     fetchJourney()
   }, [id, token])
 
-  if (loading) {
+  if (loading || isCompleting || isPolling) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading journey...</p>
+          <p className="text-gray-600">
+            {isCompleting ? 'Finalizing journey...' :
+             isPolling ? 'Monitoring journey progress...' :
+             'Loading journey...'}
+          </p>
         </div>
       </div>
     )
@@ -118,9 +164,11 @@ export default function JourneyDetailPage() {
         <JourneyProgress
           jobId={jobId}
           title={journey.title}
-          onComplete={() => {
+          onComplete={async () => {
             // Refresh journey data after completion
-            window.location.reload()
+            setIsCompleting(true)
+            await refreshJourney()
+            setIsCompleting(false)
           }}
         />
       </div>

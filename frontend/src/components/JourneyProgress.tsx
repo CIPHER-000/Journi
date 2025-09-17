@@ -86,12 +86,13 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [currentStepName, setCurrentStepName] = useState('');
   const [currentMessage, setCurrentMessage] = useState('');
+  const [isFinalizing, setIsFinalizing] = useState(false);
   
   // Prevent duplicate navigation
   const handledNavRef = useRef(false);
 
   // Handle progress messages from the hook
-  const handleProgressMessage = useCallback((message: ProgressMessage) => {
+  const handleProgressMessage = useCallback(async (message: ProgressMessage) => {
     console.log('📩 Progress message received:', message);
     
     setStatus(message.status);
@@ -148,19 +149,25 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
     // Handle completion - navigate only once
     if (['completed', 'failed'].includes(message.status) && !handledNavRef.current) {
       handledNavRef.current = true;
-      
+
       if (message.status === 'completed' && message.result?.id) {
-        console.log('🎉 Job completed, navigating to result:', message.result.id);
+        console.log('🎉 Job completed, waiting for backend finalization...');
+        setIsFinalizing(true);
+
+        // Call onComplete first to refresh journey data
         if (onComplete) {
-          onComplete();
+          await onComplete();
         }
+
+        // Add a delay to ensure backend has finalized the journey data
         setTimeout(() => {
+          console.log('✅ Navigating to journey result:', message.result.id);
           navigate(`/journey/${message.result.id}`, { replace: true });
-        }, 2000);
+        }, 3000); // Increased delay to 3 seconds for backend finalization
       } else if (message.status === 'failed') {
         // Ensure error message is set for failed jobs - check all possible locations
-        const backendError = message.error || 
-                           message.error_message || 
+        const backendError = message.error ||
+                           message.error_message ||
                            (message.progress?.message && message.progress.step_name === 'Failed' ? message.progress.message : null);
         setError(backendError || 'Journey map generation failed');
         console.log('❌ Job failed with error:', backendError);
@@ -270,6 +277,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
   const isCompleted = status === "completed";
   const isFailed = status === "failed";
   const isCancelled = status === "cancelled";
+  const isFinalizing = status === "completed" && isFinalizing;
   const percentage = stepProgress;
 
   return (
@@ -288,7 +296,8 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {isCompleted ? '🎉 Journey Map Complete!' : 
+                {isFinalizing ? '⏳ Finalizing Journey...' :
+                 isCompleted ? '🎉 Journey Map Complete!' :
                  isFailed ? '❌ Generation Failed' :
                  isCancelled ? '🛑 Process Cancelled' :
                  '🤖 CrewAI Agents Working'}
@@ -377,23 +386,24 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-gray-700">Overall Progress</span>
-            <span className="text-sm font-bold text-gray-900">{Math.round(percentage)}%</span>
+            <span className="text-sm font-bold text-gray-900">{isFinalizing ? '100%' : `${Math.round(percentage)}%`}</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
             <motion.div
               className={`h-3 rounded-full transition-all duration-500 ${
-                isCompleted ? 'bg-green-500' : 
+                isFinalizing ? 'bg-yellow-500' :
+                isCompleted ? 'bg-green-500' :
                 isFailed ? 'bg-red-500' :
                 isCancelled ? 'bg-gray-500' :
                 'bg-gradient-to-r from-blue-600 to-purple-600'
               }`}
               initial={{ width: 0 }}
-              animate={{ width: `${percentage}%` }}
+              animate={{ width: `${isFinalizing ? 100 : percentage}%` }}
             />
           </div>
           <div className="flex justify-between text-xs text-gray-500 mt-1">
             <span>
-              {currentStep ? `Step ${currentStep} of 8` : 'Initializing...'}
+              {isFinalizing ? 'Finalizing...' : currentStep ? `Step ${currentStep} of 8` : 'Initializing...'}
             </span>
             <span>
               {startTime && !isCompleted && !isFailed && !isCancelled ? formatTime(elapsedTime) : ''}
@@ -402,7 +412,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
         </div>
 
         {/* Current Agent Status */}
-        {status !== 'completed' && status !== 'failed' && status !== 'cancelled' && currentStep > 0 && (
+        {!isFinalizing && status !== 'completed' && status !== 'failed' && status !== 'cancelled' && currentStep > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
             <div className="flex items-center space-x-4">
               <div className="text-3xl">{currentStepInfo.icon}</div>
@@ -426,7 +436,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
         )}
 
         {/* Time Information */}
-        {status !== 'completed' && status !== 'failed' && status !== 'cancelled' && (
+        {!isFinalizing && status !== 'completed' && status !== 'failed' && status !== 'cancelled' && (
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-gray-50 rounded-lg p-4 text-center">
               <div className="text-lg font-bold text-gray-900">
@@ -458,7 +468,20 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
         )}
 
         {/* Completion Message */}
-        {status === 'completed' && (
+        {isFinalizing && (
+          <div className="text-center py-6">
+            <div className="text-6xl mb-4">⏳</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Finalizing Your Journey...</h3>
+            <p className="text-gray-600 mb-4">
+              Please wait while we finalize your AI-powered customer journey map.
+            </p>
+            <p className="text-sm text-gray-500">
+              This will only take a few moments...
+            </p>
+          </div>
+        )}
+
+        {status === 'completed' && !isFinalizing && (
           <div className="text-center py-6">
             <div className="text-6xl mb-4">🎉</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Journey Map Complete!</h3>
