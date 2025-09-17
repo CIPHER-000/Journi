@@ -1,3 +1,4 @@
+import asyncio
 from crewai import Crew
 from typing import Dict, Any, Callable, Optional
 import json
@@ -46,13 +47,10 @@ class CrewCoordinator:
         
         try:
             logger.info(f"Starting CrewAI workflow with form data: {form_data}")
-            
+
             # Step 1: Context Analysis
             if progress_callback:
                 await progress_callback(1, "Context Analysis", "Starting business context analysis...")
-
-            if progress_callback:
-                await progress_callback(1, "Context Analysis", "Processing business goals and objectives...")
 
             context_task = self.context_agent.create_task(form_data)
             context_crew = Crew(
@@ -62,10 +60,20 @@ class CrewCoordinator:
             )
 
             if progress_callback:
-                await progress_callback(1, "Context Analysis", "Analyzing industry and market context...")
+                await progress_callback(1, "Context Analysis", "Analyzing business goals and objectives...")
 
-            context_result = context_crew.kickoff()
-            context_analysis = str(context_result)
+            try:
+                context_result = await asyncio.to_thread(context_crew.kickoff)
+                context_analysis = str(context_result)
+
+                if progress_callback:
+                    await progress_callback(1, "Context Analysis", "Processing industry and market context...")
+
+            except Exception as e:
+                logger.error(f"Error in Context Analysis: {str(e)}")
+                if progress_callback:
+                    await progress_callback(1, "Context Analysis", f"Error: {str(e)}")
+                raise RuntimeError(f"Context Analysis failed: {str(e)}")
 
             if progress_callback:
                 await progress_callback(1, "Context Analysis", "Context analysis completed successfully")
@@ -76,9 +84,6 @@ class CrewCoordinator:
             if progress_callback:
                 await progress_callback(2, "Persona Creation", "Starting customer persona development...")
 
-            if progress_callback:
-                await progress_callback(2, "Persona Creation", "Analyzing target audience segments...")
-
             persona_task = self.persona_agent.create_task(form_data, context_analysis)
             persona_crew = Crew(
                 agents=[self.persona_agent.agent],
@@ -87,10 +92,20 @@ class CrewCoordinator:
             )
 
             if progress_callback:
-                await progress_callback(2, "Persona Creation", "Creating detailed persona profiles...")
+                await progress_callback(2, "Persona Creation", "Analyzing target audience segments...")
 
-            persona_result = persona_crew.kickoff()
-            personas = str(persona_result)
+            try:
+                persona_result = await asyncio.to_thread(persona_crew.kickoff)
+                personas = str(persona_result)
+
+                if progress_callback:
+                    await progress_callback(2, "Persona Creation", "Creating detailed persona profiles...")
+
+            except Exception as e:
+                logger.error(f"Error in Persona Creation: {str(e)}")
+                if progress_callback:
+                    await progress_callback(2, "Persona Creation", f"Error: {str(e)}")
+                raise RuntimeError(f"Persona Creation failed: {str(e)}")
 
             if progress_callback:
                 await progress_callback(2, "Persona Creation", "Customer personas completed successfully")
@@ -101,9 +116,6 @@ class CrewCoordinator:
             if progress_callback:
                 await progress_callback(3, "Journey Mapping", "Starting customer journey mapping...")
 
-            if progress_callback:
-                await progress_callback(3, "Journey Mapping", "Identifying key journey phases...")
-
             journey_task = self.journey_agent.create_task(form_data, context_analysis, personas)
             journey_crew = Crew(
                 agents=[self.journey_agent.agent],
@@ -112,10 +124,20 @@ class CrewCoordinator:
             )
 
             if progress_callback:
-                await progress_callback(3, "Journey Mapping", "Creating detailed journey map...")
+                await progress_callback(3, "Journey Mapping", "Identifying key journey phases...")
 
-            journey_result = journey_crew.kickoff()
-            journey_phases = str(journey_result)
+            try:
+                journey_result = await asyncio.to_thread(journey_crew.kickoff)
+                journey_phases = str(journey_result)
+
+                if progress_callback:
+                    await progress_callback(3, "Journey Mapping", "Creating detailed journey map...")
+
+            except Exception as e:
+                logger.error(f"Error in Journey Mapping: {str(e)}")
+                if progress_callback:
+                    await progress_callback(3, "Journey Mapping", f"Error: {str(e)}")
+                raise RuntimeError(f"Journey Mapping failed: {str(e)}")
 
             if progress_callback:
                 await progress_callback(3, "Journey Mapping", "Journey mapping completed successfully")
@@ -126,9 +148,6 @@ class CrewCoordinator:
             if progress_callback:
                 await progress_callback(4, "Research Integration", "Starting research data integration...")
 
-            if progress_callback:
-                await progress_callback(4, "Research Integration", "Processing uploaded research materials...")
-
             research_task = self.research_agent.create_task(form_data, context_analysis, personas, journey_phases)
             research_crew = Crew(
                 agents=[self.research_agent.agent],
@@ -137,10 +156,20 @@ class CrewCoordinator:
             )
 
             if progress_callback:
-                await progress_callback(4, "Research Integration", "Extracting key research insights...")
+                await progress_callback(4, "Research Integration", "Processing uploaded research materials...")
 
-            research_result = research_crew.kickoff()
-            research_insights = str(research_result)
+            try:
+                research_result = await asyncio.to_thread(research_crew.kickoff)
+                research_insights = str(research_result)
+
+                if progress_callback:
+                    await progress_callback(4, "Research Integration", "Extracting key research insights...")
+
+            except Exception as e:
+                logger.error(f"Error in Research Integration: {str(e)}")
+                if progress_callback:
+                    await progress_callback(4, "Research Integration", f"Error: {str(e)}")
+                raise RuntimeError(f"Research Integration failed: {str(e)}")
 
             if progress_callback:
                 await progress_callback(4, "Research Integration", "Research integration completed successfully")
@@ -151,9 +180,6 @@ class CrewCoordinator:
             if progress_callback:
                 await progress_callback(5, "Quote Generation", "Starting customer quote generation...")
 
-            if progress_callback:
-                await progress_callback(5, "Quote Generation", "Analyzing persona voice and tone...")
-
             quote_task = self.quote_agent.create_task(form_data, context_analysis, personas, journey_phases, research_insights)
             quote_crew = Crew(
                 agents=[self.quote_agent.agent],
@@ -162,10 +188,20 @@ class CrewCoordinator:
             )
 
             if progress_callback:
-                await progress_callback(5, "Quote Generation", "Creating authentic customer quotes...")
+                await progress_callback(5, "Quote Generation", "Analyzing persona voice and tone...")
 
-            quote_result = quote_crew.kickoff()
-            customer_quotes = str(quote_result)
+            try:
+                quote_result = await asyncio.to_thread(quote_crew.kickoff)
+                customer_quotes = str(quote_result)
+
+                if progress_callback:
+                    await progress_callback(5, "Quote Generation", "Creating authentic customer quotes...")
+
+            except Exception as e:
+                logger.error(f"Error in Quote Generation: {str(e)}")
+                if progress_callback:
+                    await progress_callback(5, "Quote Generation", f"Error: {str(e)}")
+                raise RuntimeError(f"Quote Generation failed: {str(e)}")
 
             if progress_callback:
                 await progress_callback(5, "Quote Generation", "Customer quotes generated successfully")
@@ -176,9 +212,6 @@ class CrewCoordinator:
             if progress_callback:
                 await progress_callback(6, "Emotion Validation", "Starting emotion and pain point validation...")
 
-            if progress_callback:
-                await progress_callback(6, "Emotion Validation", "Analyzing emotional journey aspects...")
-
             emotion_task = self.emotion_agent.create_task(form_data, context_analysis, personas, journey_phases, research_insights, customer_quotes)
             emotion_crew = Crew(
                 agents=[self.emotion_agent.agent],
@@ -187,10 +220,20 @@ class CrewCoordinator:
             )
 
             if progress_callback:
-                await progress_callback(6, "Emotion Validation", "Validating emotional authenticity...")
+                await progress_callback(6, "Emotion Validation", "Analyzing emotional journey aspects...")
 
-            emotion_result = emotion_crew.kickoff()
-            emotion_validation = str(emotion_result)
+            try:
+                emotion_result = await asyncio.to_thread(emotion_crew.kickoff)
+                emotion_validation = str(emotion_result)
+
+                if progress_callback:
+                    await progress_callback(6, "Emotion Validation", "Validating emotional authenticity...")
+
+            except Exception as e:
+                logger.error(f"Error in Emotion Validation: {str(e)}")
+                if progress_callback:
+                    await progress_callback(6, "Emotion Validation", f"Error: {str(e)}")
+                raise RuntimeError(f"Emotion Validation failed: {str(e)}")
 
             if progress_callback:
                 await progress_callback(6, "Emotion Validation", "Emotion validation completed successfully")
@@ -201,9 +244,6 @@ class CrewCoordinator:
             if progress_callback:
                 await progress_callback(7, "Output Formatting", "Starting professional output formatting...")
 
-            if progress_callback:
-                await progress_callback(7, "Output Formatting", "Structuring journey map data...")
-
             formatting_task = self.formatting_agent.create_task(form_data, context_analysis, personas, journey_phases, research_insights, customer_quotes, emotion_validation)
             formatting_crew = Crew(
                 agents=[self.formatting_agent.agent],
@@ -212,10 +252,20 @@ class CrewCoordinator:
             )
 
             if progress_callback:
-                await progress_callback(7, "Output Formatting", "Applying professional formatting standards...")
+                await progress_callback(7, "Output Formatting", "Structuring journey map data...")
 
-            formatting_result = formatting_crew.kickoff()
-            formatted_output = str(formatting_result)
+            try:
+                formatting_result = await asyncio.to_thread(formatting_crew.kickoff)
+                formatted_output = str(formatting_result)
+
+                if progress_callback:
+                    await progress_callback(7, "Output Formatting", "Applying professional formatting standards...")
+
+            except Exception as e:
+                logger.error(f"Error in Output Formatting: {str(e)}")
+                if progress_callback:
+                    await progress_callback(7, "Output Formatting", f"Error: {str(e)}")
+                raise RuntimeError(f"Output Formatting failed: {str(e)}")
 
             if progress_callback:
                 await progress_callback(7, "Output Formatting", "Output formatting completed successfully")
@@ -226,9 +276,6 @@ class CrewCoordinator:
             if progress_callback:
                 await progress_callback(8, "Quality Assurance", "Starting final quality check...")
 
-            if progress_callback:
-                await progress_callback(8, "Quality Assurance", "Performing comprehensive quality review...")
-
             qa_task = self.qa_agent.create_task(form_data, formatted_output)
             qa_crew = Crew(
                 agents=[self.qa_agent.agent],
@@ -237,10 +284,20 @@ class CrewCoordinator:
             )
 
             if progress_callback:
-                await progress_callback(8, "Quality Assurance", "Refining and finalizing journey map...")
+                await progress_callback(8, "Quality Assurance", "Performing comprehensive quality review...")
 
-            qa_result = qa_crew.kickoff()
-            final_output = str(qa_result)
+            try:
+                qa_result = await asyncio.to_thread(qa_crew.kickoff)
+                final_output = str(qa_result)
+
+                if progress_callback:
+                    await progress_callback(8, "Quality Assurance", "Refining and finalizing journey map...")
+
+            except Exception as e:
+                logger.error(f"Error in Quality Assurance: {str(e)}")
+                if progress_callback:
+                    await progress_callback(8, "Quality Assurance", f"Error: {str(e)}")
+                raise RuntimeError(f"Quality Assurance failed: {str(e)}")
 
             if progress_callback:
                 await progress_callback(8, "Quality Assurance", "Quality assurance completed successfully")
