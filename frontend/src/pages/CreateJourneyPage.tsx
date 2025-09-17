@@ -369,10 +369,19 @@ export default function CreateJourneyPage() {
           <p className="text-xl text-gray-600">Tell us about your business and we'll generate a comprehensive customer journey map</p>
         </div>
 
-        {/* Progress Display */}
+        {/* Progress Display - only show when actively submitting or completed */}
         {(() => {
-          console.log('CreateJourneyPage: Checking JourneyProgress display condition:', { isSubmitting, jobStatus, jobStatusId: jobStatus?.id })
-          return isSubmitting && jobStatus
+          console.log('CreateJourneyPage: Checking JourneyProgress display condition:', {
+            isSubmitting,
+            jobStatus,
+            jobStatusId: jobStatus?.id,
+            jobStatusResult: jobStatus?.result,
+            status: jobStatus?.status
+          })
+          // Keep progress visible if: actively submitting OR job exists and is not failed/cancelled
+          const shouldShowProgress = isSubmitting || (jobStatus && !['failed', 'cancelled'].includes(jobStatus.status))
+          console.log('CreateJourneyPage: Should show progress:', shouldShowProgress)
+          return shouldShowProgress
         })() ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
