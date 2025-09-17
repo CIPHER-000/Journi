@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Map, Upload, X, FileText, Users, Target, Lightbulb, Loader2, ArrowLeft } from 'lucide-react'
+import { Map, Upload, X, FileText, Users, Target, Lightbulb, Loader2, ArrowLeft, AlertCircle } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 import UpgradeModal from '../components/UpgradeModal'
 import JourneyProgress from '../components/JourneyProgress'
+import { useAuth } from '../context/AuthContext'
+import { useActiveJourney } from '../hooks/useActiveJourney'
 
 interface FormData {
   title: string
@@ -33,6 +35,8 @@ interface JobStatus {
 export default function CreateJourneyPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { token } = useAuth()
+  const { hasActiveJourney, refetch: refetchActiveJourney } = useActiveJourney()
   const [formData, setFormData] = useState<FormData>({
     title: '',
     industry: '',
@@ -55,6 +59,7 @@ export default function CreateJourneyPage() {
     limit: number
   } | null>(null)
 
+  
   // Reset state when coming from a retry
   useEffect(() => {
     if (location.state?.retry) {
@@ -64,18 +69,22 @@ export default function CreateJourneyPage() {
       setProgressMessages([])
       setStartTime(null)
       setEstimatedCompletion(null)
-      
+
       // Clear the navigation state to prevent re-triggering
       navigate(location.pathname, { replace: true, state: {} })
-      
+
+      // Refetch active journey status
+      refetchActiveJourney()
+
       console.log('Form reset for retry attempt')
     }
-  }, [location.state, navigate, location.pathname])
+  }, [location.state, navigate, location.pathname, refetchActiveJourney])
 
   // Handle job completion
   const handleJobComplete = () => {
     console.log('Job completed, cleaning up...')
     setIsSubmitting(false)
+    refetchActiveJourney() // Update active journey status
   }
 
   // Handle job cancellation
@@ -86,6 +95,7 @@ export default function CreateJourneyPage() {
     setProgressMessages([])
     setStartTime(null)
     setEstimatedCompletion(null)
+    refetchActiveJourney() // Update active journey status
   }
 
   const industryOptions = [
@@ -276,6 +286,14 @@ export default function CreateJourneyPage() {
           });
           setShowUpgradeModal(true);
           setIsSubmitting(false);
+          return;
+        }
+
+        if (response.status === 429) {
+          // Too many requests - user has active journey
+          alert(responseData.detail || 'You already have a journey in progress. Please wait for it to complete before starting a new one.');
+          setIsSubmitting(false);
+          refetchActiveJourney(); // Update the active journey state
           return;
         }
         
@@ -553,20 +571,43 @@ export default function CreateJourneyPage() {
               />
             </div>
 
+            {/* Active Journey Warning */}
+            {hasActiveJourney && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start">
+                  <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-yellow-800 font-medium mb-1">Active Journey in Progress</h3>
+                    <p className="text-yellow-700 text-sm">
+                      You already have a journey being generated. Please wait for it to complete or cancel it before starting a new one.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/journeys')}
+                      className="mt-2 text-yellow-800 hover:text-yellow-900 text-sm font-medium underline"
+                    >
+                      View My Journeys
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Submit Button */}
             <div className="flex justify-center pt-6">
               <motion.button
                 type="submit"
-                disabled={isSubmitting}
-                whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
-                whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
+                disabled={isSubmitting || hasActiveJourney}
+                whileHover={{ scale: (isSubmitting || hasActiveJourney) ? 1 : 1.05 }}
+                whileTap={{ scale: (isSubmitting || hasActiveJourney) ? 1 : 0.95 }}
                 className={`px-8 py-4 rounded-lg text-lg font-medium transition-colors ${
-                  isSubmitting
+                  isSubmitting || hasActiveJourney
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700'
                 } text-white`}
               >
-                {isSubmitting ? 'Creating Journey Map...' : 'Generate Journey Map'}
+                {hasActiveJourney ? 'Journey Already in Progress' :
+                 isSubmitting ? 'Creating Journey Map...' : 'Generate Journey Map'}
               </motion.button>
             </div>
           </form>

@@ -6,6 +6,7 @@ import json
 import openai
 import traceback
 from litellm import RateLimitError, AuthenticationError
+from fastapi import HTTPException
 from ..models.journey import Job, JobStatus, JobProgress, JourneyFormData, JourneyMap, Persona, JourneyPhase
 from ..models.auth import UserProfile
 from ..agents.crew_coordinator import CrewCoordinator
@@ -192,6 +193,14 @@ class JobManager:
             logger.info(f"Creating journey map for user {user.id}, industry: {form_data.get('industry')}")
             journey_form_data = JourneyFormData(**form_data)
 
+            # Check if user already has a running journey
+            existing_running_job = await self._check_user_running_journey(user.id)
+            if existing_running_job:
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"You already have a journey in progress. Please wait for it to complete or cancel it before starting a new one."
+                )
+
             # Generate job_id FIRST
             job_id = str(uuid.uuid4())
 
@@ -219,6 +228,8 @@ class JobManager:
             # Start workflow
             asyncio.create_task(self._run_agent_workflow(job_id, user))
             return job
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"Error creating journey: {str(e)}")
             raise e
@@ -661,6 +672,28 @@ class JobManager:
         # CRITICAL: Ensure job object always has error message set for API responses
         if error_message and job_id in self.jobs:
             self.jobs[job_id].error_message = error_message
+
+    async def _check_user_running_journey(self, user_id: str) -> Optional[Job]:
+        """Check if user already has a running journey"""
+        # Check in-memory jobs first
+        for job_id, job in self.jobs.items():
+            if job.user_id == user_id and job.status in [JobStatus.QUEUED, JobStatus.PROCESSING]:
+                return job
+
+        # Check database for any running journeys
+        try:
+            in_progress_journeys = await usage_service.get_in_progress_journeys()
+            for journey in in_progress_journeys:
+                if journey.user_id == user_id:
+                    # Try to load this job into memory
+                    loaded_job = await self.load_job_state(journey.job_id)
+                    if loaded_job and loaded_job.status in [JobStatus.QUEUED, JobStatus.PROCESSING]:
+                        self.jobs[journey.job_id] = loaded_job
+                        return loaded_job
+        except Exception as e:
+            logger.error(f"Failed to check database for running journeys: {e}")
+
+        return None
 
     def _convert_to_journey_map(self, journey_map_data: Dict[str, Any]) -> JourneyMap:
         personas = [Persona(**p) for p in journey_map_data.get('personas', [])]

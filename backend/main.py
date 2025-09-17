@@ -263,6 +263,8 @@ async def create_journey(
             "message": "Journey creation started"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Journey creation error: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
@@ -380,17 +382,58 @@ async def get_journey_info(
         raise HTTPException(status_code=503, detail="Job manager not initialized")
 
     try:
+        # First try to get from job manager (handles both memory and database lookup)
         job = await job_manager.get_job_async(journey_id, current_user.id)
         if not job:
-            raise HTTPException(status_code=404, detail="Journey not found")
+            # Fallback: try to find journey in database directly by job_id or id
+            try:
+                user_journeys = await usage_service.get_user_journeys_by_job_id(journey_id)
+                if not user_journeys:
+                    # Also try by journey ID (for backwards compatibility)
+                    user_journeys_list = await usage_service.get_user_journeys(current_user.id, limit=100)
+                    user_journeys = [j for j in user_journeys_list if j.id == journey_id]
+
+                if user_journeys and user_journeys[0].user_id == current_user.id:
+                    # Found journey in database, load it
+                    loaded_job = await job_manager.load_job_state(journey_id)
+                    if loaded_job:
+                        job = loaded_job
+                    else:
+                        # Create minimal job from database record
+                        db_journey = user_journeys[0]
+                        job = Job(
+                            id=db_journey.job_id or db_journey.id,
+                            status=JobStatus(db_journey.status),
+                            user_id=db_journey.user_id,
+                            created_at=db_journey.created_at,
+                            form_data=db_journey.form_data or JourneyFormData(
+                                industry="",
+                                businessGoals="",
+                                targetPersonas=[],
+                                journeyPhases=[]
+                            )
+                        )
+                        if db_journey.result_data:
+                            try:
+                                job.result = job_manager._convert_to_journey_map(db_journey.result_data)
+                            except Exception as e:
+                                logger.warning(f"Failed to convert result data for journey {journey_id}: {e}")
+                        if db_journey.error_message:
+                            job.error_message = db_journey.error_message
+
+                if not job:
+                    raise HTTPException(status_code=404, detail="Journey not found")
+            except Exception as db_error:
+                logger.error(f"Database lookup failed for journey {journey_id}: {db_error}")
+                raise HTTPException(status_code=404, detail="Journey not found")
 
         # Return basic journey info that works for both running and completed journeys
         response = {
             "id": job.id,
-            "title": getattr(job, 'title', f"Journey {job.id}"),
+            "title": getattr(job.form_data, 'title', None) or getattr(job, 'title', f"Journey {job.id}"),
             "status": job.status.value,
             "job_id": job.id,  # For compatibility with frontend
-            "industry": getattr(job, 'industry', None),
+            "industry": getattr(job.form_data, 'industry', None) or getattr(job, 'industry', None),
             "created_at": job.created_at.isoformat(),
             "updated_at": job.updated_at.isoformat()
         }
