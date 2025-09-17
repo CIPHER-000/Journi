@@ -16,7 +16,9 @@
       "Bash(node:*)",
       "Bash(timeout:*)",
       "WebFetch(domain:api.anthropic.com)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(npx tsc:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

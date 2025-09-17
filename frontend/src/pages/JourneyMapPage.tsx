@@ -605,47 +605,6 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
         </div>
       </motion.div>
 
-      {/* Journey Map */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Customer Journey Map</h2>
-        <div className="bg-gray-50 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto overflow-y-hidden">
-            <div className="min-w-max">
-              {/* Phase Headers */}
-              <div className="flex bg-gradient-to-r from-blue-50 to-purple-50 border-b-2 border-gray-200">
-                {finalDisplayData.phases.map((phase, index) => (
-                  <div key={phase.id} className="flex-shrink-0 w-80 sm:w-96 p-4 sm:p-6 text-center border-r border-gray-200 last:border-r-0">
-                    <div className="flex items-center justify-center gap-3 mb-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center font-bold">
-                        {index + 1}
-                      </div>
-                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{phase.name}</h3>
-                    </div>
-                    <div className="flex justify-center">
-                      {getEmotionIcon(phase.emotions)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Journey Details */}
-              <div className="flex bg-white">
-                {finalDisplayData.phases.map((phase) => (
-                  <div key={phase.id} className={`flex-shrink-0 w-80 sm:w-96 p-4 sm:p-6 border-r border-gray-200 last:border-r-0`}>
-                    <JourneyPhaseDetails phase={phase} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile-friendly scroll indicator */}
-        <div className="mt-4 text-center text-sm text-gray-500">
-          ← Scroll horizontally to view all phases →
-        </div>
-      </div>
-
       {/* Journey Map Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -760,10 +719,9 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
               </ul>
             </div>
           </div>
-          </div>
-      </div>
-      </div>
-      </div>
+        </div>
+      </motion.div>
+    </div>
     </div>
   )
 }
