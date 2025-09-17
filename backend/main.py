@@ -102,8 +102,15 @@ async def startup_event():
         # Initialize job manager
         job_manager = JobManager()
         logger.info("Job manager initialized successfully")
-        
-        # Add any other initialization code here
+
+        # Recover any in-progress journeys from database
+        logger.info("Checking for in-progress journeys to recover...")
+        recovered_count = await job_manager.recover_in_progress_journeys()
+        if recovered_count > 0:
+            logger.info(f"Recovered {recovered_count} in-progress journeys from database")
+        else:
+            logger.info("No in-progress journeys found to recover")
+
         logger.info("Application startup complete")
     except Exception as e:
         logger.error(f"Error during startup: {str(e)}")
@@ -269,15 +276,15 @@ async def get_journey_status(
 ):
     """Get the current status of a journey creation job"""
     global job_manager
-    
+
     if not job_manager:
         raise HTTPException(status_code=503, detail="Job manager not initialized")
-    
+
     try:
-        job = job_manager.get_job(job_id, current_user.id)
+        job = await job_manager.get_job_async(job_id, current_user.id)
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
-        
+
         response = {
             "id": job.id,
             "status": job.status.value,
@@ -298,9 +305,9 @@ async def get_journey_status(
         if job.error_message:
             response["error"] = job.error_message
             response["error_message"] = job.error_message
-        
+
         return response
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -340,20 +347,20 @@ async def get_journey(
 ):
     """Get a completed journey map"""
     global job_manager
-    
+
     if not job_manager:
         raise HTTPException(status_code=503, detail="Job manager not initialized")
-    
+
     try:
-        job = job_manager.get_job(journey_id, current_user.id)
+        job = await job_manager.get_job_async(journey_id, current_user.id)
         if not job:
             raise HTTPException(status_code=404, detail="Journey not found")
-        
+
         if job.status != JobStatus.COMPLETED or not job.result:
             raise HTTPException(status_code=400, detail="Journey not completed yet")
-        
+
         return job.result.dict()
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -374,7 +381,7 @@ async def export_journey(
         raise HTTPException(status_code=503, detail="Job manager not initialized")
     
     try:
-        job = job_manager.get_job(journey_id, current_user.id)
+        job = await job_manager.get_job_async(journey_id, current_user.id)
         if not job or job.status != JobStatus.COMPLETED or not job.result:
             raise HTTPException(status_code=404, detail="Completed journey not found")
         
@@ -463,7 +470,7 @@ async def poll_journey_status(
         raise HTTPException(status_code=503, detail="Job manager not initialized")
     
     try:
-        job = job_manager.get_job(job_id, current_user.id)
+        job = await job_manager.get_job_async(job_id, current_user.id)
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         

@@ -269,6 +269,35 @@ class UsageService:
             logger.error(f"Failed to get user journeys: {str(e)}")
             return []
 
+    async def get_user_journeys_by_job_id(self, job_id: str) -> List[UserJourney]:
+        """Get journeys by job_id"""
+        if not self._is_available():
+            return []
+
+        try:
+            response = self.supabase.table("user_journeys").select("*").eq("job_id", job_id).execute()
+            return [UserJourney(**journey) for journey in response.data] if response.data else []
+
+        except Exception as e:
+            logger.error(f"Failed to get journeys by job_id {job_id}: {str(e)}")
+            return []
+
+    async def get_in_progress_journeys(self) -> List[UserJourney]:
+        """Get all journeys that are currently in progress"""
+        if not self._is_available():
+            return []
+
+        try:
+            # Get journeys that are in processing state and created recently (last 24 hours)
+            cutoff_time = datetime.now().timestamp() - 86400  # 24 hours ago
+
+            response = self.supabase.table("user_journeys").select("*").eq("status", "processing").gte("created_at", datetime.fromtimestamp(cutoff_time).isoformat()).execute()
+            return [UserJourney(**journey) for journey in response.data] if response.data else []
+
+        except Exception as e:
+            logger.error(f"Failed to get in-progress journeys: {str(e)}")
+            return []
+
     async def get_usage_stats(self, user_id: str) -> Dict[str, Any]:
         """Get user's usage statistics"""
         if not self._is_available():

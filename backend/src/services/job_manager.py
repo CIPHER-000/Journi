@@ -11,6 +11,7 @@ from ..models.auth import UserProfile
 from ..agents.crew_coordinator import CrewCoordinator
 from ..services.usage_service import usage_service
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +26,167 @@ class JobManager:
         self.progress_callbacks: Dict[str, List[Callable]] = {}
         self._cleanup_tasks: Dict[str, asyncio.Task] = {}
         self._workflow_tasks: Dict[str, asyncio.Task] = {}
+        self._last_progress_save: Dict[str, float] = {}  # Track last progress save time per job
     
     def safe_json(self, data):
         """Convert data to JSON-safe format, handling datetime objects"""
         import json
         return json.dumps(data, default=str)
-        
+
+    async def save_job_state(self, job_id: str, force: bool = False) -> bool:
+        """Save job state to database with throttling"""
+        if job_id not in self.jobs:
+            logger.warning(f"Cannot save job {job_id}: not found in memory")
+            return False
+
+        job = self.jobs[job_id]
+        current_time = time.time()
+
+        # Throttle saves to avoid too frequent database updates (max every 10 seconds)
+        if not force and job_id in self._last_progress_save:
+            if current_time - self._last_progress_save[job_id] < 10:
+                logger.debug(f"Skipping save for job {job_id} - throttled (last save {current_time - self._last_progress_save[job_id]:.1f}s ago)")
+                return True  # Return True to avoid triggering error handling
+
+        try:
+            # Prepare progress data
+            progress_data = None
+            if job.progress:
+                progress_data = {
+                    "current_step": job.progress.current_step,
+                    "total_steps": job.progress.total_steps,
+                    "step_name": job.progress.step_name,
+                    "message": job.progress.message,
+                    "percentage": job.progress.percentage,
+                    "updated_at": datetime.now().isoformat()
+                }
+
+            # Add progress history if available
+            if hasattr(job, 'progress_history') and job.progress_history:
+                if progress_data is None:
+                    progress_data = {}
+                progress_data["progress_history"] = job.progress_history[-10:]  # Save last 10 progress updates
+
+            # Update database
+            await usage_service.update_journey_status(
+                journey_id=job_id,
+                status=job.status.value,
+                progress_data=progress_data
+            )
+
+            self._last_progress_save[job_id] = current_time
+            logger.debug(f"Saved job state for {job_id} (status: {job.status.value})")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to save job state for {job_id}: {str(e)}")
+            return False
+
+    async def load_job_state(self, job_id: str) -> Optional[Job]:
+        """Load job state from database"""
+        try:
+            user_journeys = await usage_service.get_user_journeys_by_job_id(job_id)
+            if not user_journeys:
+                logger.warning(f"No journey found for job_id {job_id}")
+                return None
+
+            user_journey = user_journeys[0]
+
+            # Create job object from database record
+            form_data = user_journey.form_data
+            if form_data:
+                # Convert dict back to JourneyFormData
+                journey_form_data = JourneyFormData(**form_data)
+            else:
+                logger.error(f"No form data found for job {job_id}")
+                return None
+
+            job = Job(
+                id=job_id,
+                status=JobStatus(user_journey.status),
+                user_id=user_journey.user_id,
+                created_at=user_journey.created_at,
+                form_data=journey_form_data
+            )
+
+            # Load progress data if available
+            if user_journey.progress_data:
+                progress_data = user_journey.progress_data
+                if progress_data.get("current_step") is not None:
+                    job.progress = JobProgress(
+                        current_step=progress_data["current_step"],
+                        total_steps=progress_data.get("total_steps", 8),
+                        step_name=progress_data.get("step_name", "Unknown"),
+                        message=progress_data.get("message", ""),
+                        percentage=progress_data.get("percentage", 0)
+                    )
+
+                # Load progress history
+                if progress_data.get("progress_history"):
+                    job.progress_history = progress_data["progress_history"]
+
+            # Load error message if available
+            if user_journey.error_message:
+                job.error_message = user_journey.error_message
+
+            # Load result if available
+            if user_journey.result_data:
+                try:
+                    journey_map = self._convert_to_journey_map(user_journey.result_data)
+                    job.result = journey_map
+                except Exception as e:
+                    logger.error(f"Failed to convert result data for job {job_id}: {e}")
+
+            return job
+
+        except Exception as e:
+            logger.error(f"Failed to load job state for {job_id}: {str(e)}")
+            return None
+
+    async def recover_in_progress_journeys(self) -> int:
+        """Recover journeys that were in progress when the backend restarted"""
+        try:
+            # Get all journeys that were in processing state
+            in_progress_journeys = await usage_service.get_in_progress_journeys()
+            recovered_count = 0
+
+            for user_journey in in_progress_journeys:
+                job_id = user_journey.job_id
+                if not job_id:
+                    logger.warning(f"Found in-progress journey without job_id: {user_journey.id}")
+                    continue
+
+                logger.info(f"Recovering journey {job_id} for user {user_journey.user_id}")
+
+                # Load job state from database
+                job = await self.load_job_state(job_id)
+                if job:
+                    # Add to in-memory jobs
+                    self.jobs[job_id] = job
+
+                    # Get user profile (we need this to resume workflow)
+                    # For now, we'll mark it as failed and let the user restart
+                    # This prevents orphaned workflows from running without proper user context
+                    await usage_service.update_journey_status(
+                        journey_id=job_id,
+                        status="failed",
+                        progress_data={
+                            "error": "Backend restarted during processing",
+                            "recovery_attempted": True,
+                            "recovered_at": datetime.now().isoformat()
+                        }
+                    )
+
+                    recovered_count += 1
+                    logger.info(f"Marked journey {job_id} for recovery")
+
+            logger.info(f"Recovered {recovered_count} in-progress journeys")
+            return recovered_count
+
+        except Exception as e:
+            logger.error(f"Failed to recover in-progress journeys: {str(e)}")
+            return 0
+
     async def create_job(self, form_data: Dict[str, Any], user: UserProfile) -> Job:
         try:
             logger.info(f"Creating journey map for user {user.id}, industry: {form_data.get('industry')}")
@@ -69,10 +225,53 @@ class JobManager:
 
     
     def get_job(self, job_id: str, user_id: Optional[str] = None) -> Optional[Job]:
+        # First try to get from memory
         job = self.jobs.get(job_id)
-        if job and user_id and job.user_id != user_id:
+        if job:
+            if user_id and job.user_id != user_id:
+                return None
+            return job
+
+        # If not in memory, try to load from database
+        logger.debug(f"Job {job_id} not found in memory, attempting to load from database")
+        try:
+            # Note: This is a synchronous method, so we can't await directly
+            # For now, we'll return None and let the API handle database loading
+            # This is a limitation we can address later if needed
+            logger.debug(f"Database loading not available in synchronous get_job for {job_id}")
             return None
-        return job
+        except Exception as e:
+            logger.error(f"Failed to load job {job_id} from database: {e}")
+            return None
+
+    async def get_job_async(self, job_id: str, user_id: Optional[str] = None) -> Optional[Job]:
+        # First try to get from memory
+        job = self.jobs.get(job_id)
+        if job:
+            if user_id and job.user_id != user_id:
+                return None
+            return job
+
+        # If not in memory, try to load from database
+        logger.debug(f"Job {job_id} not found in memory, attempting to load from database")
+        try:
+            loaded_job = await self.load_job_state(job_id)
+            if loaded_job:
+                # Add to memory for future access
+                self.jobs[job_id] = loaded_job
+                logger.info(f"Loaded job {job_id} from database")
+
+                # Check user permissions
+                if user_id and loaded_job.user_id != user_id:
+                    return None
+
+                return loaded_job
+            else:
+                logger.debug(f"Job {job_id} not found in database")
+                return None
+        except Exception as e:
+            logger.error(f"Failed to load job {job_id} from database: {e}")
+            return None
     
     async def cancel_job(self, job_id: str, user_id: Optional[str] = None) -> bool:
         """Cancel a running job"""
@@ -156,11 +355,11 @@ class JobManager:
     async def _update_progress(self, job_id: str, step: int, step_name: str, message: str):
         """Update job progress and send WebSocket-safe updates."""
         logger.info(f"Updating progress for job {job_id}: Step {step} - {step_name}: {message}")
-        
+
         if job_id not in self.jobs:
             logger.error(f"Job {job_id} not found")
             return
-            
+
         job = self.jobs[job_id]
         percentage = min(100, max(0, (step / 8) * 100))
         progress = JobProgress(
@@ -172,6 +371,13 @@ class JobManager:
         )
         job.progress = progress
         job.updated_at = datetime.now()
+
+        # Save progress to database (with throttling)
+        try:
+            await self.save_job_state(job_id)
+        except Exception as e:
+            logger.error(f"Failed to save progress to database for job {job_id}: {e}")
+            # Don't let database errors stop the workflow
         
         update_msg = {
             "job_id": job_id,
