@@ -4,8 +4,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   ArrowLeft, Download, Share2, Users, Heart, Frown,
-  Smile, Meh, AlertCircle, CheckCircle, Star, Quote, FileText, Loader2
+  Smile, Meh, AlertCircle, CheckCircle, Star, Quote, FileText, Loader2,
+  Calendar, Building, User, MapPin, Target, Lightbulb, TrendingUp,
+  Award, Send, Eye, BarChart3, Activity, Clock
 } from 'lucide-react'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 interface Persona {
   id: string
@@ -250,45 +254,82 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
   }
 
   const handleExport = async (format: 'pdf' | 'png' | 'pptx' | 'json') => {
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'
-      const response = await fetch(`${backendUrl}/api/journey/${id}/export/${format}`)
-      
-      if (response.ok) {
-        if (format === 'json') {
-          const data = await response.json()
-          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-          const url = window.URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = `journey-map-${id}.json`
-          document.body.appendChild(a)
-          a.click()
-          window.URL.revokeObjectURL(url)
-          document.body.removeChild(a)
-        } else {
-          const blob = await response.blob()
-          const url = window.URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = `journey-map-${id}.${format}`
-          document.body.appendChild(a)
-          a.click()
-          window.URL.revokeObjectURL(url)
-          document.body.removeChild(a)
-        }
-        alert(`Journey map exported as ${format.toUpperCase()} successfully!`)
-      } else {
-        const errorText = await response.text()
-        console.error('Export failed:', errorText)
-        alert(`Export failed: ${response.status} ${response.statusText}`)
-      }
-    } catch (error) {
-      console.error('Export error:', error)
-      alert(`Export failed: ${error.message}`)
+    switch (format) {
+      case 'pdf':
+        await exportAsPDF()
+        break
+      case 'json':
+        downloadJSONReport(finalDisplayData, finalDisplayData.title)
+        break
+      default:
+        alert(`${format.toUpperCase()} export coming soon!`)
     }
-    
     setShowExportMenu(false)
+  }
+
+  const exportAsPDF = async () => {
+    try {
+      const element = document.getElementById('journey-report')
+      if (!element) return
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      })
+
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const imgWidth = 210
+      const pageHeight = 295
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      let heightLeft = imgHeight
+
+      let position = 0
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+
+      pdf.save(`${finalDisplayData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_journey_map.pdf`)
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      alert('Failed to generate PDF. Please try again.')
+    }
+  }
+
+  const downloadJSONReport = (data: any, title: string) => {
+    const reportData = {
+      title: title,
+      generatedAt: new Date().toISOString(),
+      summary: {
+        totalPersonas: data.personas?.length || 0,
+        totalPhases: data.phases?.length || 0,
+        industry: data.industry,
+        createdAt: data.createdAt
+      },
+      personas: data.personas || [],
+      phases: data.phases || []
+    }
+
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], {
+      type: 'application/json'
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_journey_map.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   const handleShare = async () => {
@@ -313,18 +354,18 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
     }
   }
 
-  // Use real data if available, otherwise fall back to mock data
-  const rawData = journeyMap || mockJourneyMap
+  // Use real data if available, don't fall back to mock data
+  const rawData = journeyMap
 
   // Ensure data has the expected structure
-  const finalDisplayData = {
+  const finalDisplayData = rawData ? {
     ...rawData,
     personas: rawData.personas || [],
     phases: rawData.phases || [],
     title: rawData.title || 'Untitled Journey',
     industry: rawData.industry || 'Unknown',
     createdAt: rawData.createdAt || new Date().toISOString()
-  }
+  } : null
 
   console.log('🗺️ JourneyMapPage: Final display data:', finalDisplayData)
 
@@ -339,101 +380,230 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
     )
   }
 
+  if (!finalDisplayData) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Journey Not Found</h2>
+          <p className="text-gray-600 mb-4">Unable to load journey data. The journey may not have completed successfully or the data is unavailable.</p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{finalDisplayData.title}</h1>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <span className="flex items-center gap-1">
-                <FileText className="w-4 h-4" />
-                {finalDisplayData.industry}
-              </span>
-              <span className="flex items-center gap-1">
-                <Users className="w-4 h-4" />
-                {finalDisplayData.personas.length} Personas
-              </span>
-              <span className="flex items-center gap-1">
-                <CheckCircle className="w-4 h-4" />
-                {finalDisplayData.phases.length} Phases
-              </span>
-              <span>Created {new Date(finalDisplayData.createdAt).toLocaleDateString()}</span>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleShare}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors"
-            >
-              <Share2 className="w-4 h-4" />
-              Share
-            </motion.button>
-            <div className="relative">
+    <div id="journey-report" className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Header */}
+      <div className="bg-white/80 backdrop-blur-md border-b border-white/20 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setShowExportMenu(!showExportMenu)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-white/50 rounded-lg transition-all"
               >
-                <Download className="w-4 h-4" />
-                Export
+                <ArrowLeft className="w-4 h-4" />
+                Back
               </motion.button>
-              {showExportMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                  <div className="py-2">
-                    <button
-                      onClick={() => handleExport('pdf')}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
-                    >
-                      <FileText className="w-4 h-4" />
-                      Export as PDF
-                    </button>
-                    <button
-                      onClick={() => handleExport('png')}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
-                    >
-                      <Download className="w-4 h-4" />
-                      Export as PNG
-                    </button>
-                    <button
-                      onClick={() => handleExport('pptx')}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
-                    >
-                      <FileText className="w-4 h-4" />
-                      Export as PowerPoint
-                    </button>
-                    <button
-                      onClick={() => handleExport('json')}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
-                    >
-                      <Download className="w-4 h-4" />
-                      Export as JSON
-                    </button>
-                  </div>
+              <div className="h-8 w-px bg-gray-300"></div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent">
+                  {finalDisplayData.title}
+                </h1>
+                <div className="flex items-center gap-6 mt-2 text-sm text-gray-600">
+                  <span className="flex items-center gap-1.5">
+                    <Building className="w-4 h-4 text-blue-500" />
+                    <span className="font-medium">{finalDisplayData.industry}</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Users className="w-4 h-4 text-purple-500" />
+                    <span className="font-medium">{finalDisplayData.personas.length} Personas</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-green-500" />
+                    <span className="font-medium">{finalDisplayData.phases.length} Phases</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-orange-500" />
+                    <span className="font-medium">{new Date(finalDisplayData.createdAt).toLocaleDateString()}</span>
+                  </span>
                 </div>
-              )}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleShare}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white/70 hover:bg-white border border-gray-200 rounded-xl transition-all shadow-sm"
+              >
+                <Share2 className="w-4 h-4 text-gray-600" />
+                <span className="text-gray-700 font-medium">Share</span>
+              </motion.button>
+              <div className="relative">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-lg"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="font-medium">Export</span>
+                </motion.button>
+                {showExportMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 z-50 overflow-hidden"
+                  >
+                    <div className="py-2">
+                      <button
+                        onClick={() => handleExport('pdf')}
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 transition-colors"
+                      >
+                        <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                          <FileText className="w-4 h-4 text-red-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">Export as PDF</div>
+                          <div className="text-xs text-gray-500">Professional document format</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => handleExport('json')}
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 transition-colors"
+                      >
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <Download className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">Export as JSON</div>
+                          <div className="text-xs text-gray-500">Raw data for analysis</div>
+                        </div>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Personas</p>
+              <p className="text-3xl font-bold text-gray-900">{finalDisplayData.personas.length}</p>
+            </div>
+            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Journey Phases</p>
+              <p className="text-3xl font-bold text-gray-900">{finalDisplayData.phases.length}</p>
+            </div>
+            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+              <MapPin className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Industry</p>
+              <p className="text-3xl font-bold text-gray-900">{finalDisplayData.industry}</p>
+            </div>
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              <Building className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Created</p>
+              <p className="text-lg font-bold text-gray-900">{new Date(finalDisplayData.createdAt).toLocaleDateString()}</p>
+            </div>
+            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-orange-600" />
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Personas Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <Users className="w-6 h-6 text-blue-600" />
-          Customer Personas
-        </h2>
-        <div className="grid md:grid-cols-2 gap-6">
-          {finalDisplayData.personas.map((persona) => (
-            <PersonaCard key={persona.id} persona={persona} />
-          ))}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden"
+      >
+        <div className="px-8 py-6 border-b border-white/20">
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-purple-600" />
+            </div>
+            Customer Personas
+            <span className="text-sm font-normal text-gray-500">({finalDisplayData.personas.length})</span>
+          </h2>
         </div>
-      </div>
+        <div className="p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {finalDisplayData.personas.map((persona, index) => (
+              <motion.div
+                key={persona.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 + index * 0.1 }}
+                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 border border-gray-200 hover:shadow-lg transition-all"
+              >
+                <PersonaCard key={persona.id} persona={persona} />
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
 
       {/* Journey Map */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
@@ -476,10 +646,79 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
         </div>
       </div>
 
-      {/* Key Insights */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Key Insights & Recommendations</h2>
-          <div className="grid md:grid-cols-2 gap-6">
+      {/* Journey Map Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden"
+      >
+        <div className="px-8 py-6 border-b border-white/20">
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+              <MapPin className="w-6 h-6 text-green-600" />
+            </div>
+            Customer Journey Map
+            <span className="text-sm font-normal text-gray-500">({finalDisplayData.phases.length} phases)</span>
+          </h2>
+        </div>
+        <div className="p-8">
+          <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl overflow-hidden border border-gray-200">
+            <div className="overflow-x-auto overflow-y-hidden">
+              <div className="min-w-max">
+                {/* Phase Headers */}
+                <div className="flex bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 border-b-2 border-white/30">
+                  {finalDisplayData.phases.map((phase, index) => (
+                    <div key={phase.id} className="flex-shrink-0 w-80 sm:w-96 p-4 sm:p-6 text-center border-r border-white/30 last:border-r-0">
+                      <div className="flex items-center justify-center gap-3 mb-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                          {index + 1}
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{phase.name}</h3>
+                      </div>
+                      <div className="flex justify-center">
+                        {getEmotionIcon(phase.emotions)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Journey Details */}
+                <div className="flex bg-white/50 backdrop-blur-sm">
+                  {finalDisplayData.phases.map((phase) => (
+                    <div key={phase.id} className={`flex-shrink-0 w-80 sm:w-96 p-4 sm:p-6 border-r border-white/30 last:border-r-0`}>
+                      <JourneyPhaseDetails phase={phase} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile-friendly scroll indicator */}
+          <div className="mt-4 text-center text-sm text-gray-500">
+            ← Scroll horizontally to view all phases →
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Key Insights Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7 }}
+        className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden"
+      >
+        <div className="px-8 py-6 border-b border-white/20">
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+              <Lightbulb className="w-6 h-6 text-orange-600" />
+            </div>
+            Key Insights & Recommendations
+          </h2>
+        </div>
+        <div className="p-8">
+          <div className="grid md:grid-cols-2 gap-8">
             <div>
               <h3 className="text-lg font-semibold text-red-600 mb-3 flex items-center gap-2">
                 <AlertCircle className="w-5 h-5" />
@@ -521,6 +760,9 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
               </ul>
             </div>
           </div>
+          </div>
+      </div>
+      </div>
       </div>
     </div>
   )
@@ -528,49 +770,58 @@ export default function JourneyMapPage({ journeyData: propJourneyData }: Journey
 
 function PersonaCard({ persona }: { persona: Persona }) {
   return (
-    <motion.div
-      whileHover={{ y: -2 }}
-      className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200"
-    >
-      <div className="flex items-center gap-4 mb-4">
-        <div className="text-4xl">{persona.avatar}</div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center text-2xl">
+          {persona.avatar}
+        </div>
         <div>
-          <h3 className="text-xl font-semibold text-gray-900">{persona.name}</h3>
+          <h3 className="text-xl font-bold text-gray-900">{persona.name}</h3>
           <p className="text-gray-600">{persona.age} • {persona.occupation}</p>
         </div>
       </div>
-      
-      <div className="mb-4">
-        <h4 className="font-semibold text-gray-900 mb-2">Goals</h4>
-        <ul className="space-y-1">
+
+      {/* Goals */}
+      <div>
+        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <Target className="w-4 h-4 text-green-500" />
+          Goals
+        </h4>
+        <ul className="space-y-2">
           {persona.goals.map((goal, index) => (
-            <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-              <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+            <li key={index} className="text-sm text-gray-700 flex items-start gap-3">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
               {goal}
             </li>
           ))}
         </ul>
       </div>
 
-      <div className="mb-4">
-        <h4 className="font-semibold text-gray-900 mb-2">Pain Points</h4>
-        <ul className="space-y-1">
+      {/* Pain Points */}
+      <div>
+        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-red-500" />
+          Pain Points
+        </h4>
+        <ul className="space-y-2">
           {persona.painPoints.map((pain, index) => (
-            <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+            <li key={index} className="text-sm text-gray-700 flex items-start gap-3">
+              <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
               {pain}
             </li>
           ))}
         </ul>
       </div>
 
-      <div className="bg-blue-50 p-3 rounded-lg">
-        <div className="flex items-start gap-2">
-          <Quote className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-blue-800 italic">"{persona.quote}"</p>
+      {/* Quote */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border-l-4 border-blue-500">
+        <div className="flex items-start gap-3">
+          <Quote className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-gray-800 italic leading-relaxed">"{persona.quote}"</p>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
