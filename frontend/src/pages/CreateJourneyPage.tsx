@@ -33,16 +33,11 @@ interface JobStatus {
 }
 
 export default function CreateJourneyPage() {
+  // ALL HOOKS MUST BE CALLED AT THE TOP LEVEL IN THE SAME ORDER
   const navigate = useNavigate()
   const location = useLocation()
   const { token } = useAuth()
   const { hasActiveJourney, loading, refetch: refetchActiveJourney } = useActiveJourney()
-
-  // Debug active journey state
-  useEffect(() => {
-    console.log('🔍 CreateJourneyPage - hasActiveJourney:', hasActiveJourney, 'loading:', loading)
-  }, [hasActiveJourney, loading])
-
   const [formData, setFormData] = useState<FormData>({
     title: '',
     industry: '',
@@ -57,15 +52,32 @@ export default function CreateJourneyPage() {
   const [progressMessages, setProgressMessages] = useState<string[]>([])
   const [startTime, setStartTime] = useState<Date | null>(null)
   const [estimatedCompletion, setEstimatedCompletion] = useState<Date | null>(null)
-
-  // Upgrade modal state
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [usageInfo, setUsageInfo] = useState<{
     currentUsage: number
     limit: number
   } | null>(null)
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'text/csv': ['.csv'],
+      'text/plain': ['.txt']
+    },
+    onDrop: (acceptedFiles) => {
+      setFormData(prev => ({
+        ...prev,
+        files: [...prev.files, ...acceptedFiles]
+      }))
+    }
+  })
 
-  
+  // EFFECTS COME AFTER ALL HOOKS
+  // Debug active journey state
+  useEffect(() => {
+    console.log('🔍 CreateJourneyPage - hasActiveJourney:', hasActiveJourney, 'loading:', loading)
+  }, [hasActiveJourney, loading])
+
   // Reset state when coming from a retry
   useEffect(() => {
     if (location.state?.retry) {
