@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { CheckCircle, Clock, Bot, AlertTriangle, Wifi, WifiOff, Loader2, X, ArrowLeft, Home } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { useJobProgress, ProgressMessage } from '../hooks/useJobProgress';
+import { Download, FileText, Users, Map, Eye } from 'lucide-react';
 
 // Define the 8 CrewAI agent steps with realistic time estimates
 const AGENT_STEPS = [
@@ -87,6 +88,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
   const [currentStepName, setCurrentStepName] = useState('');
   const [currentMessage, setCurrentMessage] = useState('');
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [journeyResult, setJourneyResult] = useState<any>(null);
 
   // Prevent duplicate navigation
   const handledNavRef = useRef(false);
@@ -113,12 +115,29 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
     }
     
     if (message.progress) {
-      setProgress(message.progress);
-      setCurrentStep(message.progress.current_step || 0);
-      setStepProgress(message.progress.percentage || 0);
-      
+      // Calculate adjusted progress to prevent reaching 100% too early
+      let adjustedPercentage = message.progress.percentage || 0;
+      const currentStep = message.progress.current_step || 0;
+
+      // If we're on step 8 but job isn't complete yet, cap at 95%
+      if (currentStep >= 8 && message.status !== 'completed') {
+        adjustedPercentage = Math.min(95, adjustedPercentage);
+      }
+
+      // Only show 100% when job is actually completed
+      if (message.status === 'completed') {
+        adjustedPercentage = 100;
+      }
+
+      setProgress({
+        ...message.progress,
+        percentage: adjustedPercentage
+      });
+      setCurrentStep(currentStep);
+      setStepProgress(adjustedPercentage);
+
       // Set start time on first progress update
-      if (!startTime && message.progress.current_step > 0) {
+      if (!startTime && currentStep > 0) {
         setStartTime(new Date());
       }
     }
@@ -151,24 +170,24 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
       console.log('Job cancelled successfully');
     }
     
-    // Handle completion - navigate only once
+    // Handle completion - show report on current page instead of navigating
     if (['completed', 'failed'].includes(message.status) && !handledNavRef.current) {
       handledNavRef.current = true;
 
       if (message.status === 'completed' && message.result?.id) {
-        console.log('🎉 Job completed, waiting for backend finalization...');
-        setIsFinalizing(true);
+        console.log('🎉 Job completed, showing report on current page...');
+        setIsFinalizing(false);
+        setStatus('completed');
+        setJourneyResult(message.result);
 
-        // Call onComplete first to refresh journey data
+        // Call onComplete to refresh journey data
         if (onComplete) {
           await onComplete();
         }
 
-        // Add a delay to ensure backend has finalized the journey data
-        setTimeout(() => {
-          console.log('✅ Navigating to journey result:', message.result.id);
-          navigate(`/journey/${message.result.id}`, { replace: true });
-        }, 3000); // Increased delay to 3 seconds for backend finalization
+        // Store result for display and set final progress
+        setProgress(prev => prev ? { ...prev, percentage: 100 } : null);
+        setStepProgress(100);
       } else if (message.status === 'failed') {
         // Ensure error message is set for failed jobs - check all possible locations
         const backendError = message.error ||
@@ -486,16 +505,149 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
           </div>
         )}
 
-        {status === 'completed' && !isFinalizing && (
-          <div className="text-center py-6">
-            <div className="text-6xl mb-4">🎉</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Journey Map Complete!</h3>
-            <p className="text-gray-600 mb-4">
-              Your AI-powered customer journey map has been generated successfully.
-            </p>
-            <p className="text-sm text-gray-500">
-              Total time: {startTime ? formatTime(elapsedTime) : 'Unknown'}
-            </p>
+        {status === 'completed' && !isFinalizing && journeyResult && (
+          <div className="space-y-6">
+            {/* Completion Header */}
+            <div className="text-center py-6">
+              <div className="text-6xl mb-4">🎉</div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Journey Map Complete!</h3>
+              <p className="text-gray-600 mb-4">
+                Your AI-powered customer journey map has been generated successfully.
+              </p>
+              <p className="text-sm text-gray-500">
+                Total time: {startTime ? formatTime(elapsedTime) : 'Unknown'}
+              </p>
+
+              {/* Download and Navigation Buttons */}
+              <div className="flex flex-wrap justify-center gap-3 mt-6">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => downloadJSONReport(journeyResult, title)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download JSON
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => downloadTextReport(journeyResult, title)}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Download Report
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate(`/journey/${journeyResult.id}`)}
+                  className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Full Journey
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/dashboard')}
+                  className="bg-gray-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors flex items-center gap-2"
+                >
+                  <Home className="w-4 h-4" />
+                  Go to Dashboard
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Journey Summary */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Map className="w-5 h-5 text-blue-600" />
+                Journey Summary
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white rounded-lg p-4">
+                  <div className="text-2xl font-bold text-blue-600">{journeyResult.personas?.length || 0}</div>
+                  <div className="text-sm text-gray-600">Customer Personas</div>
+                </div>
+                <div className="bg-white rounded-lg p-4">
+                  <div className="text-2xl font-bold text-purple-600">{journeyResult.phases?.length || 0}</div>
+                  <div className="text-sm text-gray-600">Journey Phases</div>
+                </div>
+                <div className="bg-white rounded-lg p-4">
+                  <div className="text-2xl font-bold text-green-600">{journeyResult.industry}</div>
+                  <div className="text-sm text-gray-600">Industry</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Personas Preview */}
+            {journeyResult.personas && journeyResult.personas.length > 0 && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-600" />
+                  Customer Personas
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {journeyResult.personas.slice(0, 4).map((persona: any, index: number) => (
+                    <div key={index} className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-lg">{persona.avatar || '👤'}</span>
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-gray-900">{persona.name}</h5>
+                          <p className="text-sm text-gray-600">{persona.age} • {persona.occupation}</p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-700 italic">"{persona.quote}"</p>
+                    </div>
+                  ))}
+                </div>
+                {journeyResult.personas.length > 4 && (
+                  <p className="text-center text-sm text-gray-500 mt-4">
+                    +{journeyResult.personas.length - 4} more personas
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Journey Phases Preview */}
+            {journeyResult.phases && journeyResult.phases.length > 0 && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Journey Phases Preview</h4>
+                <div className="space-y-3">
+                  {journeyResult.phases.slice(0, 3).map((phase: any, index: number) => (
+                    <div key={index} className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-semibold text-gray-900">{phase.name}</h5>
+                        <span className="text-sm px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                          {phase.emotions}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 italic mb-2">"{phase.customerQuote}"</p>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {phase.actions?.slice(0, 2).map((action: string, actionIndex: number) => (
+                          <span key={actionIndex} className="bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                            {action}
+                          </span>
+                        ))}
+                        {phase.touchpoints?.slice(0, 2).map((touchpoint: string, touchpointIndex: number) => (
+                          <span key={touchpointIndex} className="bg-purple-50 text-purple-700 px-2 py-1 rounded">
+                            {touchpoint}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {journeyResult.phases.length > 3 && (
+                  <p className="text-center text-sm text-gray-500 mt-4">
+                    +{journeyResult.phases.length - 3} more phases
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -707,4 +859,82 @@ const formatTimeRemaining = (seconds?: number) => {
   if (!seconds) return null;
   const minutes = Math.ceil(seconds / 60);
   return `~${minutes} min${minutes !== 1 ? 's' : ''} remaining`;
+};
+
+// Journey report download functions
+const downloadJSONReport = (journeyResult: any, title: string) => {
+  const reportData = {
+    title: title,
+    generatedAt: new Date().toISOString(),
+    industry: journeyResult.industry,
+    personas: journeyResult.personas,
+    phases: journeyResult.phases,
+    insights: journeyResult.insights || {},
+    recommendations: journeyResult.recommendations || []
+  };
+
+  const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_journey_report.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+const downloadTextReport = (journeyResult: any, title: string) => {
+  let report = `# ${title}\n\n`;
+  report += `**Generated:** ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`;
+  report += `**Industry:** ${journeyResult.industry}\n\n`;
+
+  report += `## Customer Personas\n\n`;
+  journeyResult.personas?.forEach((persona: any, index: number) => {
+    report += `### ${index + 1}. ${persona.name}\n\n`;
+    report += `**Age:** ${persona.age}\n`;
+    report += `**Occupation:** ${persona.occupation}\n\n`;
+    report += `**Goals:**\n`;
+    persona.goals?.forEach((goal: string) => report += `- ${goal}\n`);
+    report += `\n**Pain Points:**\n`;
+    persona.painPoints?.forEach((pain: string) => report += `- ${pain}\n`);
+    report += `\n**Quote:** "${persona.quote}"\n\n`;
+  });
+
+  report += `## Journey Phases\n\n`;
+  journeyResult.phases?.forEach((phase: any, index: number) => {
+    report += `### ${index + 1}. ${phase.name}\n\n`;
+    report += `**Actions:**\n`;
+    phase.actions?.forEach((action: string) => report += `- ${action}\n`);
+    report += `\n**Touchpoints:**\n`;
+    phase.touchpoints?.forEach((touchpoint: string) => report += `- ${touchpoint}\n`);
+    report += `\n**Emotions:** ${phase.emotions}\n`;
+    report += `\n**Pain Points:**\n`;
+    phase.painPoints?.forEach((pain: string) => report += `- ${pain}\n`);
+    report += `\n**Opportunities:**\n`;
+    phase.opportunities?.forEach((opportunity: string) => report += `- ${opportunity}\n`);
+    report += `\n**Customer Quote:** "${phase.customerQuote}"\n\n`;
+  });
+
+  if (journeyResult.insights && Object.keys(journeyResult.insights).length > 0) {
+    report += `## Key Insights\n\n`;
+    Object.entries(journeyResult.insights).forEach(([key, value]: [string, any]) => {
+      report += `**${key}:** ${value}\n\n`;
+    });
+  }
+
+  if (journeyResult.recommendations && journeyResult.recommendations.length > 0) {
+    report += `## Recommendations\n\n`;
+    journeyResult.recommendations.forEach((rec: string) => report += `- ${rec}\n`);
+  }
+
+  const blob = new Blob([report], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_journey_report.md`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
