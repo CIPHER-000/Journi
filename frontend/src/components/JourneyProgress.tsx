@@ -755,7 +755,7 @@ export default function JourneyProgress({ jobId, title, onComplete, onCancel }: 
         <div className="space-y-3">
           {AGENT_STEPS.map((step, index) => {
             const stepNumber = index + 1;
-            const isStepCompleted = currentStep > stepNumber;
+            const isStepCompleted = currentStep > stepNumber || (status === 'completed' && currentStep >= stepNumber);
             const isStepCurrent = currentStep === stepNumber;
             const isStepPending = currentStep < stepNumber;
 
