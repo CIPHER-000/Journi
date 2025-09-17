@@ -76,7 +76,9 @@ export default function CreateJourneyPage() {
 
   // Reset state when coming from a retry
   useEffect(() => {
+    console.log('CreateJourneyPage: useEffect - checking location state', location.state)
     if (location.state?.retry) {
+      console.log('CreateJourneyPage: Resetting state for retry')
       // Reset all states to initial values
       setIsSubmitting(false)
       setJobStatus(null)
@@ -89,25 +91,27 @@ export default function CreateJourneyPage() {
 
       // Refetch active journey status
       refetchActiveJourney()
-
-      }
-  }, [location.state, navigate, location.pathname])
+    }
+  }, [location.state, navigate, location.pathname, refetchActiveJourney])
 
   // Handle job completion
-  const handleJobComplete = () => {
+  const handleJobComplete = useCallback(() => {
+    console.log('Job completed, updating states')
     setIsSubmitting(false)
+    setJobStatus(null)
     refetchActiveJourney() // Update active journey status
-  }
+  }, [refetchActiveJourney])
 
   // Handle job cancellation
-  const handleJobCancel = () => {
+  const handleJobCancel = useCallback(() => {
+    console.log('Job cancelled, updating states')
     setIsSubmitting(false)
     setJobStatus(null)
     setProgressMessages([])
     setStartTime(null)
     setEstimatedCompletion(null)
     refetchActiveJourney() // Update active journey status
-  }
+  }, [refetchActiveJourney])
 
   const industryOptions = [
     'Technology/SaaS', 'E-commerce/Retail', 'Healthcare', 'Financial Services', 
@@ -153,6 +157,7 @@ export default function CreateJourneyPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('CreateJourneyPage: handleSubmit started')
 
     // Validate minimum requirements
     if (!formData.industry) {
@@ -172,9 +177,11 @@ export default function CreateJourneyPage() {
       return;
     }
 
+    console.log('CreateJourneyPage: Form validation passed, setting submitting state')
     setIsSubmitting(true)
     setStartTime(new Date())
     setProgressMessages([])
+    setJobStatus(null)  // Clear any previous job status
 
     try {
       // Generate title automatically
@@ -267,12 +274,14 @@ export default function CreateJourneyPage() {
         
         // Success case - start tracking the job
         const job: JobStatus = responseData
+        console.log('CreateJourneyPage: Job started successfully', job)
 
         setJobStatus(job)
-
         setProgressMessages(['🚀 Journey map creation started...', '🤖 Initializing AI agents...'])
+        console.log('CreateJourneyPage: Job status set, JourneyProgress should now display')
 
-        return
+        // Don't return here - let the state updates complete naturally
+        // The JourneyProgress component will handle the job tracking
       } catch (error) {
         
         // Check for network errors
@@ -295,8 +304,9 @@ export default function CreateJourneyPage() {
       }
       
     } catch (error: unknown) {
+      console.error('Form submission error:', error)
       let errorMessage = 'Failed to create journey map';
-      
+
       if (error instanceof Error) {
         if (error.message === 'Failed to fetch') {
           errorMessage = 'Cannot connect to backend server. Please check if the backend is deployed and accessible.';
@@ -306,9 +316,15 @@ export default function CreateJourneyPage() {
       } else if (typeof error === 'object' && error !== null && 'message' in error) {
         errorMessage = `Failed to create journey map: ${String((error as { message: unknown }).message)}`;
       }
-      
-      alert(errorMessage);
-      setIsSubmitting(false);
+
+      console.error('Error details:', errorMessage)
+      alert(errorMessage)
+      setIsSubmitting(false)
+    } finally {
+      // Ensure isSubmitting is reset if job wasn't started
+      if (!jobStatus) {
+        setIsSubmitting(false)
+      }
     }
   }
 
@@ -325,7 +341,10 @@ export default function CreateJourneyPage() {
         </div>
 
         {/* Progress Display */}
-        {isSubmitting && jobStatus ? (
+        {(() => {
+          console.log('CreateJourneyPage: Checking JourneyProgress display condition:', { isSubmitting, jobStatus, jobStatusId: jobStatus?.id })
+          return isSubmitting && jobStatus
+        })() ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
