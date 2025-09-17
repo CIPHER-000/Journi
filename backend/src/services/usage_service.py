@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from supabase import create_client, Client
 from ..models.auth import UserProfile, UserJourney, UsageLimitResponse
 import logging
