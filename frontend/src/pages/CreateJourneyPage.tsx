@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Map, Upload, X, FileText, Users, Target, Lightbulb, Loader2, ArrowLeft, AlertCircle } from 'lucide-react'
