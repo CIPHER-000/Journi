@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Map, Plus, BarChart3, Settings, CreditCard, User, LogOut,
   ChevronLeft, ChevronRight, Home, FileText, Crown, Key,
-  HelpCircle, Bell, Search, Menu, X, Zap
+  HelpCircle, Bell, Search, Menu, X, Zap, LayoutTemplate
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Topbar } from './ui/Topbar';
@@ -32,7 +32,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: '/dashboard', label: 'Dashboard', icon: Home },
     { path: '/create', label: 'Create Journey', icon: Plus },
     { path: '/journeys', label: 'My Journeys', icon: Map },
-    { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+    { path: '/templates', label: 'Templates', icon: LayoutTemplate },
   ];
 
   const bottomItems = [

@@ -66,7 +66,7 @@ function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             } />
-            <Route path="/analytics" element={
+            <Route path="/templates" element={
               <ProtectedRoute>
                 <DashboardLayout>
                   <AnalyticsPage />
