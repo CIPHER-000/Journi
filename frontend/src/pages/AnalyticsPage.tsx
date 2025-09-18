@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   Search, BookOpen, Lightbulb, X, Star, Users, BarChart3, TrendingUp,
-  FileText, CheckCircle, ArrowRight, Play, Eye, Clock, LayoutTemplate
+  FileText, CheckCircle, ArrowRight, Play, Eye, Clock, LayoutTemplate, Plus
 } from 'lucide-react'
 import { PrimaryButton, SecondaryButton } from '../components/ui/PrimaryButton'
 
