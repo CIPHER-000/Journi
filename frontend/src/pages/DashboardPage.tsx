@@ -334,7 +334,6 @@ export default function DashboardPage() {
               >
                 <JourneyCard
                   journey={journey}
-                  onView={(id) => navigate(`/journey/${id}`)}
                 />
               </motion.div>
             ))}

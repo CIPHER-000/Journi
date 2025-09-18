@@ -85,7 +85,17 @@ export function JourneyCard({
   const StatusIcon = statusInfo.icon;
 
   const handleView = () => {
-    if (onView) {
+    // For processing journeys, navigate to create page to restore progress
+    if (journey.status === 'processing' || journey.status === 'queued' || journey.status === 'running') {
+      console.log('🔄 Processing journey clicked, navigating to restore progress...');
+      navigate('/create', {
+        state: {
+          restoreJourney: true,
+          journeyId: journey.id,
+          journeyTitle: journey.title
+        }
+      });
+    } else if (onView) {
       onView(journey.id);
     } else {
       navigate(`/journey/${journey.id}`);
