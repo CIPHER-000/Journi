@@ -1,47 +1,127 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import {
-  BarChart3, TrendingUp, Users, Clock, Target, CheckCircle, AlertCircle,
-  Calendar, Map, Activity, Zap, Loader2
-} from 'lucide-react'
-import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  Legend, ResponsiveContainer, PieChart, Pie, Cell
+  LineChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  Legend, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area,
+  ComposedChart, Scatter, ScatterChart
 } from 'recharts'
-import { format, subDays, startOfMonth, endOfMonth } from 'date-fns'
+import { format, subDays, startOfMonth, endOfMonth, isAfter, isBefore } from 'date-fns'
+import {
+  TrendingUp, TrendingDown, Activity, Clock, Target, Zap, Users,
+  BarChart3, PieChart as PieChartIcon, Calendar, Filter, Download,
+  RefreshCw, Award, AlertTriangle, CheckCircle, Timer, Building,
+  Lightbulb, Star, ArrowUpRight, ArrowDownRight, Minus
+} from 'lucide-react'
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'
 
-interface AnalyticsData {
+interface UserMetrics {
   totalJourneys: number
   completedJourneys: number
   failedJourneys: number
+  inProgressJourneys: number
   averageCompletionTime: number
-  journeysByIndustry: Array<{ name: string; value: number }>
-  journeysOverTime: Array<{ date: string; created: number; completed: number }>
+  successRate: number
+  totalProcessingTime: number
+  favoriteIndustry: string
+  accountAgeDays: number
+  lastActivity: string
+}
+
+interface AnalyticsData {
+  userMetrics: UserMetrics
+  journeysByIndustry: Array<{ name: string; value: number; isFavorite?: boolean }>
+  journeysOverTime: Array<{ date: string; created: number; completed: number; failed: number }>
   agentPerformance: Array<{ agent: string; success_rate: number; avg_time: number }>
-  userActivity: Array<{ date: string; journeys_created: number; active_users: number }>
+  usagePatterns: {
+    peakUsageHours: number[]
+    averageJourneysPerWeek: number
+    mostProductiveDay: string
+    usageGrowth: number
+  }
+  journeyComplexity: Array<{ complexity: string; count: number; avg_time: number }>
 }
 
 interface AnalyticsPageProps {
   searchQuery?: string
 }
 
-const COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444']
+const COLORS = ['#6366F1', '#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#1E40AF', '#3B82F6', '#60A5FA', '#93C5FD', '#DBEAFE']
+
+const formatMetric = (value: number, suffix: string = ''): string => {
+  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M${suffix}`
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}K${suffix}`
+  return `${value}${suffix}`
+}
+
+const formatTime = (minutes: number): string => {
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+  return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${remainingMinutes}m`
+}
+
+const MetricCard: React.FC<{
+  title: string
+  value: string | number
+  change?: number
+  icon: React.ReactNode
+  color: string
+  suffix?: string
+}> = ({ title, value, change, icon, color, suffix = '' }) => {
+  const getChangeIcon = () => {
+    if (change === undefined) return null
+    if (change > 0) return <ArrowUpRight className="w-4 h-4 text-green-600" />
+    if (change < 0) return <ArrowDownRight className="w-4 h-4 text-red-600" />
+    return <Minus className="w-4 h-4 text-gray-600" />
+  }
+
+  const getChangeColor = () => {
+    if (change === undefined) return 'text-gray-600'
+    if (change > 0) return 'text-green-600'
+    if (change < 0) return 'text-red-600'
+    return 'text-gray-600'
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {typeof value === 'number' ? formatMetric(value, suffix) : value}
+          </p>
+          {change !== undefined && (
+            <div className={`flex items-center space-x-1 mt-2 ${getChangeColor()}`}>
+              {getChangeIcon()}
+              <span className="text-sm font-medium">
+                {Math.abs(change)}% from last period
+              </span>
+            </div>
+          )}
+        </div>
+        <div className={`p-3 rounded-lg ${color}`}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function AnalyticsPage({ searchQuery = '' }: AnalyticsPageProps) {
   const { user, token } = useAuth()
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState('30d')
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       if (!user || !token) return
 
       try {
-        const response = await fetch(`${API_BASE_URL}/analytics`, {
+        const response = await fetch(`${API_BASE_URL}/analytics?date_range=${dateRange}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -50,60 +130,39 @@ export default function AnalyticsPage({ searchQuery = '' }: AnalyticsPageProps) 
 
         if (response.ok) {
           const data = await response.json()
-          setAnalytics(data)
-        } else {
-          // Mock data for development
-          setAnalytics(getMockAnalyticsData())
+          setAnalytics(data.data)
         }
       } catch (error) {
         console.error('Error fetching analytics:', error)
-        setAnalytics(getMockAnalyticsData())
       } finally {
         setLoading(false)
+        setRefreshing(false)
       }
     }
 
     fetchAnalytics()
   }, [user, token, dateRange])
 
-  const getMockAnalyticsData = (): AnalyticsData => ({
-    totalJourneys: 24,
-    completedJourneys: 18,
-    failedJourneys: 3,
-    averageCompletionTime: 4.2,
-    journeysByIndustry: [
-      { name: 'E-commerce', value: 8 },
-      { name: 'SaaS', value: 6 },
-      { name: 'Healthcare', value: 4 },
-      { name: 'Education', value: 3 },
-      { name: 'Other', value: 3 }
-    ],
-    journeysOverTime: [
-      { date: 'Jan 1', created: 3, completed: 2 },
-      { date: 'Jan 8', created: 4, completed: 3 },
-      { date: 'Jan 15', created: 2, completed: 4 },
-      { date: 'Jan 22', created: 5, completed: 3 },
-      { date: 'Jan 29', created: 6, completed: 4 }
-    ],
-    agentPerformance: [
-      { agent: 'Research Agent', success_rate: 95, avg_time: 2.1 },
-      { agent: 'Persona Agent', success_rate: 88, avg_time: 3.2 },
-      { agent: 'Journey Agent', success_rate: 92, avg_time: 4.5 },
-      { agent: 'Analysis Agent', success_rate: 90, avg_time: 1.8 }
-    ],
-    userActivity: [
-      { date: 'Jan 1', journeys_created: 3, active_users: 12 },
-      { date: 'Jan 8', journeys_created: 4, active_users: 15 },
-      { date: 'Jan 15', journeys_created: 2, active_users: 18 },
-      { date: 'Jan 22', journeys_created: 5, active_users: 22 },
-      { date: 'Jan 29', journeys_created: 6, active_users: 25 }
-    ]
-  })
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await new Promise(resolve => setTimeout(resolve, 500)) // Simulate refresh
+    const response = await fetch(`${API_BASE_URL}/analytics?date_range=${dateRange}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    if (response.ok) {
+      const data = await response.json()
+      setAnalytics(data.data)
+    }
+    setRefreshing(false)
+  }
 
   if (loading) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     )
   }
@@ -111,294 +170,314 @@ export default function AnalyticsPage({ searchQuery = '' }: AnalyticsPageProps) 
   if (!analytics) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
-        <p className="text-gray-500">No analytics data available</p>
+        <div className="text-center">
+          <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">Analytics data not available</p>
+        </div>
       </div>
     )
   }
 
-  const successRate = analytics.totalJourneys > 0
-    ? Math.round((analytics.completedJourneys / analytics.totalJourneys) * 100)
-    : 0
+  const { userMetrics, journeysOverTime, journeysByIndustry, agentPerformance, usagePatterns, journeyComplexity } = analytics
+
+  // Calculate insights
+  const efficiency = userMetrics.totalProcessingTime > 0 ?
+    Math.round((userMetrics.completedJourneys / userMetrics.totalProcessingTime) * 100) / 100 : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-gray-50 min-h-screen p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
-          <p className="text-gray-600 mt-1">
-            Track your journey mapping performance and insights
-          </p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-            <option value="1y">Last year</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-primary-100 rounded-xl">
-              <BarChart3 className="w-6 h-6 text-primary-600" />
-            </div>
-            <span className="text-sm font-medium text-green-600">+12%</span>
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <Activity className="w-8 h-8 text-indigo-600" />
+              Analytics Dashboard
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Personalized insights for {user?.name || user?.email?.split('@')[0] || 'User'}
+            </p>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900">{analytics.totalJourneys}</h3>
-          <p className="text-sm text-gray-600">Total Journeys</p>
-        </motion.div>
+          <div className="flex items-center space-x-4">
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+            >
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 90 days</option>
+              <option value="1y">Last year</option>
+            </select>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+            <button className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+              <Download className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-green-100 rounded-xl">
+        {/* Key User Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <MetricCard
+            title="Total Journeys"
+            value={userMetrics.totalJourneys}
+            change={usagePatterns.usageGrowth}
+            icon={<BarChart3 className="w-6 h-6 text-white" />}
+            color="bg-indigo-600"
+          />
+          <MetricCard
+            title="Success Rate"
+            value={userMetrics.successRate}
+            suffix="%"
+            icon={<Target className="w-6 h-6 text-white" />}
+            color="bg-green-600"
+          />
+          <MetricCard
+            title="Avg. Completion Time"
+            value={userMetrics.averageCompletionTime}
+            suffix="m"
+            icon={<Clock className="w-6 h-6 text-white" />}
+            color="bg-blue-600"
+          />
+          <MetricCard
+            title="Efficiency Score"
+            value={efficiency}
+            suffix="x"
+            icon={<Zap className="w-6 h-6 text-white" />}
+            color="bg-purple-600"
+          />
+        </div>
+
+        {/* Status Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
               <CheckCircle className="w-6 h-6 text-green-600" />
+              <div>
+                <p className="text-sm font-medium text-green-900">Completed</p>
+                <p className="text-2xl font-bold text-green-700">{userMetrics.completedJourneys}</p>
+              </div>
             </div>
-            <span className="text-sm font-medium text-green-600">{successRate}%</span>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900">{analytics.completedJourneys}</h3>
-          <p className="text-sm text-gray-600">Completed</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-accent-100 rounded-xl">
-              <Clock className="w-6 h-6 text-accent-600" />
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <Timer className="w-6 h-6 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium text-blue-900">In Progress</p>
+                <p className="text-2xl font-bold text-blue-700">{userMetrics.inProgressJourneys}</p>
+              </div>
             </div>
-            <span className="text-sm font-medium text-blue-600">
-              {analytics.averageCompletionTime}m
-            </span>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900">Avg Time</h3>
-          <p className="text-sm text-gray-600">Completion</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-yellow-100 rounded-xl">
-              <AlertCircle className="w-6 h-6 text-yellow-600" />
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+              <div>
+                <p className="text-sm font-medium text-red-900">Failed</p>
+                <p className="text-2xl font-bold text-red-700">{userMetrics.failedJourneys}</p>
+              </div>
             </div>
-            <span className="text-sm font-medium text-red-600">
-              {Math.round((analytics.failedJourneys / analytics.totalJourneys) * 100) || 0}%
-            </span>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900">{analytics.failedJourneys}</h3>
-          <p className="text-sm text-gray-600">Failed</p>
-        </motion.div>
+        </div>
       </div>
 
-      {/* Charts */}
+      {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Journeys Over Time */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6"
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Journeys Over Time</h3>
+        {/* Journey Creation Over Time */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-indigo-600" />
+              Journey Activity Over Time
+            </h3>
+            <LineChartIcon className="w-5 h-5 text-gray-400" />
+          </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={analytics.journeysOverTime}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
+              <ComposedChart data={journeysOverTime}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="date" stroke="#666" />
+                <YAxis stroke="#666" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
                 <Legend />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="created"
-                  stroke="#8B5CF6"
-                  strokeWidth={2}
+                  stackId="1"
+                  stroke="#6366F1"
+                  fill="#6366F1"
+                  fillOpacity={0.2}
                   name="Created"
                 />
-                <Line
-                  type="monotone"
-                  dataKey="completed"
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  name="Completed"
-                />
-              </LineChart>
+                <Bar dataKey="completed" fill="#10B981" name="Completed" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="failed" fill="#EF4444" name="Failed" radius={[4, 4, 0, 0]} />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Journeys by Industry */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6"
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Journeys by Industry</h3>
+        {/* Industry Distribution */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Building className="w-5 h-5 text-indigo-600" />
+              Journey Distribution by Industry
+            </h3>
+            <PieChartIcon className="w-5 h-5 text-gray-400" />
+          </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={analytics.journeysByIndustry}
+                  data={journeysByIndustry}
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
+                  innerRadius={40}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ name, value }) => `${name}: ${value}`}
+                  label={({ name, value, isFavorite }) => (
+                    <text
+                      x={0}
+                      y={0}
+                      textAnchor="middle"
+                      fill="#374151"
+                      fontSize={12}
+                      fontWeight={isFavorite ? 600 : 400}
+                    >
+                      {name}: {value}
+                    </text>
+                  )}
                 >
-                  {analytics.journeysByIndustry.map((entry, index) => (
+                  {journeysByIndustry.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  formatter={(value, name, props) => [
+                    `${value} journeys`,
+                    props.payload.isFavorite ? `${name} (Favorite)` : name
+                  ]}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
-        </motion.div>
+        </div>
 
         {/* Agent Performance */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6"
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Agent Performance</h3>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-indigo-600" />
+              AI Agent Performance
+            </h3>
+            <Activity className="w-5 h-5 text-gray-400" />
+          </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.agentPerformance}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="agent" />
-                <YAxis />
-                <Tooltip />
+              <BarChart data={agentPerformance} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis type="number" stroke="#666" />
+                <YAxis dataKey="agent" type="category" width={100} stroke="#666" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
                 <Legend />
-                <Bar dataKey="success_rate" fill="#8B5CF6" name="Success Rate %" />
-                <Bar dataKey="avg_time" fill="#06B6D4" name="Avg Time (min)" />
+                <Bar dataKey="success_rate" fill="#10B981" name="Success Rate %" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="avg_time" fill="#6366F1" name="Avg Time (min)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </motion.div>
+        </div>
 
-        {/* User Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6"
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">User Activity</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={analytics.userActivity}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="journeys_created"
-                  stroke="#8B5CF6"
-                  strokeWidth={2}
-                  name="Journeys Created"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="active_users"
-                  stroke="#F59E0B"
-                  strokeWidth={2}
-                  name="Active Users"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+        {/* Journey Complexity */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Target className="w-5 h-5 text-indigo-600" />
+              Journey Complexity Analysis
+            </h3>
+            <Award className="w-5 h-5 text-gray-400" />
           </div>
-        </motion.div>
+          <div className="space-y-4">
+            {journeyComplexity.map((complexity, index) => (
+              <div key={complexity.complexity} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-3 h-3 rounded-full ${
+                    complexity.complexity === 'Simple' ? 'bg-green-500' :
+                    complexity.complexity === 'Medium' ? 'bg-yellow-500' : 'bg-red-500'
+                  }`} />
+                  <span className="font-medium text-gray-900">{complexity.complexity}</span>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-gray-900">{complexity.count} journeys</p>
+                  <p className="text-sm text-gray-600">{formatTime(complexity.avg_time)} avg</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Insights */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-        className="bg-white rounded-2xl border border-gray-200 p-6"
-      >
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Key Insights</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
+      {/* Insights Panel */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <Lightbulb className="w-6 h-6 text-yellow-500" />
+          <h3 className="text-lg font-semibold text-gray-900">Personalized Insights</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-3">
             <div className="flex items-start space-x-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-green-600" />
-              </div>
+              <Star className="w-5 h-5 text-yellow-500 mt-0.5" />
               <div>
-                <h4 className="font-medium text-gray-900">High Success Rate</h4>
+                <h4 className="font-medium text-gray-900">Top Performer</h4>
                 <p className="text-sm text-gray-600">
-                  Your journey completion rate is {successRate}%, above the industry average of 75%
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Zap className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <h4 className="font-medium text-gray-900">Fast Processing</h4>
-                <p className="text-sm text-gray-600">
-                  Average completion time of {analytics.averageCompletionTime} minutes is 30% faster than average
+                  Your success rate of {userMetrics.successRate}% exceeds the average by 15%
                 </p>
               </div>
             </div>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-start space-x-3">
-              <div className="p-2 bg-primary-100 rounded-lg">
-                <Target className="w-5 h-5 text-primary-600" />
-              </div>
+              <Building className="w-5 h-5 text-indigo-500 mt-0.5" />
               <div>
-                <h4 className="font-medium text-gray-900">Top Industry</h4>
+                <h4 className="font-medium text-gray-900">Industry Focus</h4>
                 <p className="text-sm text-gray-600">
-                  E-commerce leads with 33% of all journeys created
+                  {userMetrics.favoriteIndustry} is your most successful category
                 </p>
               </div>
             </div>
+          </div>
+          <div className="space-y-3">
             <div className="flex items-start space-x-3">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Users className="w-5 h-5 text-yellow-600" />
-              </div>
+              <Users className="w-5 h-5 text-green-500 mt-0.5" />
               <div>
-                <h4 className="font-medium text-gray-900">Growing User Base</h4>
+                <h4 className="font-medium text-gray-900">Productivity Peak</h4>
                 <p className="text-sm text-gray-600">
-                  Active users increased by 108% over the last month
+                  {usagePatterns.mostProductiveDay}s are your most productive days
                 </p>
               </div>
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
