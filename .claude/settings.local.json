@@ -24,7 +24,9 @@
       "Bash(git checkout:*)",
       "Bash(gh pr create:*)",
       "Bash(curl:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(find:*)",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": []
