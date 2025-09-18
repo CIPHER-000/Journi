@@ -12,6 +12,7 @@ import DashboardPage from './pages/DashboardPage'
 import JourneysPage from './pages/JourneysPage'
 import JourneyMapPage from './pages/JourneyMapPage'
 import JourneyDetailPage from './pages/JourneyDetailPage'
+import AnalyticsPage from './pages/AnalyticsPage'
 import SettingsPage from './pages/SettingsPage'
 import UpgradePage from './pages/UpgradePage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
@@ -62,6 +63,13 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <UpgradePage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/analytics" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AnalyticsPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

@@ -32,8 +32,9 @@ try:
     from src.services.job_manager import JobManager
     from src.services.usage_service import UsageService
     from src.routes.auth_routes import router as auth_router
-    from src.middleware.auth_middleware import require_auth
-    from src.models.auth import UserProfile, UserJourney, UsageLimitResponse
+from src.routes.analytics_routes import router as analytics_router
+from src.middleware.auth_middleware import require_auth
+from src.models.auth import UserProfile, UserJourney, UsageLimitResponse
 
     # Initialize services
     usage_service = UsageService()
@@ -92,6 +93,8 @@ app.add_middleware(
 
 # Include auth routes
 app.include_router(auth_router)
+# Include analytics routes
+app.include_router(analytics_router)
 
 # Initialize job manager as None, will be initialized in startup event
 job_manager = None
