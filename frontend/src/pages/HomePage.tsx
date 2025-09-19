@@ -414,7 +414,7 @@ export default function HomePage() {
         />
 
         {/* Background Overlay */}
-        <div className="absolute inset-0 bg-gray-50/95 dark:bg-gray-900/95" />
+        <div className="absolute inset-0 bg-gray-50/80 dark:bg-gray-900/80" />
 
         <div className="relative max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
