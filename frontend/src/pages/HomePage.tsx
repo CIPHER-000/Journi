@@ -538,7 +538,7 @@ export default function HomePage() {
                           <div className="text-3xl font-bold text-gray-500 dark:text-gray-400">Coming Soon</div>
                           <p className="text-sm text-gray-400 dark:text-gray-500">Enterprise features in development</p>
                         </div>
-                      ) : plan.price ? (
+                      ) : plan.price !== null && plan.price !== undefined ? (
                         <>
                           <div className="flex items-baseline justify-center gap-2">
                             <span className="text-5xl font-bold text-gray-900 dark:text-white">${plan.price}</span>
@@ -565,9 +565,9 @@ export default function HomePage() {
                             : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white hover:text-gray-900 dark:hover:text-white"
                       }`}
                       disabled={plan.comingSoon}
-                      onClick={() => !plan.comingSoon && navigate(plan.price ? '/signup' : '/contact')}
+                      onClick={() => !plan.comingSoon && navigate(plan.price !== null && plan.price !== undefined ? '/signup' : '/contact')}
                     >
-                      {plan.comingSoon ? "Coming Soon" : plan.price ? "Start Free Trial" : "Contact Sales"}
+                      {plan.comingSoon ? "Coming Soon" : plan.price !== null && plan.price !== undefined ? "Start Free Trial" : "Contact Sales"}
                     </Button>
 
                     <div className="space-y-4">
