@@ -610,33 +610,6 @@ export default function HomePage() {
               </motion.div>
             ))}
           </div>
-
-          {/* Bottom Features */}
-          <div className="mt-20">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center space-y-4 p-6 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-100 dark:border-green-900/20">
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/40 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-                <h4 className="font-semibold text-gray-900 dark:text-white">14-day free trial</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">No credit card required</p>
-              </div>
-              <div className="text-center space-y-4 p-6 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-100 dark:border-green-900/20">
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/40 rounded-xl flex items-center justify-center">
-                  <Sparkles className="h-8 w-8 text-green-600" />
-                </div>
-                <h4 className="font-semibold text-gray-900 dark:text-white">Cancel anytime</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">No long-term contracts</p>
-              </div>
-              <div className="text-center space-y-4 p-6 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-100 dark:border-green-900/20">
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/40 rounded-xl flex items-center justify-center">
-                  <Crown className="h-8 w-8 text-green-600" />
-                </div>
-                <h4 className="font-semibold text-gray-900 dark:text-white">Enterprise ready</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">SOC 2 compliant</p>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -674,10 +647,7 @@ export default function HomePage() {
               </Button>
             </div>
 
-            <div className="pt-8 text-sm text-gray-500 dark:text-gray-500">
-              <p>No credit card required • 14-day free trial • Cancel anytime</p>
             </div>
-          </div>
         </div>
       </section>
 
