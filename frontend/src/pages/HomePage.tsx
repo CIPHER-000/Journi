@@ -776,7 +776,7 @@ export default function HomePage() {
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              © 2024 Journi. All rights reserved.
+              © 2025 Journi. All rights reserved.
             </div>
             <div className="flex gap-6 text-sm text-gray-600 dark:text-gray-400">
               <a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy Policy</a>
