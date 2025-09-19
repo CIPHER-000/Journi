@@ -51,7 +51,7 @@ export default function HomePage() {
 
     const element = document.getElementById(sectionId)
     if (element) {
-      const offset = 80
+      const offset = 90
       const elementPosition = element.offsetTop - offset
       window.scrollTo({ top: elementPosition, behavior: "smooth" })
     }
@@ -61,7 +61,7 @@ export default function HomePage() {
   useEffect(() => {
     const handleScroll = () => {
       const sections = ["home", "how-it-works", "pricing"]
-      const scrollPosition = window.scrollY + 100
+      const scrollPosition = window.scrollY + 110
 
       for (let i = sections.length - 1; i >= 0; i--) {
         const section = document.getElementById(sections[i])
@@ -212,7 +212,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800 shadow-md">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800 shadow-md">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -308,7 +308,7 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section id="home" className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+      <section id="home" className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-16">
         {/* Background Image */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
