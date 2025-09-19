@@ -324,7 +324,7 @@ export default function HomePage() {
           <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-green-500/10 rounded-full blur-3xl animate-pulse delay-2000" />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 text-center">
+        <div className="relative max-w-7xl mx-auto px-6 text-center pt-16">
           <div className="space-y-8">
             {/* Main Headline */}
             <motion.div
