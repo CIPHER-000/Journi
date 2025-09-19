@@ -404,8 +404,19 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-24 bg-gradient-to-br from-gray-50 to-green-50 dark:from-gray-900 dark:to-green-900/10">
-        <div className="max-w-7xl mx-auto px-6">
+      <section id="how-it-works" className="py-24 relative overflow-hidden">
+        {/* Background Image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1620712943543-bcc4688e7485?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhaSUyMGFnZW50JTIwd29ya2Zsb3clMjBwcm9jZXNzfGVufDB8fHx8MTc1ODI4NTQ0OHww&ixlib=rb-4.1.0&q=80&w=1080')`
+          }}
+        />
+
+        {/* Background Overlay */}
+        <div className="absolute inset-0 bg-gray-50/95 dark:bg-gray-900/95" />
+
+        <div className="relative max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-snug tracking-tight pb-2">
               How Journi's AI Agents Work Together
