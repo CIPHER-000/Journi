@@ -641,14 +641,25 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/30">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+      <section className="py-24 relative overflow-hidden">
+        {/* Background Image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1552664730-d307ca884978?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWFtJTIwY29sbGFib3JhdGlvbiUyMHN1Y2Nlc3N8ZW58MHx8fHwxNzU4Mjg0ODg0fDA&ixlib=rb-4.1.0&q=80&w=1080')`
+          }}
+        />
+
+        {/* Background Overlay */}
+        <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90" />
+
+        <div className="relative max-w-4xl mx-auto px-6 text-center">
           <div className="space-y-8">
             <div className="space-y-4">
-              <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-snug tracking-tight pb-2">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white leading-snug tracking-tight pb-2">
                 Ready to Transform Your Customer Journey Mapping?
               </h2>
-              <p className="text-lg text-gray-900 dark:text-white max-w-3xl mx-auto leading-relaxed">
+              <p className="text-lg text-gray-800 dark:text-gray-200 max-w-3xl mx-auto leading-relaxed">
                 Join hundreds of SaaS teams who are already using Journi to create better customer experiences.
                 Start your free trial today and see the difference AI-powered journey mapping can make.
               </p>
