@@ -409,7 +409,7 @@ export default function HomePage() {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1620712943543-bcc4688e7485?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhaSUyMGFnZW50JTIwd29ya2Zsb3clMjBwcm9jZXNzfGVufDB8fHx8MTc1ODI4NTQ0OHww&ixlib=rb-4.1.0&q=80&w=1080')`
+            backgroundImage: `url('https://images.unsplash.com/photo-1677442136019-21780ecad995?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyb2JvdHMlMjBBSWxlYnJhdGluZyUyMHdvcmtpbmclMjB0b2dldGhlciUyMGNvbGxhYm9yYXRpb258ZW58MHx8fHwxNzU4Mjg1ODUxfDA&ixlib=rb-4.1.0&q=80&w=1080')`
           }}
         />
 
