@@ -648,7 +648,7 @@ export default function HomePage() {
               <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-snug tracking-tight pb-2">
                 Ready to Transform Your Customer Journey Mapping?
               </h2>
-              <p className="text-lg text-gray-700 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-lg text-gray-900 dark:text-white max-w-3xl mx-auto leading-relaxed">
                 Join hundreds of SaaS teams who are already using Journi to create better customer experiences.
                 Start your free trial today and see the difference AI-powered journey mapping can make.
               </p>
