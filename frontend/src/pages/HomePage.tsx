@@ -17,7 +17,8 @@ import {
   Zap,
   TrendingUp,
   FileText,
-  Star
+  Star,
+  ChevronRight
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -148,20 +149,20 @@ export default function HomePage() {
     {
       name: "Starter",
       price: 0,
-      description: "Perfect for small teams getting started with customer journey mapping",
+      description: "Entry-level plan for testing Journi before committing",
       icon: Zap,
       color: "bg-green-500",
       features: [
         "5 journey maps per month",
         "Basic AI agent workflow",
-        "Standard templates",
         "Email support",
         "Export to PDF/PNG",
-        "1 user account"
+        "1 user account",
+        "Uses platform's own OpenAI API key for agentic operation"
       ],
       limitations: [
-        "Limited customization",
-        "Basic analytics"
+        "No templates included",
+        "No analytics"
       ]
     },
     {
@@ -409,7 +410,7 @@ export default function HomePage() {
       <section id="how-it-works" className="py-24 bg-gradient-to-br from-gray-50 to-green-50 dark:from-gray-900 dark:to-green-900/10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-tight tracking-normal">
               How Journi's AI Agents Work Together
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
@@ -432,13 +433,10 @@ export default function HomePage() {
                 >
                   <CardContent className="p-6">
                     <div className="space-y-6">
-                      {/* Step Number & Icon */}
-                      <div className="flex items-center gap-4">
+                      {/* Icon */}
+                      <div className="flex items-center justify-center">
                         <div className={`w-14 h-14 rounded-xl ${step.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                           <step.icon className="h-7 w-7 text-white" />
-                        </div>
-                        <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/40 rounded-full flex items-center justify-center border-2 border-green-200 dark:border-green-700">
-                          <span className="text-sm font-bold text-green-700 dark:text-green-300">{step.number}</span>
                         </div>
                       </div>
 
@@ -453,9 +451,11 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* Connection Line (hidden on mobile) */}
+                    {/* Connection Arrow (hidden on mobile) */}
                     {index < steps.length - 1 && index % 4 !== 3 && (
-                      <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-green-300 to-green-400 dark:from-green-600 dark:to-green-700" />
+                      <div className="hidden lg:block absolute top-1/2 -right-6 transform -translate-y-1/2">
+                        <ChevronRight className="w-8 h-8 text-green-400 dark:text-green-600" />
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -484,7 +484,7 @@ export default function HomePage() {
       <section id="pricing" className="py-24 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-tight tracking-normal">
               Simple, Transparent Pricing
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
@@ -627,7 +627,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="space-y-8">
             <div className="space-y-4">
-              <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+              <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-tight tracking-normal">
                 Ready to Transform Your Customer Journey Mapping?
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
@@ -640,7 +640,7 @@ export default function HomePage() {
               <Button className="px-10 py-5 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg hover:scale-105 transform">
                 Start Your Free Trial
               </Button>
-              <Button variant="outline" className="px-10 py-5 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-green-200 dark:border-green-700 rounded-xl font-semibold transition-all duration-300 text-lg hover:scale-105 transform hover:border-green-300 dark:hover:border-green-600">
+              <Button variant="outline" className="px-10 py-5 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-green-200 dark:border-green-700 rounded-xl font-semibold transition-all duration-300 text-lg hover:scale-105 transform hover:border-green-300 dark:hover:border-green-600 text-gray-900 dark:text-white">
                 Schedule a Demo
               </Button>
             </div>
