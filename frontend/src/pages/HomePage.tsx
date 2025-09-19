@@ -208,15 +208,15 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b">
+      <nav className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center shadow-lg">
                 <span className="text-white font-bold text-sm">J</span>
               </div>
-              <span className="text-xl font-semibold">Journi</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">Journi</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -225,10 +225,10 @@ export default function HomePage() {
                 <button
                   key={item.id}
                   onClick={() => scrollToSection(item.id)}
-                  className={`transition-colors hover:text-foreground ${
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     activeSection === item.id
-                      ? "text-foreground"
-                      : "text-muted-foreground"
+                      ? "text-green-600 bg-green-50 dark:bg-green-900/20"
+                      : "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                   }`}
                 >
                   {item.label}
@@ -238,8 +238,17 @@ export default function HomePage() {
 
             {/* Desktop Auth Buttons */}
             <div className="hidden md:flex items-center gap-3">
-              <Button variant="ghost" onClick={() => navigate('/login')}>Log In</Button>
-              <Button className="bg-green-600 hover:bg-green-700" onClick={() => navigate('/signup')}>
+              <Button
+                variant="ghost"
+                className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                onClick={() => navigate('/login')}
+              >
+                Log In
+              </Button>
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={() => navigate('/signup')}
+              >
                 Sign Up
               </Button>
             </div>
@@ -255,8 +264,8 @@ export default function HomePage() {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="md:hidden py-4 border-t">
-              <div className="space-y-4">
+            <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+              <div className="space-y-2">
                 {navItems.map((item) => (
                   <button
                     key={item.id}
@@ -264,18 +273,27 @@ export default function HomePage() {
                       scrollToSection(item.id)
                       setIsMobileMenuOpen(false)
                     }}
-                    className={`block w-full text-left transition-colors hover:text-foreground ${
+                    className={`block w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       activeSection === item.id
-                        ? "text-foreground"
-                        : "text-muted-foreground"
+                        ? "text-green-600 bg-green-50 dark:bg-green-900/20"
+                        : "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                     }`}
                   >
                     {item.label}
                   </button>
                 ))}
-                <div className="flex flex-col gap-2 pt-4">
-                  <Button variant="ghost" className="justify-start" onClick={() => navigate('/login')}>Log In</Button>
-                  <Button className="justify-start bg-green-600 hover:bg-green-700" onClick={() => navigate('/signup')}>
+                <div className="flex flex-col gap-2 pt-4 border-t border-gray-200 dark:border-gray-800">
+                  <Button
+                    variant="ghost"
+                    className="justify-start text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    onClick={() => navigate('/login')}
+                  >
+                    Log In
+                  </Button>
+                  <Button
+                    className="justify-start bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                    onClick={() => navigate('/signup')}
+                  >
                     Sign Up
                   </Button>
                 </div>
@@ -296,13 +314,13 @@ export default function HomePage() {
         />
 
         {/* Background Overlay */}
-        <div className="absolute inset-0 bg-green-900/85 dark:bg-green-950/90" />
+        <div className="absolute inset-0 bg-gradient-to-br from-green-900/95 via-green-800/90 to-green-700/85" />
 
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-green-300/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-green-400/15 rounded-full blur-3xl animate-pulse delay-1000" />
-          <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-green-500/10 rounded-full blur-3xl animate-pulse delay-2000" />
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-green-400/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-[28rem] h-[28rem] bg-green-300/15 rounded-full blur-3xl animate-pulse delay-1000" />
+          <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-green-500/10 rounded-full blur-3xl animate-pulse delay-2000" />
         </div>
 
         <div className="relative max-w-7xl mx-auto px-6 text-center">
@@ -388,72 +406,88 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-24 bg-muted/30">
+      <section id="how-it-works" className="py-24 bg-gradient-to-br from-gray-50 to-green-50 dark:from-gray-900 dark:to-green-900/10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
               How Journi's AI Agents Work Together
             </h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
               Our 8-step collaborative workflow orchestrates specialized AI agents to deliver comprehensive
               customer journey maps with unprecedented speed and accuracy.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {steps.map((step, index) => (
-              <Card
+              <motion.div
                 key={step.number}
-                className="relative group hover:shadow-lg transition-all duration-300 border-2 hover:border-green-200 dark:hover:border-green-800"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="relative"
               >
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    {/* Step Number & Icon */}
-                    <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-xl ${step.color} flex items-center justify-center shadow-lg`}>
-                        <step.icon className="h-6 w-6 text-white" />
+                <Card
+                  className="h-full group hover:shadow-2xl transition-all duration-500 border-2 border-transparent hover:border-green-200 dark:hover:border-green-700 bg-white dark:bg-gray-800/80 backdrop-blur-sm"
+                >
+                  <CardContent className="p-6">
+                    <div className="space-y-6">
+                      {/* Step Number & Icon */}
+                      <div className="flex items-center gap-4">
+                        <div className={`w-14 h-14 rounded-xl ${step.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                          <step.icon className="h-7 w-7 text-white" />
+                        </div>
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/40 rounded-full flex items-center justify-center border-2 border-green-200 dark:border-green-700">
+                          <span className="text-sm font-bold text-green-700 dark:text-green-300">{step.number}</span>
+                        </div>
                       </div>
-                      <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                        <span className="text-sm font-bold text-muted-foreground">{step.number}</span>
+
+                      {/* Content */}
+                      <div className="space-y-3">
+                        <h3 className="font-bold text-xl text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-300">
+                          {step.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                          {step.description}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Content */}
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-lg">{step.title}</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Connection Line (hidden on mobile) */}
-                  {index < steps.length - 1 && index % 4 !== 3 && (
-                    <div className="hidden lg:block absolute top-1/2 -right-3 w-6 h-0.5 bg-green-300 dark:bg-green-700" />
-                  )}
-                </CardContent>
-              </Card>
+                    {/* Connection Line (hidden on mobile) */}
+                    {index < steps.length - 1 && index % 4 !== 3 && (
+                      <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-green-300 to-green-400 dark:from-green-600 dark:to-green-700" />
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
 
           {/* Bottom CTA */}
-          <div className="text-center mt-16">
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-green-100 dark:bg-green-900/20 rounded-full">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <span className="font-medium">Complete journey maps generated in under 10 minutes</span>
-            </div>
+          <div className="text-center mt-20">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/40 rounded-full border-2 border-green-200 dark:border-green-700 shadow-lg"
+            >
+              <CheckCircle className="h-6 w-6 text-green-600" />
+              <span className="font-semibold text-green-800 dark:text-green-300">
+                Complete journey maps generated in under 10 minutes
+              </span>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24">
+      <section id="pricing" className="py-24 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
               Choose the perfect plan for your team. All plans include our core AI-powered journey mapping
               with no hidden fees or setup costs.
             </p>
@@ -461,113 +495,127 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {plans.map((plan, index) => (
-              <Card
+              <motion.div
                 key={plan.name}
-                className={`relative transition-all duration-300 hover:shadow-xl ${
-                  plan.popular
-                    ? "border-2 border-green-200 dark:border-green-800 shadow-lg scale-105"
-                    : "border-2 hover:border-green-100 dark:hover:border-green-900"
-                }`}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="relative"
               >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-green-600 text-white px-4 py-1">
-                      Most Popular
-                    </Badge>
-                  </div>
-                )}
+                <Card
+                  className={`h-full group transition-all duration-500 hover:shadow-2xl ${
+                    plan.popular
+                      ? "border-2 border-green-200 dark:border-green-600 shadow-xl scale-105 ring-2 ring-green-100 dark:ring-green-900/20"
+                      : "border-2 border-gray-200 dark:border-gray-700 hover:border-green-200 dark:hover:border-green-600"
+                  } bg-white dark:bg-gray-800/80 backdrop-blur-sm`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                      <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-2 shadow-lg">
+                        Most Popular
+                      </Badge>
+                    </div>
+                  )}
 
-                <CardHeader className="text-center space-y-4 pt-8">
-                  <div className={`w-16 h-16 mx-auto rounded-2xl ${plan.color} flex items-center justify-center shadow-lg`}>
-                    <plan.icon className="h-8 w-8 text-white" />
-                  </div>
+                  <CardHeader className="text-center space-y-6 pt-8 pb-4">
+                    <div className={`w-20 h-20 mx-auto rounded-2xl ${plan.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                      <plan.icon className="h-10 w-10 text-white" />
+                    </div>
 
-                  <div>
-                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
-                  </div>
+                    <div>
+                      <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-300">
+                        {plan.name}
+                      </CardTitle>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-3 leading-relaxed">
+                        {plan.description}
+                      </p>
+                    </div>
 
-                  <div className="space-y-1">
-                    {plan.price ? (
-                      <>
-                        <div className="flex items-baseline justify-center gap-1">
-                          <span className="text-4xl font-bold">${plan.price}</span>
-                          <span className="text-muted-foreground">/month</span>
+                    <div className="space-y-2">
+                      {plan.price ? (
+                        <>
+                          <div className="flex items-baseline justify-center gap-2">
+                            <span className="text-5xl font-bold text-gray-900 dark:text-white">${plan.price}</span>
+                            <span className="text-lg text-gray-600 dark:text-gray-400">/month</span>
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-gray-500">per user, billed monthly</p>
+                        </>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="text-5xl font-bold text-gray-900 dark:text-white">Custom</div>
+                          <p className="text-sm text-gray-500 dark:text-gray-500">Contact us for pricing</p>
                         </div>
-                        <p className="text-sm text-muted-foreground">per user, billed monthly</p>
-                      </>
-                    ) : (
-                      <div className="space-y-1">
-                        <div className="text-4xl font-bold">Custom</div>
-                        <p className="text-sm text-muted-foreground">Contact us for pricing</p>
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
+                      )}
+                    </div>
+                  </CardHeader>
 
-                <CardContent className="space-y-6">
-                  <Button
-                    className={`w-full ${
-                      plan.popular
-                        ? "bg-green-600 hover:bg-green-700"
-                        : ""
-                    }`}
-                    variant={plan.popular ? "default" : "outline"}
-                    onClick={() => navigate(plan.price ? '/signup' : '/contact')}
-                  >
-                    {plan.price ? "Start Free Trial" : "Contact Sales"}
-                  </Button>
+                  <CardContent className="space-y-8">
+                    <Button
+                      className={`w-full text-lg py-4 font-semibold transition-all duration-300 ${
+                        plan.popular
+                          ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl"
+                          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white hover:text-gray-900 dark:hover:text-white"
+                      }`}
+                      onClick={() => navigate(plan.price ? '/signup' : '/contact')}
+                    >
+                      {plan.price ? "Start Free Trial" : "Contact Sales"}
+                    </Button>
 
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-sm">What's included:</h4>
-                    <ul className="space-y-2">
-                      {plan.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-start gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {plan.limitations && (
-                      <ul className="space-y-2 pt-2 border-t">
-                        {plan.limitations.map((limitation, limitationIndex) => (
-                          <li key={limitationIndex} className="flex items-start gap-2">
-                            <div className="w-4 h-4 mt-0.5 flex-shrink-0 rounded-full border border-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">{limitation}</span>
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">What's included:</h4>
+                      <ul className="space-y-3">
+                        {plan.features.map((feature, featureIndex) => (
+                          <li key={featureIndex} className="flex items-start gap-3">
+                            <div className="w-5 h-5 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <CheckCircle className="h-3 w-3 text-green-600" />
+                            </div>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{feature}</span>
                           </li>
                         ))}
                       </ul>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+
+                      {plan.limitations && (
+                        <ul className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                          {plan.limitations.map((limitation, limitationIndex) => (
+                            <li key={limitationIndex} className="flex items-start gap-3">
+                              <div className="w-5 h-5 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full" />
+                              </div>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">{limitation}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
 
           {/* Bottom Features */}
-          <div className="mt-16 text-center">
+          <div className="mt-20">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="space-y-2">
-                <div className="w-12 h-12 mx-auto bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+              <div className="text-center space-y-4 p-6 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-100 dark:border-green-900/20">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/40 rounded-xl flex items-center justify-center">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
-                <h4 className="font-semibold">14-day free trial</h4>
-                <p className="text-sm text-muted-foreground">No credit card required</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white">14-day free trial</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">No credit card required</p>
               </div>
-              <div className="space-y-2">
-                <div className="w-12 h-12 mx-auto bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                  <Sparkles className="h-6 w-6 text-green-600" />
+              <div className="text-center space-y-4 p-6 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-100 dark:border-green-900/20">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/40 rounded-xl flex items-center justify-center">
+                  <Sparkles className="h-8 w-8 text-green-600" />
                 </div>
-                <h4 className="font-semibold">Cancel anytime</h4>
-                <p className="text-sm text-muted-foreground">No long-term contracts</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Cancel anytime</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">No long-term contracts</p>
               </div>
-              <div className="space-y-2">
-                <div className="w-12 h-12 mx-auto bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                  <Crown className="h-6 w-6 text-green-600" />
+              <div className="text-center space-y-4 p-6 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-100 dark:border-green-900/20">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/40 rounded-xl flex items-center justify-center">
+                  <Crown className="h-8 w-8 text-green-600" />
                 </div>
-                <h4 className="font-semibold">Enterprise ready</h4>
-                <p className="text-sm text-muted-foreground">SOC 2 compliant</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Enterprise ready</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">SOC 2 compliant</p>
               </div>
             </div>
           </div>
@@ -575,29 +623,29 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-green-50 dark:bg-green-950/20">
+      <section className="py-24 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/30">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="space-y-8">
             <div className="space-y-4">
-              <h2 className="text-3xl md:text-4xl font-bold">
+              <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
                 Ready to Transform Your Customer Journey Mapping?
               </h2>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
                 Join hundreds of SaaS teams who are already using Journi to create better customer experiences.
                 Start your free trial today and see the difference AI-powered journey mapping can make.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button className="px-8 py-4 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 text-lg">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+              <Button className="px-10 py-5 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg hover:scale-105 transform">
                 Start Your Free Trial
               </Button>
-              <Button variant="outline" className="px-8 py-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-border rounded-lg font-medium transition-all duration-300 text-lg">
+              <Button variant="outline" className="px-10 py-5 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-green-200 dark:border-green-700 rounded-xl font-semibold transition-all duration-300 text-lg hover:scale-105 transform hover:border-green-300 dark:hover:border-green-600">
                 Schedule a Demo
               </Button>
             </div>
 
-            <div className="pt-8 text-sm text-muted-foreground">
+            <div className="pt-8 text-sm text-gray-500 dark:text-gray-500">
               <p>No credit card required • 14-day free trial • Cancel anytime</p>
             </div>
           </div>
@@ -605,14 +653,16 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-10">
+      <footer className="bg-gradient-to-br from-gray-900 to-gray-800 text-white py-12 border-t border-gray-800">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center shadow-lg">
                 <span className="text-white font-bold text-sm">J</span>
               </div>
-              <span className="text-xl font-bold">Journi</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent">
+                Journi
+              </span>
             </div>
             <div className="text-gray-400 text-sm">
               © 2024 Journi. All rights reserved.
