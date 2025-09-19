@@ -18,7 +18,11 @@ import {
   TrendingUp,
   FileText,
   Star,
-  ChevronRight
+  ChevronRight,
+  Mail,
+  Github,
+  Twitter,
+  Linkedin
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -26,6 +30,7 @@ import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
+import { Separator } from '../components/ui/separator'
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -666,19 +671,117 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-br from-gray-900 to-gray-800 text-white py-12 border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-sm">J</span>
+      <footer className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Brand */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">J</span>
+                </div>
+                <span className="text-xl font-semibold text-gray-900 dark:text-white">Journi</span>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent">
-                Journi
-              </span>
+              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                AI-powered customer journey mapping for modern SaaS teams.
+                Transform customer research into actionable insights in minutes.
+              </p>
+              <div className="flex gap-2">
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                  <Twitter className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                  <Linkedin className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                  <Github className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <div className="text-gray-400 text-sm">
+
+            {/* Product */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-gray-900 dark:text-white">Product</h4>
+              <div className="space-y-2 text-sm">
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Features
+                </a>
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Templates
+                </a>
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Integrations
+                </a>
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  API
+                </a>
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Changelog
+                </a>
+              </div>
+            </div>
+
+            {/* Company */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-gray-900 dark:text-white">Company</h4>
+              <div className="space-y-2 text-sm">
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  About
+                </a>
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Blog
+                </a>
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Careers
+                </a>
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Press
+                </a>
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Partners
+                </a>
+              </div>
+            </div>
+
+            {/* Support */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-gray-900 dark:text-white">Support</h4>
+              <div className="space-y-2 text-sm">
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Help Center
+                </a>
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Documentation
+                </a>
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Community
+                </a>
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Contact Us
+                </a>
+                <a href="#" className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Status
+                </a>
+              </div>
+              <div className="pt-4">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <Mail className="h-4 w-4" />
+                  <span>hello@journi.ai</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator className="my-8" />
+
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               © 2024 Journi. All rights reserved.
+            </div>
+            <div className="flex gap-6 text-sm text-gray-600 dark:text-gray-400">
+              <a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Security</a>
             </div>
           </div>
         </div>
