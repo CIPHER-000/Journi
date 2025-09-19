@@ -542,9 +542,13 @@ export default function HomePage() {
                         <>
                           <div className="flex items-baseline justify-center gap-2">
                             <span className="text-5xl font-bold text-gray-900 dark:text-white">${plan.price}</span>
-                            <span className="text-lg text-gray-600 dark:text-gray-400">/month</span>
+                            {plan.price > 0 && (
+                              <span className="text-lg text-gray-600 dark:text-gray-400">/month</span>
+                            )}
                           </div>
-                          <p className="text-sm text-gray-500 dark:text-gray-500">per user, billed monthly</p>
+                          {plan.price > 0 && (
+                            <p className="text-sm text-gray-500 dark:text-gray-500">per user, billed monthly</p>
+                          )}
                         </>
                       ) : (
                         <div className="space-y-2">
