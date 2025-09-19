@@ -175,9 +175,11 @@ export default function HomePage() {
       features: [
         "25 journey maps per month",
         "Full AI agent orchestration",
-        "Custom templates (Coming Soon)",
         "Priority support",
-        "Advanced export options",
+        "Advanced export options"
+      ],
+      limitations: [
+        "Custom templates (Coming Soon)",
         "Up to 5 user accounts (Coming Soon)",
         "Real-time collaboration (Coming Soon)",
         "Advanced analytics (Coming Soon)",
@@ -187,10 +189,10 @@ export default function HomePage() {
     },
     {
       name: "Enterprise",
-      price: 29,
+      price: null,
       description: "Custom solutions for large organizations with complex requirements",
       icon: Crown,
-      color: "bg-green-700",
+      color: "bg-gray-400",
       features: [
         "Unlimited journey maps",
         "Bring your own OpenAI API key",
@@ -202,7 +204,8 @@ export default function HomePage() {
         "Custom workflows",
         "SLA guarantees",
         "On-premise deployment"
-      ]
+      ],
+      comingSoon: true
     }
   ]
 
@@ -399,7 +402,7 @@ export default function HomePage() {
       <section id="how-it-works" className="py-24 bg-gradient-to-br from-gray-50 to-green-50 dark:from-gray-900 dark:to-green-900/10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-snug tracking-tight">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-snug tracking-tight pb-2">
               How Journi's AI Agents Work Together
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
@@ -473,7 +476,7 @@ export default function HomePage() {
       <section id="pricing" className="py-24 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-snug tracking-tight">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-snug tracking-tight pb-2">
               Simple, Transparent Pricing
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
@@ -493,15 +496,24 @@ export default function HomePage() {
               >
                 <Card
                   className={`h-full group transition-all duration-500 hover:shadow-2xl ${
-                    plan.popular
-                      ? "border-2 border-green-200 dark:border-green-600 shadow-xl scale-105 ring-2 ring-green-100 dark:ring-green-900/20"
-                      : "border-2 border-gray-200 dark:border-gray-700 hover:border-green-200 dark:hover:border-green-600"
+                    plan.comingSoon
+                      ? "border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 opacity-60"
+                      : plan.popular
+                        ? "border-2 border-green-200 dark:border-green-600 shadow-xl scale-105 ring-2 ring-green-100 dark:ring-green-900/20"
+                        : "border-2 border-gray-200 dark:border-gray-700 hover:border-green-200 dark:hover:border-green-600"
                   } bg-white dark:bg-gray-800/80 backdrop-blur-sm`}
                 >
                   {plan.popular && (
                     <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
                       <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-2 shadow-lg">
                         Most Popular
+                      </Badge>
+                    </div>
+                  )}
+                  {plan.comingSoon && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                      <Badge className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-6 py-2 shadow-lg">
+                        Coming Soon
                       </Badge>
                     </div>
                   )}
@@ -521,7 +533,12 @@ export default function HomePage() {
                     </div>
 
                     <div className="space-y-2">
-                      {plan.price ? (
+                      {plan.comingSoon ? (
+                        <div className="space-y-2">
+                          <div className="text-3xl font-bold text-gray-500 dark:text-gray-400">Coming Soon</div>
+                          <p className="text-sm text-gray-400 dark:text-gray-500">Enterprise features in development</p>
+                        </div>
+                      ) : plan.price ? (
                         <>
                           <div className="flex items-baseline justify-center gap-2">
                             <span className="text-5xl font-bold text-gray-900 dark:text-white">${plan.price}</span>
@@ -541,13 +558,16 @@ export default function HomePage() {
                   <CardContent className="space-y-8">
                     <Button
                       className={`w-full text-lg py-4 font-semibold transition-all duration-300 ${
-                        plan.popular
-                          ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl"
-                          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white hover:text-gray-900 dark:hover:text-white"
+                        plan.comingSoon
+                          ? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                          : plan.popular
+                            ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl"
+                            : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white hover:text-gray-900 dark:hover:text-white"
                       }`}
-                      onClick={() => navigate(plan.price ? '/signup' : '/contact')}
+                      disabled={plan.comingSoon}
+                      onClick={() => !plan.comingSoon && navigate(plan.price ? '/signup' : '/contact')}
                     >
-                      {plan.price ? "Start Free Trial" : "Contact Sales"}
+                      {plan.comingSoon ? "Coming Soon" : plan.price ? "Start Free Trial" : "Contact Sales"}
                     </Button>
 
                     <div className="space-y-4">
@@ -616,7 +636,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="space-y-8">
             <div className="space-y-4">
-              <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-snug tracking-tight">
+              <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-snug tracking-tight pb-2">
                 Ready to Transform Your Customer Journey Mapping?
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
