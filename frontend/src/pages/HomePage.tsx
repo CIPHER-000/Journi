@@ -175,14 +175,14 @@ export default function HomePage() {
       features: [
         "25 journey maps per month",
         "Full AI agent orchestration",
-        "Custom templates",
+        "Custom templates (Coming Soon)",
         "Priority support",
         "Advanced export options",
-        "Up to 5 user accounts",
-        "Real-time collaboration",
-        "Advanced analytics",
-        "Integration APIs",
-        "Custom branding"
+        "Up to 5 user accounts (Coming Soon)",
+        "Real-time collaboration (Coming Soon)",
+        "Advanced analytics (Coming Soon)",
+        "Integration APIs (Coming Soon)",
+        "Custom branding (Coming Soon)"
       ]
     },
     {
@@ -410,7 +410,7 @@ export default function HomePage() {
       <section id="how-it-works" className="py-24 bg-gradient-to-br from-gray-50 to-green-50 dark:from-gray-900 dark:to-green-900/10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-tight tracking-normal">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-snug tracking-tight">
               How Journi's AI Agents Work Together
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
@@ -484,7 +484,7 @@ export default function HomePage() {
       <section id="pricing" className="py-24 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-tight tracking-normal">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-snug tracking-tight">
               Simple, Transparent Pricing
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
@@ -627,7 +627,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="space-y-8">
             <div className="space-y-4">
-              <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-tight tracking-normal">
+              <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent leading-snug tracking-tight">
                 Ready to Transform Your Customer Journey Mapping?
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
