@@ -326,17 +326,6 @@ export default function HomePage() {
 
         <div className="relative max-w-7xl mx-auto px-6 text-center">
           <div className="space-y-8">
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white/90 dark:bg-gray-900/90 rounded-full border shadow-lg backdrop-blur-sm"
-            >
-              <Sparkles className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium">AI-Powered Journey Mapping</span>
-            </motion.div>
-
             {/* Main Headline */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
