@@ -364,7 +364,7 @@ export default function HomePage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="text-lg px-8 py-6 bg-white/90 hover:bg-white dark:bg-gray-900/90 dark:hover:bg-gray-900 border-2 border-white/50 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm"
+                className="text-lg px-8 py-6 bg-white/90 hover:bg-white dark:bg-gray-900/90 dark:hover:bg-gray-900 border-2 border-white/50 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm text-gray-900 dark:text-white"
                 onClick={() => scrollToSection('how-it-works')}
               >
                 <Play className="mr-2 h-5 w-5" />
