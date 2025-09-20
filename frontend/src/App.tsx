@@ -15,6 +15,7 @@ import JourneyDetailPage from './pages/JourneyDetailPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import SettingsPage from './pages/SettingsPage'
 import UpgradePage from './pages/UpgradePage'
+import TemplatesPage from './pages/TemplatesPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
 import './App.css'
 
@@ -69,7 +70,7 @@ function App() {
             <Route path="/templates" element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <AnalyticsPage />
+                  <TemplatesPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

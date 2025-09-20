@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
   Map, Plus, Calendar, Users, Key, Crown, Zap, CheckCircle,
-  Clock, TrendingUp, Target, BarChart3, Loader2
+  Clock, TrendingUp, Target, BarChart3, Loader2, FileText, BookOpen
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuth } from '../context/AuthContext'
@@ -87,275 +87,274 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Welcome Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-primary-50 to-secondary-50 rounded-3xl p-8 border border-primary-100"
-      >
+      {/* Header */}
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome back, {user?.name || user?.email?.split('@')[0] || 'User'}! 🚀
-            </h1>
-            <p className="text-lg text-gray-600">
-              Ready to map your next customer journey?
-            </p>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-2">Dashboard</h1>
+            <p className="text-gray-600">Welcome back! Here's your journey mapping overview.</p>
           </div>
+
           <PrimaryButton
             onClick={() => navigate('/create')}
             size="lg"
-            className="hidden md:flex"
+            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base font-medium gap-3"
           >
-            <Plus className="w-5 h-5 mr-2" />
+            <Plus className="w-5 h-5" />
             Create New Journey
           </PrimaryButton>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Quick Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white shadow-sm border border-gray-200 rounded-xl"
+        >
+          <div className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-50 rounded-lg">
+                <Map className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Journeys Created</p>
+                <p className="text-2xl font-semibold text-gray-900">{totalJourneys}</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-soft transition-all duration-300"
+          className="bg-white shadow-sm border border-gray-200 rounded-xl"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-primary-100 rounded-xl">
-              <BarChart3 className="w-6 h-6 text-primary-600" />
+          <div className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <FileText className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Reports Generated</p>
+                <p className="text-2xl font-semibold text-gray-900">{completedJourneys}</p>
+              </div>
             </div>
-            <span className="text-sm font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">
-              +12%
-            </span>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900">{totalJourneys}</h3>
-          <p className="text-sm text-gray-600">Total Journeys</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-soft transition-all duration-300"
+          className="bg-white shadow-sm border border-gray-200 rounded-xl"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-green-100 rounded-xl">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+          <div className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-purple-50 rounded-lg">
+                <BookOpen className="w-6 h-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Templates Used</p>
+                <p className="text-2xl font-semibold text-gray-900">5</p>
+              </div>
             </div>
-            <span className="text-sm font-medium text-green-600">
-              {Math.round((completedJourneys / totalJourneys) * 100) || 0}%
-            </span>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900">{completedJourneys}</h3>
-          <p className="text-sm text-gray-600">Completed</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-soft transition-all duration-300"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <Clock className="w-6 h-6 text-blue-600" />
-            </div>
-            <span className="text-sm font-medium text-blue-600 animate-pulse">
-              Live
-            </span>
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900">{processingJourneys}</h3>
-          <p className="text-sm text-gray-600">Processing</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-soft transition-all duration-300"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-accent-100 rounded-xl">
-              <Target className="w-6 h-6 text-accent-600" />
-            </div>
-            <span className="text-sm font-medium text-accent-600">
-              {userProfile?.plan_type === 'free' ? 'Free' : 'Pro'}
-            </span>
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900">
-            {userProfile?.journey_count || 0}
-            {userProfile?.plan_type === 'free' ? '/5' : '+'}
-          </h3>
-          <p className="text-sm text-gray-600">This Month</p>
         </motion.div>
       </div>
 
-      {/* Usage Overview */}
+      {/* Plan Usage Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+        transition={{ delay: 0.3 }}
+        className="bg-white shadow-sm border border-gray-200 rounded-xl"
       >
-        {/* Main Stats */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Recent Activity</h3>
-            <div className="space-y-4">
-              {journeyMaps.slice(0, 5).map((journey, index) => (
-                <motion.div
-                  key={journey.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/journey/${journey.id}`)}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      journey.status === 'completed' ? 'bg-green-100' :
-                      journey.status === 'processing' ? 'bg-blue-100' :
-                      journey.status === 'failed' ? 'bg-red-100' : 'bg-gray-100'
-                    }`}>
-                      {journey.status === 'completed' ? <CheckCircle className="w-5 h-5 text-green-600" /> :
-                       journey.status === 'processing' ? <Clock className="w-5 h-5 text-blue-600" /> :
-                       journey.status === 'failed' ? <CheckCircle className="w-5 h-5 text-red-600" /> :
-                       <Clock className="w-5 h-5 text-gray-600" />}
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">{journey.title}</h4>
-                      <p className="text-sm text-gray-600">{format(new Date(journey.createdAt), 'MMM d, yyyy')}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                      journey.status === 'completed' ? 'bg-green-100 text-green-700' :
-                      journey.status === 'processing' ? 'bg-blue-100 text-blue-700' :
-                      journey.status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {journey.status}
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Plan & Actions */}
-        <div className="space-y-6">
-          {userProfile?.plan_type === 'free' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6 }}
-              className="bg-gradient-to-br from-primary-600 to-secondary-600 rounded-2xl p-6 text-white"
-            >
-              <div className="flex items-center mb-4">
-                <Crown className="w-6 h-6 mr-2" />
-                <h3 className="font-semibold">Upgrade to Pro</h3>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-50 rounded-lg">
+                <Crown className="w-5 h-5 text-yellow-600" />
               </div>
-              <p className="text-sm text-primary-100 mb-4">
-                Unlimited journeys with your own API key
-              </p>
+              <div>
+                <h3 className="font-semibold text-gray-900">Plan Usage</h3>
+                <p className="text-sm text-gray-600">{userProfile?.plan_type === 'free' ? 'Free' : 'Pro'} Plan</p>
+              </div>
+            </div>
+
+            {userProfile?.plan_type === 'free' && (
               <PrimaryButton
-                variant="secondary"
                 onClick={() => navigate('/upgrade')}
-                className="w-full bg-white text-primary-600 hover:bg-gray-100"
+                className="bg-green-600 hover:bg-green-700 text-white gap-2"
               >
-                Upgrade Now
+                <TrendingUp className="w-4 h-4" />
+                Upgrade
               </PrimaryButton>
-            </motion.div>
-          )}
-
-          {/* Usage Progress */}
-          {userProfile?.plan_type === 'free' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-              className="bg-white rounded-2xl border border-gray-200 p-6"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Usage Overview</h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-600">Journeys this month</span>
-                    <span className="font-medium text-gray-900">
-                      {userProfile.journey_count}/5
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <motion.div
-                      className="bg-gradient-to-r from-primary-600 to-secondary-600 h-2 rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${((userProfile.journey_count || 0) / 5) * 100}%` }}
-                      transition={{ duration: 0.8 }}
-                    />
-                  </div>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-gray-600">
-                    {5 - (userProfile.journey_count || 0)} journeys remaining
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </div>
-      </motion.div>
-
-      {/* Recent Journeys Grid */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Your Journey Maps</h2>
-          <PrimaryButton
-            onClick={() => navigate('/journeys')}
-            variant="secondary"
-            size="sm"
-          >
-            View All
-          </PrimaryButton>
-        </div>
-
-        {journeyMaps.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {journeyMaps.map((journey, index) => (
-              <motion.div
-                key={journey.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 + index * 0.1 }}
-              >
-                <JourneyCard
-                  journey={journey}
-                />
-              </motion.div>
-            ))}
+            )}
           </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl border border-gray-200 p-12 text-center"
-          >
-            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Map className="w-8 h-8 text-primary-600" />
+
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">
+                {userProfile?.plan_type === 'free' ? 'Journeys Used' : 'Journeys This Month'}
+              </span>
+              <span className="font-medium text-gray-900">
+                {userProfile?.plan_type === 'free'
+                  ? `${userProfile?.journey_count || 0}/5 used`
+                  : `${userProfile?.journey_count || 0}/25`
+                }
+              </span>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No journeys yet</h3>
-            <p className="text-gray-600 mb-6">Create your first customer journey map</p>
-            <PrimaryButton onClick={() => navigate('/create')}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Journey
-            </PrimaryButton>
-          </motion.div>
-        )}
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <motion.div
+                className="bg-gradient-to-r from-green-600 to-green-500 h-2 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${((userProfile?.journey_count || 0) / (userProfile?.plan_type === 'free' ? 5 : 25)) * 100}%` }}
+                transition={{ duration: 0.8 }}
+              />
+            </div>
+
+            {userProfile?.plan_type === 'free' && (userProfile.journey_count || 0) >= 4 && (
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg mt-3">
+                <p className="text-sm text-yellow-800">
+                  You're running low on journeys. Upgrade to Pro for 25 journeys per month.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       </motion.div>
+
+      {/* Recent Items Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Journeys */}
+        <div className="bg-white shadow-sm border border-gray-200 rounded-xl">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Recent Journeys</h3>
+              <PrimaryButton
+                onClick={() => navigate('/journeys')}
+                variant="secondary"
+                size="sm"
+                className="text-green-600 hover:text-green-700"
+              >
+                View All
+              </PrimaryButton>
+            </div>
+          </div>
+          <div className="p-6">
+            {journeyMaps.length > 0 ? (
+              <div className="space-y-3">
+                {journeyMaps.slice(0, 3).map((journey, index) => (
+                  <motion.div
+                    key={journey.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + index * 0.1 }}
+                    className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <Map className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 text-sm">{journey.title}</h4>
+                        <p className="text-xs text-gray-600">{journey.industry}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        journey.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        journey.status === 'processing' || journey.status === 'running' ? 'bg-yellow-100 text-yellow-800' :
+                        journey.status === 'failed' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {journey.status}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {format(new Date(journey.createdAt), 'MMM d')}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Map className="w-6 h-6 text-gray-400" />
+                </div>
+                <h4 className="text-sm font-medium text-gray-900 mb-1">No journeys yet</h4>
+                <p className="text-xs text-gray-600 mb-3">Create your first customer journey map</p>
+                <PrimaryButton size="sm" onClick={() => navigate('/create')}>
+                  <Plus className="w-3 h-3 mr-1" />
+                  Create Journey
+                </PrimaryButton>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Reports */}
+        <div className="bg-white shadow-sm border border-gray-200 rounded-xl">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Recent Reports</h3>
+              <PrimaryButton
+                onClick={() => navigate('/analytics')}
+                variant="secondary"
+                size="sm"
+                className="text-green-600 hover:text-green-700"
+              >
+                View All
+              </PrimaryButton>
+            </div>
+          </div>
+          <div className="p-6">
+            {completedJourneys > 0 ? (
+              <div className="space-y-3">
+                {journeyMaps.filter(j => j.status === 'completed').slice(0, 3).map((journey, index) => (
+                  <motion.div
+                    key={`report-${journey.id}`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 + index * 0.1 }}
+                    className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 text-sm">{journey.title} Report</h4>
+                        <p className="text-xs text-gray-600">Generated insights</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">
+                        {format(new Date(journey.createdAt), 'MMM d')}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <FileText className="w-6 h-6 text-gray-400" />
+                </div>
+                <h4 className="text-sm font-medium text-gray-900 mb-1">No reports yet</h4>
+                <p className="text-xs text-gray-600 mb-3">Complete a journey to generate reports</p>
+                <PrimaryButton size="sm" onClick={() => navigate('/create')}>
+                  <Plus className="w-3 h-3 mr-1" />
+                  Create Journey
+                </PrimaryButton>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
