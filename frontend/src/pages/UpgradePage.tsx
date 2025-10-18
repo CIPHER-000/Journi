@@ -100,14 +100,14 @@ export default function UpgradePage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Current Plan Status */}
-        <Card className="bg-white border border-gray-200 rounded-lg mb-8">
+        <Card className="bg-white shadow-sm border border-gray-200 rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Crown className="h-5 w-5 text-blue-600" />
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <Crown className="h-5 w-5 text-yellow-600" />
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900">Current Plan</h3>
@@ -124,12 +124,12 @@ export default function UpgradePage() {
         </Card>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {plans.map((plan) => (
             <Card
               key={plan.id}
-              className={`bg-white border-2 rounded-lg overflow-hidden transition-all hover:shadow-md ${
-                plan.popular ? 'border-green-500 shadow-lg' : 'border-gray-200'
+              className={`bg-white shadow-sm border-2 rounded-xl overflow-hidden transition-all hover:shadow-md ${
+                plan.popular ? 'border-green-500 shadow-md' : 'border-gray-200'
               } ${plan.current ? 'ring-2 ring-green-500' : ''}`}
             >
               {plan.popular && (
@@ -138,7 +138,7 @@ export default function UpgradePage() {
                 </div>
               )}
               {plan.current && (
-                <div className="bg-blue-500 text-white text-center py-2 text-sm font-medium">
+                <div className="bg-gray-500 text-white text-center py-2 text-sm font-medium">
                   Current Plan
                 </div>
               )}
@@ -213,7 +213,7 @@ export default function UpgradePage() {
         </div>
 
         {/* Additional Benefits */}
-        <Card className="bg-white border border-gray-200 rounded-lg">
+        <Card className="bg-white shadow-sm border border-gray-200 rounded-xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5" />
@@ -243,8 +243,8 @@ export default function UpgradePage() {
               </div>
 
               <div className="text-center">
-                <div className="p-3 bg-blue-100 rounded-lg w-fit mx-auto mb-3">
-                  <CreditCard className="h-6 w-6 text-blue-600" />
+                <div className="p-3 bg-green-100 rounded-lg w-fit mx-auto mb-3">
+                  <CreditCard className="h-6 w-6 text-green-600" />
                 </div>
                 <h3 className="font-medium text-gray-900 mb-2">Flexible Billing</h3>
                 <p className="text-sm text-gray-600">
@@ -256,7 +256,7 @@ export default function UpgradePage() {
         </Card>
 
         {/* FAQ Section */}
-        <Card className="bg-white border border-gray-200 rounded-lg mt-8">
+        <Card className="bg-white shadow-sm border border-gray-200 rounded-xl">
           <CardHeader>
             <CardTitle>Frequently Asked Questions</CardTitle>
           </CardHeader>

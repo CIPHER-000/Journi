@@ -26,7 +26,15 @@
       "Bash(curl:*)",
       "Bash(npm run lint)",
       "Bash(find:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(git restore:*)",
+      "Bash(PORT=8001 python:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(set:*)",
+      "Bash(netstat:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

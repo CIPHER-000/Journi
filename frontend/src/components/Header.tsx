@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Map, Home, Plus, BarChart3, LogOut, User } from 'lucide-react';
+import { Home, Plus, BarChart3, LogOut, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import Logo from './Logo';
 
 export function Header() {
   const location = useLocation();
@@ -21,13 +22,8 @@ export function Header() {
     <header className="bg-white/95 backdrop-blur-lg border-b border-gray-100 sticky top-0 z-50 shadow-sm">
       <div className="w-full px-6 lg:px-8">
         <div className="flex justify-between items-center h-14">
-          <Link to="/" className="flex items-center space-x-2.5">
-            <div className="p-1.5 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg">
-              <Map className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Journi
-            </span>
+          <Link to="/" className="flex items-center">
+            <Logo size="sm" />
           </Link>
 
           <nav className="flex items-center space-x-8">

@@ -108,7 +108,7 @@ export default function DashboardPage() {
   }))
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
       {/* Header with Create Button */}
       <div className="bg-white border-b border-gray-200 p-6">
         <div className="flex items-center justify-between">
@@ -133,44 +133,44 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-white border border-gray-200 rounded-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-white shadow-sm border border-gray-200 rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-50 rounded-lg">
+                <Map className="h-6 w-6 text-green-600" />
+              </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Journeys Created</p>
+                <p className="text-sm font-medium text-gray-600">Journeys Created</p>
                 <p className="text-2xl font-semibold text-gray-900">{metrics.journeysCreated}</p>
               </div>
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Map className="h-5 w-5 text-green-600" />
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-gray-200 rounded-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+        <Card className="bg-white shadow-sm border border-gray-200 rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <FileText className="h-6 w-6 text-blue-600" />
+              </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Reports Generated</p>
+                <p className="text-sm font-medium text-gray-600">Reports Generated</p>
                 <p className="text-2xl font-semibold text-gray-900">{metrics.reportsGenerated}</p>
               </div>
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <FileText className="h-5 w-5 text-blue-600" />
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-gray-200 rounded-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Templates Used</p>
-                <p className="text-2xl font-semibold text-gray-900">{metrics.templatesUsed}</p>
+        <Card className="bg-white shadow-sm border border-gray-200 rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-purple-50 rounded-lg">
+                <BookOpen className="h-6 w-6 text-purple-600" />
               </div>
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <BookOpen className="h-5 w-5 text-purple-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Templates Used</p>
+                <p className="text-2xl font-semibold text-gray-900">{metrics.templatesUsed}</p>
               </div>
             </div>
           </CardContent>
@@ -178,15 +178,15 @@ export default function DashboardPage() {
       </div>
 
       {/* Plan Usage Card */}
-      <Card className="bg-white border border-gray-200 rounded-lg">
-        <CardContent className="p-4">
+      <Card className="bg-white shadow-sm border border-gray-200 rounded-xl">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 rounded-lg">
+              <div className="p-2 bg-yellow-50 rounded-lg">
                 <Crown className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Plan Usage</h3>
+                <h3 className="font-semibold text-gray-900">Plan Usage</h3>
                 <p className="text-sm text-gray-600">{isProPlan ? 'Pro' : 'Free'} Plan</p>
               </div>
             </div>
@@ -194,8 +194,9 @@ export default function DashboardPage() {
             {!isProPlan && (
               <Button
                 onClick={() => navigate('/upgrade')}
-                className="bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 text-sm font-medium"
+                className="bg-green-600 hover:bg-green-700 text-white gap-2"
               >
+                <TrendingUp className="h-4 w-4" />
                 Upgrade
               </Button>
             )}
@@ -236,28 +237,9 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Active Persona Card */}
-      <Card className="bg-white border border-gray-200 rounded-lg">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <User className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-900">Active Persona</h3>
-                <p className="text-sm text-gray-600">Customer Experience Manager</p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" className="text-gray-600 border-gray-300 hover:bg-gray-50">
-              Change
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
+      
       {/* Recent Items Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Journeys */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -272,14 +254,14 @@ export default function DashboardPage() {
             </Button>
           </div>
 
-          <Card className="bg-white border border-gray-200 rounded-lg">
-            <CardContent className="p-4">
-              <div className="space-y-3">
+          <Card className="bg-white shadow-sm border border-gray-200 rounded-xl">
+            <CardContent className="p-6">
+              <div className="space-y-4">
                 {recentJourneys.map((journey) => (
-                  <div key={journey.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={journey.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="space-y-1">
                       <h3 className="font-medium text-gray-900">{journey.title}</h3>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-3 text-sm text-gray-600">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           journey.status === 'Complete'
                             ? 'bg-green-100 text-green-700'
@@ -287,15 +269,15 @@ export default function DashboardPage() {
                         }`}>
                           {journey.status}
                         </span>
-                        <span className="text-gray-500">{journey.lastUpdated}</span>
+                        <span>Updated {journey.lastUpdated}</span>
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="outline" className="border-gray-300 hover:bg-gray-50 p-2">
-                        <Eye className="h-3 w-3" />
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline">
+                        <Eye className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline" className="border-gray-300 hover:bg-gray-50 p-2">
-                        <Edit className="h-3 w-3" />
+                      <Button size="sm" variant="outline">
+                        <Edit className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -314,21 +296,21 @@ export default function DashboardPage() {
             </Button>
           </div>
 
-          <Card className="bg-white border border-gray-200 rounded-lg">
-            <CardContent className="p-4">
-              <div className="space-y-3">
+          <Card className="bg-white shadow-sm border border-gray-200 rounded-xl">
+            <CardContent className="p-6">
+              <div className="space-y-4">
                 {recentReports.map((report) => (
-                  <div key={report.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <div key={report.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="space-y-1">
                       <h3 className="font-medium text-gray-900">{report.title}</h3>
-                      <p className="text-sm text-gray-600">{report.createdDate}</p>
+                      <p className="text-sm text-gray-600">Generated {report.createdDate}</p>
                     </div>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="outline" className="border-blue-300 hover:bg-blue-50 p-2">
-                        <Eye className="h-3 w-3" />
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline">
+                        <Eye className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline" className="border-blue-300 hover:bg-blue-50 p-2">
-                        <FileText className="h-3 w-3" />
+                      <Button size="sm" variant="outline">
+                        <FileText className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

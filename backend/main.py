@@ -32,9 +32,9 @@ try:
     from src.services.job_manager import JobManager
     from src.services.usage_service import UsageService
     from src.routes.auth_routes import router as auth_router
-from src.routes.analytics_routes import router as analytics_router
-from src.middleware.auth_middleware import require_auth
-from src.models.auth import UserProfile, UserJourney, UsageLimitResponse
+    from src.routes.analytics_routes import router as analytics_router
+    from src.middleware.auth_middleware import require_auth
+    from src.models.auth import UserProfile, UserJourney, UsageLimitResponse
 
     # Initialize services
     usage_service = UsageService()

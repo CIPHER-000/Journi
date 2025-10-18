@@ -31,6 +31,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
 import { Separator } from '../components/ui/separator'
+import Logo from '../components/Logo'
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -222,10 +223,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-sm">J</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">Journi</span>
+              <Logo size="md" />
             </div>
 
             {/* Desktop Navigation */}

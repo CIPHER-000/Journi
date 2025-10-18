@@ -30,13 +30,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navigationItems = [
     { path: '/dashboard', label: 'Dashboard', icon: Home },
-    { path: '/create', label: 'Create Journey', icon: Plus },
     { path: '/journeys', label: 'My Journeys', icon: Map },
     { path: '/templates', label: 'Templates', icon: LayoutTemplate },
+    { path: '/reports', label: 'Reports', icon: FileText },
   ];
 
   const bottomItems = [
-    { path: '/upgrade', label: 'Upgrade Plan', icon: Crown },
+    { path: '/account', label: 'Account', icon: Crown },
     { path: '/settings', label: 'Settings', icon: Settings },
     { path: '/help', label: 'Help & Support', icon: HelpCircle },
   ];
@@ -56,14 +56,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         )}
       </AnimatePresence>
 
-      {/* Sidebar - Modern Design */}
+      {/* Sidebar - Clean Figma AI Design */}
       <aside
         className={`
           fixed top-0 left-0 h-screen z-50
-          bg-white border-r border-gray-200 shadow-soft lg:shadow-none
+          bg-white border-r border-gray-200 shadow-soft
           flex flex-col transition-all duration-300
           ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${isSidebarCollapsed ? 'w-20' : 'w-80'}
+          ${isSidebarCollapsed ? 'w-16' : 'w-64'}
         `}
       >
         {/* Scrollable content within fixed sidebar */}
@@ -73,17 +73,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex items-center justify-between">
             <Link to="/dashboard" className={`flex items-center ${isSidebarCollapsed ? 'justify-center w-full' : 'space-x-3'}`}>
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-xl flex items-center justify-center shadow-soft">
-                  <Zap className="w-6 h-6 text-white" />
+                <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-white" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent-500 rounded-full border-2 border-white"></div>
               </div>
               {!isSidebarCollapsed && (
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+                  <h1 className="text-xl font-semibold text-gray-900">
                     Journi
                   </h1>
-                  <p className="text-xs text-gray-500">AI Journey Mapper</p>
+                  <p className="text-xs text-gray-500">Journey Mapper</p>
                 </div>
               )}
             </Link>
@@ -106,34 +105,32 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* User Profile Section */}
         <div className={`p-4 border-b border-gray-100 ${isSidebarCollapsed ? 'px-2' : ''}`}>
-          <div className={`bg-gradient-to-br from-primary-50 to-secondary-50 rounded-2xl p-4 ${isSidebarCollapsed ? 'p-3' : ''}`}>
+          <div className={`bg-gray-50 rounded-lg p-3 ${isSidebarCollapsed ? 'p-2' : ''}`}>
             <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'}`}>
               <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-full flex items-center justify-center text-white font-semibold shadow-soft">
+                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-medium">
                   {user?.name ? user.name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}
                 </div>
-                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
               </div>
               {!isSidebarCollapsed && (
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">
+                  <p className="text-sm font-medium text-gray-900 truncate">
                     {user?.name || user?.email?.split('@')[0]}
                   </p>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-500">
                     {user?.plan_type === 'free' ? 'Free Plan' : 'Pro Plan'}
                   </p>
                 </div>
               )}
             </div>
             {!isSidebarCollapsed && user?.plan_type === 'free' && (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 onClick={() => navigate('/upgrade')}
-                className="w-full mt-4 bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-2.5 px-4 rounded-xl text-sm font-medium shadow-soft hover:shadow-medium transition-all duration-300"
+                className="w-full mt-3 bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
               >
                 Upgrade to Pro
-              </motion.button>
+              </button>
             )}
           </div>
         </div>
@@ -147,10 +144,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 key={item.path}
                 to={item.path}
                 className={`
-                  group flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200
+                  group flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200
                   ${isActive(item.path)
-                    ? 'bg-gradient-to-r from-primary-50 to-secondary-50 text-primary-600 font-medium shadow-soft border border-primary-100'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:shadow-soft'}
+                    ? 'bg-green-50 text-green-600 font-medium border border-green-200'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
                   ${isSidebarCollapsed ? 'justify-center px-3' : ''}
                 `}
                 title={isSidebarCollapsed ? item.label : undefined}
@@ -175,10 +172,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 key={item.path}
                 to={item.path}
                 className={`
-                  group flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200
+                  group flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200
                   ${isActive(item.path)
-                    ? 'bg-gradient-to-r from-primary-50 to-secondary-50 text-primary-600 font-medium shadow-soft border border-primary-100'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:shadow-soft'}
+                    ? 'bg-green-50 text-green-600 font-medium border border-green-200'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
                   ${isSidebarCollapsed ? 'justify-center px-3' : ''}
                 `}
                 title={isSidebarCollapsed ? item.label : undefined}
@@ -212,7 +209,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main Content Area */}
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-80'}`}>
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         {/* Top Navigation Bar */}
         <Topbar
           onMenuClick={() => setIsMobileSidebarOpen(true)}
@@ -221,11 +218,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           user={user}
         />
 
+        {/* Reopen Button (only when sidebar is collapsed) */}
+        {isSidebarCollapsed && (
+          <button
+            onClick={() => setIsSidebarCollapsed(false)}
+            className="fixed left-4 top-20 z-40 p-2 bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+            title="Open Sidebar"
+          >
+            <ChevronRight className="w-4 h-4 text-gray-600" />
+          </button>
+        )}
+
         {/* Page Content */}
-        <main className="flex-1 overflow-auto">
-          <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-            {React.cloneElement(children as React.ReactElement, { searchQuery })}
-          </div>
+        <main className="flex-1 overflow-auto bg-gray-50">
+          {React.cloneElement(children as React.ReactElement, { searchQuery })}
         </main>
       </div>
     </div>

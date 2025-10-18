@@ -23,25 +23,16 @@ const Logo: React.FC<LogoProps> = ({
   return (
     <div className={`flex items-center ${className}`}>
       <svg width={width} height={height} viewBox="0 0 100 100" className="flex-shrink-0">
-        {/* Lightning bolt that forms a J shape */}
+        {/* Bold lightning bolt - vertically aligned */}
         <path d="M 50 15
-                 L 35 45
-                 L 45 45
-                 L 40 70
-                 Q 38 75, 35 78
-                 C 32 80, 32 82, 35 83
-                 Q 38 84, 42 82
-                 L 48 78
-                 Q 52 75, 48 72
-                 L 50 65
-                 L 40 65
-                 L 45 40
-                 L 35 40
-                 L 50 15"
-              fill="#28a745"
-              stroke="none"
-              strokeLinejoin="round"
-              strokeLinecap="round"/>
+                 L 38 45
+                 L 48 45
+                 L 42 85
+                 L 62 40
+                 L 52 40
+                 L 58 15
+                 Z"
+              fill="#0f766e"/>
       </svg>
 
       {variant === 'full' && (

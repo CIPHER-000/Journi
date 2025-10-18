@@ -7,13 +7,13 @@ import { DashboardLayout } from './components/DashboardLayout'
 import HomePage from './pages/HomePage'
 import SignUpPage from './pages/SignUpPage'
 import LoginPage from './pages/LoginPage'
-import CreateJourneyPage from './pages/CreateJourneyPage'
 import DashboardPage from './pages/DashboardPage'
 import JourneysPage from './pages/JourneysPage'
 import JourneyMapPage from './pages/JourneyMapPage'
 import JourneyDetailPage from './pages/JourneyDetailPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import SettingsPage from './pages/SettingsPage'
+import ReportsPage from './pages/ReportsPage'
 import UpgradePage from './pages/UpgradePage'
 import TemplatesPage from './pages/TemplatesPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
@@ -39,10 +39,10 @@ function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             } />
-            <Route path="/create" element={
+            <Route path="/reports" element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <CreateJourneyPage />
+                  <ReportsPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
@@ -60,7 +60,7 @@ function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             } />
-            <Route path="/upgrade" element={
+            <Route path="/account" element={
               <ProtectedRoute>
                 <DashboardLayout>
                   <UpgradePage />

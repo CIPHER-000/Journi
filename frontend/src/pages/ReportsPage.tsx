@@ -1,159 +1,202 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Badge } from "../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Separator } from "../components/ui/separator";
+import { Input } from "../components/ui/input";
 import {
-  Search, Filter, Download, Eye, FileText, Calendar, Star,
-  ArrowUpDown, Clock, CheckCircle, AlertCircle, Loader2, Zap
+  Download, Edit, Calendar, Users, TrendingDown, TrendingUp, AlertTriangle,
+  Lightbulb, ArrowRight, FileText, MessageSquare, Target, Zap
 } from "lucide-react";
-import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { format } from 'date-fns'
-
-interface Report {
-  id: string
-  title: string
-  journeyTitle: string
-  type: 'analysis' | 'summary' | 'recommendations' | 'metrics'
-  createdAt: Date | string
-  fileSize: string
-  status: 'completed' | 'processing' | 'failed'
-  downloadUrl?: string
-}
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'
 
-export default function ReportsPage() {
-  const { user, token } = useAuth()
+interface ReportsProps {
+  journeyId?: string;
+}
+
+export default function ReportsPage({ journeyId }: ReportsProps) {
   const navigate = useNavigate()
-  const [reports, setReports] = useState<Report[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
+  const [journeyTitle, setJourneyTitle] = useState("SaaS Onboarding Flow");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
 
-  // Mock reports data
-  useEffect(() => {
-    const fetchReports = async () => {
-      setLoading(true)
-
-      // Simulate API call with mock data
-      setTimeout(() => {
-        const mockReports: Report[] = [
-          {
-            id: '1',
-            title: 'E-commerce Customer Journey Analysis',
-            journeyTitle: 'E-commerce Customer Experience',
-            type: 'analysis',
-            createdAt: new Date('2024-01-15'),
-            fileSize: '2.4 MB',
-            status: 'completed',
-            downloadUrl: '#'
-          },
-          {
-            id: '2',
-            title: 'Healthcare Patient Journey Summary',
-            journeyTitle: 'Healthcare Patient Experience',
-            type: 'summary',
-            createdAt: new Date('2024-01-12'),
-            fileSize: '1.8 MB',
-            status: 'completed',
-            downloadUrl: '#'
-          },
-          {
-            id: '3',
-            title: 'Banking Customer Journey Recommendations',
-            journeyTitle: 'Banking Customer Experience',
-            type: 'recommendations',
-            createdAt: new Date('2024-01-10'),
-            fileSize: '3.1 MB',
-            status: 'processing'
-          },
-          {
-            id: '4',
-            title: 'Retail Shopping Journey Metrics',
-            journeyTitle: 'Retail Customer Experience',
-            type: 'metrics',
-            createdAt: new Date('2024-01-08'),
-            fileSize: '1.2 MB',
-            status: 'completed',
-            downloadUrl: '#'
-          },
-          {
-            id: '5',
-            title: 'SaaS User Journey Analysis',
-            journeyTitle: 'SaaS User Onboarding',
-            type: 'analysis',
-            createdAt: new Date('2024-01-05'),
-            fileSize: '2.7 MB',
-            status: 'failed'
-          }
-        ]
-
-        setReports(mockReports)
-        setLoading(false)
-      }, 1000)
+  // Mock journey data
+  const journeyData = {
+    id: "1",
+    title: journeyTitle,
+    dateCreated: "Dec 8, 2024",
+    phases: [
+      {
+        id: "awareness",
+        name: "Awareness",
+        customerActions: [
+          "Searches for solution online",
+          "Reads blog posts and reviews",
+          "Compares different tools"
+        ],
+        painPoints: [
+          "Too many options to choose from",
+          "Unclear pricing information",
+          "Complex feature comparisons"
+        ],
+        opportunities: [
+          "Simplified comparison charts",
+          "Clear value proposition",
+          "Free trial CTA placement"
+        ],
+        personas: ["new-user", "trial-user"]
+      },
+      {
+        id: "trial",
+        name: "Trial Signup",
+        customerActions: [
+          "Signs up for free trial",
+          "Provides basic information",
+          "Receives welcome email"
+        ],
+        painPoints: [
+          "Long signup form",
+          "Email verification delays",
+          "Unclear trial duration"
+        ],
+        opportunities: [
+          "Reduce form fields",
+          "Instant account activation",
+          "Clear trial timeline"
+        ],
+        personas: ["new-user"]
+      },
+      {
+        id: "onboarding",
+        name: "Initial Setup",
+        customerActions: [
+          "Completes profile setup",
+          "Connects integrations",
+          "Invites team members"
+        ],
+        painPoints: [
+          "Complex setup process",
+          "Missing integration guides",
+          "Unclear permission system"
+        ],
+        opportunities: [
+          "Guided setup wizard",
+          "Video tutorials",
+          "Smart defaults"
+        ],
+        personas: ["new-user", "trial-user"]
+      },
+      {
+        id: "usage",
+        name: "First Value",
+        customerActions: [
+          "Creates first project",
+          "Explores core features",
+          "Generates first report"
+        ],
+        painPoints: [
+          "Feature discovery issues",
+          "Steep learning curve",
+          "Time to first value too long"
+        ],
+        opportunities: [
+          "Interactive product tour",
+          "Quick win templates",
+          "Contextual help"
+        ],
+        personas: ["new-user", "trial-user"]
+      },
+      {
+        id: "renewal",
+        name: "Conversion",
+        customerActions: [
+          "Reviews trial usage",
+          "Evaluates pricing plans",
+          "Makes purchase decision"
+        ],
+        painPoints: [
+          "Pricing confusion",
+          "Feature limitations unclear",
+          "No sales support"
+        ],
+        opportunities: [
+          "Usage-based recommendations",
+          "Clear upgrade prompts",
+          "Sales chat support"
+        ],
+        personas: ["trial-user"]
+      }
+    ],
+    personas: [
+      {
+        id: "new-user",
+        name: "New User",
+        color: "bg-blue-500",
+        description: "First-time users exploring the platform"
+      },
+      {
+        id: "trial-user",
+        name: "Trial User",
+        color: "bg-green-500",
+        description: "Users actively evaluating the product"
+      }
+    ],
+    insights: {
+      summary: "The biggest drop-off occurs during the initial setup phase, with 67% of trial users not completing the onboarding process.",
+      bottlenecks: [
+        {
+          phase: "Initial Setup",
+          issue: "Complex integration setup",
+          impact: "67% drop-off rate",
+          severity: "high"
+        },
+        {
+          phase: "First Value",
+          issue: "Time to first meaningful action",
+          impact: "Average 45 minutes",
+          severity: "medium"
+        }
+      ],
+      recommendations: [
+        {
+          priority: "high",
+          title: "Simplify Integration Setup",
+          description: "Implement a guided wizard with smart defaults and optional advanced settings",
+          impact: "Could reduce drop-off by 30-40%"
+        },
+        {
+          priority: "medium",
+          title: "Add Quick Win Templates",
+          description: "Provide pre-built templates that new users can customize immediately",
+          impact: "Reduce time to first value by 60%"
+        },
+        {
+          priority: "low",
+          title: "Enhanced Progress Indicators",
+          description: "Show clear progress through onboarding with estimated time remaining",
+          impact: "Improved user confidence and completion rates"
+        }
+      ]
     }
+  };
 
-    fetchReports()
-  }, [])
+  const getPersonaColor = (personaId: string) => {
+    const persona = journeyData.personas.find(p => p.id === personaId);
+    return persona?.color || "bg-gray-500";
+  };
 
-  // Filter reports based on search and filters
-  const filteredReports = reports.filter(report => {
-    const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         report.journeyTitle.toLowerCase().includes(searchQuery.toLowerCase())
-
-    const matchesType = typeFilter === "all" || report.type === typeFilter
-    const matchesDate = dateFilter === "all" || true // Simplified for now
-
-    return matchesSearch && matchesType && matchesDate
-  })
-
-  // Handle actions
-  const handleViewReport = (id: string) => {
-    console.log('View report:', id)
-  }
-
-  const handleDownloadReport = (id: string) => {
-    console.log('Download report:', id)
-  }
-
-  // Status colors
-  const statusColors = {
-    'completed': 'bg-green-100 text-green-700',
-    'processing': 'bg-blue-100 text-blue-700',
-    'failed': 'bg-red-100 text-red-700'
-  }
-
-  const statusIcons = {
-    'completed': CheckCircle,
-    'processing': Loader2,
-    'failed': AlertCircle
-  }
-
-  // Type colors
-  const typeColors = {
-    'analysis': 'bg-purple-100 text-purple-700',
-    'summary': 'bg-blue-100 text-blue-700',
-    'recommendations': 'bg-green-100 text-green-700',
-    'metrics': 'bg-orange-100 text-orange-700'
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-lg font-medium text-gray-900">Loading your reports...</p>
-        </div>
-      </div>
-    )
-  }
+  const getPriorityColor = (priority: string) => {
+    switch(priority) {
+      case "high": return "bg-red-100 text-red-800";
+      case "medium": return "bg-yellow-100 text-yellow-800";
+      case "low": return "bg-green-100 text-green-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
       {/* Header Section */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -167,185 +210,301 @@ export default function ReportsPage() {
                 <p className="text-gray-600">View and download your journey analysis reports</p>
               </div>
             </div>
-            <Button className="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-lg font-medium">
-              <Download className="h-4 w-4 mr-2" />
-              Export All
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export PDF
+              </Button>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+              <Button variant="outline" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Export DOCX
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Search and Filters */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search reports by title or journey..."
-                  className="pl-10 py-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Journey Title Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            {isEditingTitle ? (
+              <Input
+                value={journeyTitle}
+                onChange={(e) => setJourneyTitle(e.target.value)}
+                onBlur={() => setIsEditingTitle(false)}
+                onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
+                className="text-3xl font-bold border-none p-0 h-auto"
+                autoFocus
+              />
+            ) : (
+              <h1
+                className="text-2xl font-semibold text-gray-900 cursor-pointer hover:text-gray-600 transition-colors"
+                onClick={() => setIsEditingTitle(true)}
+              >
+                {journeyTitle}
+                <Edit className="inline h-4 w-4 ml-2" />
+              </h1>
+            )}
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                Created {journeyData.dateCreated}
               </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[140px] border-gray-300 rounded-lg">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="analysis">Analysis</SelectItem>
-                  <SelectItem value="summary">Summary</SelectItem>
-                  <SelectItem value="recommendations">Recommendations</SelectItem>
-                  <SelectItem value="metrics">Metrics</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-[140px] border-gray-300 rounded-lg">
-                  <SelectValue placeholder="Date" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                {journeyData.personas.length} personas
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Reports Grid */}
-        {filteredReports.length === 0 ? (
-          <Card className="bg-white border border-gray-200 rounded-lg">
-            <CardContent className="p-12 text-center">
-              <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No reports found</h3>
-              <p className="text-gray-500 mb-4">
-                {searchQuery || typeFilter !== "all" || dateFilter !== "all"
-                  ? "Try adjusting your search or filters"
-                  : "Generate journey maps to create reports"
-                }
-              </p>
-              <Button
-                onClick={() => navigate('/create')}
-                className="bg-green-600 text-white hover:bg-green-700"
-              >
-                Create Journey
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredReports.map((report) => {
-              const StatusIcon = statusIcons[report.status]
-              return (
-                <Card key={report.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-base font-medium text-gray-900 mb-1 line-clamp-2">
-                          {report.title}
-                        </CardTitle>
-                        <p className="text-sm text-gray-600 truncate">
-                          {report.journeyTitle}
-                        </p>
-                      </div>
-                      <Badge className={`${typeColors[report.type]} text-xs`}>
-                        {report.type}
-                      </Badge>
-                    </div>
-                  </CardHeader>
+        {/* AI Insights Summary */}
+        <Card className="border-l-4 border-l-green-600">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Lightbulb className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-medium mb-2">🔍 Key Insight</h3>
+                <p className="text-gray-600">{journeyData.insights.summary}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-                  <CardContent className="pt-0 space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-1 text-gray-500">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(report.createdAt), 'MMM d, yyyy')}
-                      </div>
-                      <span className="text-gray-500">{report.fileSize}</span>
-                    </div>
+        {/* Journey Map Visualization */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Journey Map</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {/* Personas Legend */}
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium">Personas:</span>
+                {journeyData.personas.map((persona) => (
+                  <div key={persona.id} className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${persona.color}`}></div>
+                    <span className="text-sm">{persona.name}</span>
+                  </div>
+                ))}
+              </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <StatusIcon className={`h-4 w-4 ${report.status === 'processing' ? 'animate-spin' : ''}`} />
-                        <span className={`text-xs font-medium ${statusColors[report.status]}`}>
-                          {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
-                        </span>
-                      </div>
-
-                      <div className="flex gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewReport(report.id)}
-                          className="border-gray-300 hover:bg-gray-50 p-2"
-                        >
-                          <Eye className="h-3 w-3" />
-                        </Button>
-
-                        {report.status === 'completed' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDownloadReport(report.id)}
-                            className="border-gray-300 hover:bg-gray-50 p-2"
-                          >
-                            <Download className="h-3 w-3" />
-                          </Button>
+              {/* Journey Phases */}
+              <div className="relative">
+                <div className="flex gap-4 overflow-x-auto pb-4">
+                  {journeyData.phases.map((phase, index) => (
+                    <div key={phase.id} className="min-w-[300px] space-y-4">
+                      {/* Phase Header */}
+                      <div className="text-center">
+                        <div className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium">
+                          {phase.name}
+                        </div>
+                        {index < journeyData.phases.length - 1 && (
+                          <ArrowRight className="h-6 w-6 text-gray-400 mx-auto mt-2" />
                         )}
                       </div>
+
+                      {/* Phase Content */}
+                      <div className="space-y-4">
+                        {/* Customer Actions */}
+                        <div className="border rounded-lg p-4 bg-blue-50">
+                          <h4 className="font-medium mb-2 text-blue-800">Customer Actions</h4>
+                          <ul className="space-y-1 text-sm">
+                            {phase.customerActions.map((action, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <div className="w-1 h-1 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                                {action}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Pain Points */}
+                        <div className="border rounded-lg p-4 bg-red-50">
+                          <h4 className="font-medium mb-2 text-red-800 flex items-center gap-1">
+                            <AlertTriangle className="h-4 w-4" />
+                            Pain Points
+                          </h4>
+                          <ul className="space-y-1 text-sm">
+                            {phase.painPoints.map((pain, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <div className="w-1 h-1 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
+                                {pain}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Opportunities */}
+                        <div className="border rounded-lg p-4 bg-yellow-50">
+                          <h4 className="font-medium mb-2 text-yellow-800 flex items-center gap-1">
+                            <Target className="h-4 w-4" />
+                            Opportunities
+                          </h4>
+                          <ul className="space-y-1 text-sm">
+                            {phase.opportunities.map((opp, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <div className="w-1 h-1 bg-yellow-600 rounded-full mt-2 flex-shrink-0"></div>
+                                {opp}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Persona Indicators */}
+                        <div className="flex gap-1">
+                          {phase.personas.map((personaId) => (
+                            <div
+                              key={personaId}
+                              className={`w-3 h-3 rounded-full ${getPersonaColor(personaId)}`}
+                              title={journeyData.personas.find(p => p.id === personaId)?.name}
+                            ></div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        )}
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Summary Stats */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-white border border-gray-200 rounded-lg">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">{reports.length}</div>
-              <div className="text-sm text-gray-600">Total Reports</div>
+        {/* Insights & Recommendations */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Bottlenecks */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingDown className="h-5 w-5 text-red-600" />
+                Identified Bottlenecks
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {journeyData.insights.bottlenecks.map((bottleneck, index) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-medium">{bottleneck.phase}</h4>
+                    <Badge variant="destructive" className={bottleneck.severity === "high" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"}>
+                      {bottleneck.severity}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{bottleneck.issue}</p>
+                  <p className="text-sm font-medium text-red-600">{bottleneck.impact}</p>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-gray-200 rounded-lg">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {reports.filter(r => r.status === 'completed').length}
-              </div>
-              <div className="text-sm text-gray-600">Completed</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white border border-gray-200 rounded-lg">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {reports.filter(r => r.status === 'processing').length}
-              </div>
-              <div className="text-sm text-gray-600">Processing</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white border border-gray-200 rounded-lg">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {(reports.reduce((total, report) => total + parseFloat(report.fileSize), 0)).toFixed(1)} MB
-              </div>
-              <div className="text-sm text-gray-600">Total Size</div>
+          {/* Recommendations */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                AI Recommendations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {journeyData.insights.recommendations.map((rec, index) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-medium">{rec.title}</h4>
+                    <Badge variant="secondary" className={getPriorityColor(rec.priority)}>
+                      {rec.priority}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{rec.description}</p>
+                  <p className="text-sm font-medium text-green-600">{rec.impact}</p>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </div>
+
+        {/* Persona Breakdown */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Persona Journey Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {journeyData.personas.map((persona) => (
+                <div key={persona.id} className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-4 h-4 rounded-full ${persona.color}`}></div>
+                    <div>
+                      <h3 className="font-medium">{persona.name}</h3>
+                      <p className="text-sm text-gray-600">{persona.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg p-4 space-y-2">
+                    <h4 className="font-medium text-sm">Journey Path:</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {journeyData.phases
+                        .filter(phase => phase.personas.includes(persona.id))
+                        .map((phase, index, arr) => (
+                          <div key={phase.id} className="flex items-center">
+                            <Badge variant="outline" className="text-xs">
+                              {phase.name}
+                            </Badge>
+                            {index < arr.length - 1 && (
+                              <ArrowRight className="h-3 w-3 mx-1 text-gray-400" />
+                            )}
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Additional Context */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Research Context & Notes
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="border rounded-lg p-4">
+              <h4 className="font-medium mb-2">Uploaded Research Files</h4>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <FileText className="h-4 w-4" />
+                  <span>User Interview Transcripts (Dec 5, 2024)</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <FileText className="h-4 w-4" />
+                  <span>Customer Survey Results Q4 (Nov 28, 2024)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="border rounded-lg p-4">
+              <h4 className="font-medium mb-2">Key Research Findings</h4>
+              <ul className="space-y-1 text-sm text-gray-600">
+                <li>• 78% of users found the initial setup process confusing</li>
+                <li>• Time to first value averages 45 minutes (target: 15 minutes)</li>
+                <li>• Integration setup is the #1 reason for trial abandonment</li>
+                <li>• Users who complete onboarding have 89% conversion rate</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  )
+  );
 }
