@@ -43,7 +43,7 @@ export const API_CONFIG = {
   
   // Staging API (real backend in staging environment)
   [TEST_ENVIRONMENTS.STAGING]: {
-    baseURL: process.env.VITE_STAGING_API_URL || 'https://journi-backend-staging.onrender.com',
+    baseURL: process.env.VITE_STAGING_API_URL || process.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com',
     timeout: 30000,
     useMocks: false,
   },

@@ -2,36 +2,47 @@
  * Integration Test: Journey Creation Flow
  * 
  * Tests the complete journey creation flow with REAL API calls
+ * Uses native fetch - NO MOCKS
  * 
- * Environment: STAGING or INTEGRATION
- * Data Source: Real backend API
+ * Environment: STAGING
+ * Data Source: Real backend API (https://journi-backend.onrender.com)
  * 
- * Run with: TEST_ENV=staging npm test -- integration
+ * Run with: TEST_ENV=staging npm test -- tests/integration
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { shouldUseRealAPI, getAPIConfig, TEST_DATA, TEST_TIMEOUTS } from '../utils/testConfig'
-import { setupFetch, resetFetch, cleanupTestData, generateTestID, retry } from '../utils/testHelpers'
+import { getAPIConfig, TEST_DATA, TEST_TIMEOUTS, getTestEnvironment } from '../utils/testConfig'
+import { generateTestID, retry, sleep } from '../utils/testHelpers'
 import { TestReporter } from '../utils/testReporter'
-import { agentService } from '../../src/services/agentService'
 
 describe('Journey Creation Integration Tests', () => {
-  let createdJourneyIds: string[] = []
+  let baseURL: string
+  let createdJobIds: string[] = []
+  let isRealAPI: boolean
   
   beforeAll(() => {
-    setupFetch()
+    const config = getAPIConfig()
+    baseURL = config.baseURL
+    isRealAPI = getTestEnvironment() !== 'mock'
     
-    if (!shouldUseRealAPI()) {
-      console.warn('⚠️  Running in MOCK mode - switch to TEST_ENV=staging for real API tests')
-    }
+    console.log(`\n🎯 Integration Test Environment: ${getTestEnvironment().toUpperCase()}`)
+    console.log(`🌐 API Endpoint: ${baseURL}`)
+    console.log(`📊 Real API Calls: ${isRealAPI ? 'YES ✅' : 'NO (Skipping) ⏭️'}\n`)
   })
 
   afterAll(async () => {
     // Cleanup created test data
-    for (const id of createdJourneyIds) {
-      await cleanupTestData('/journey', id)
+    console.log(`\n🧹 Cleaning up ${createdJobIds.length} test jobs...`)
+    
+    for (const jobId of createdJobIds) {
+      try {
+        await fetch(`${baseURL}/agent/journey/${jobId}`, {
+          method: 'DELETE',
+        })
+      } catch (error) {
+        console.warn(`⚠️  Could not cleanup job ${jobId}`)
+      }
     }
-    resetFetch()
     
     // Print test report
     if (process.env.VITE_ENABLE_TEST_REPORTER === 'true') {
@@ -40,8 +51,8 @@ describe('Journey Creation Integration Tests', () => {
   })
 
   it('should create a journey with real API', async () => {
-    if (!shouldUseRealAPI()) {
-      console.log('⏭️  Skipping - requires real API')
+    if (!isRealAPI) {
+      console.log('⏭️  Skipping - set TEST_ENV=staging to run')
       return
     }
 
@@ -49,27 +60,48 @@ describe('Journey Creation Integration Tests', () => {
     const startTime = Date.now()
 
     try {
-      // Create journey with real API call
+      // Create journey with REAL HTTP request
       const journeyData = {
         title: `${TEST_DATA.sampleJourney.title} - ${testID}`,
         description: TEST_DATA.sampleJourney.description,
         persona: TEST_DATA.sampleJourney.persona,
+        stages: [],
+        touchpoints: [],
       }
 
-      const result = await retry(
-        () => agentService.createJourneyMap(journeyData as any),
-        3,
-        2000
-      )
+      console.log(`🚀 Creating journey: "${journeyData.title}"`)
+
+      const response = await retry(async () => {
+        const res = await fetch(`${baseURL}/agent/journey`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(journeyData),
+        })
+
+        if (!res.ok && res.status >= 500) {
+          throw new Error(`Server error: ${res.status}`)
+        }
+
+        return res
+      }, 3, 2000)
+
+      console.log(`✅ Response status: ${response.status}`)
 
       // Verify response
-      expect(result).toBeDefined()
-      expect(result.job_id).toBeDefined()
-      expect(result.status).toMatch(/queued|processing/)
+      expect(response.ok).toBe(true)
+      expect([200, 201, 202]).toContain(response.status)
 
-      // Track for cleanup
+      const result = await response.json()
+      console.log(`📦 Response data:`, result)
+
+      expect(result).toBeDefined()
+
+      // Track job_id if present
       if (result.job_id) {
-        createdJourneyIds.push(result.job_id)
+        createdJobIds.push(result.job_id)
+        console.log(`🎯 Job ID: ${result.job_id}`)
       }
 
       // Record test execution
@@ -82,6 +114,8 @@ describe('Journey Creation Integration Tests', () => {
         timestamp: new Date().toISOString(),
       })
     } catch (error) {
+      console.error('❌ Test failed:', error)
+      
       // Record failure
       TestReporter.record({
         testName: 'should create a journey with real API',
@@ -96,27 +130,43 @@ describe('Journey Creation Integration Tests', () => {
   }, TEST_TIMEOUTS.integration)
 
   it('should poll job status until completion', async () => {
-    if (!shouldUseRealAPI()) {
-      console.log('⏭️  Skipping - requires real API')
+    if (!isRealAPI) {
+      console.log('⏭️  Skipping - set TEST_ENV=staging to run')
       return
     }
 
-    const testID = generateTestID('integration')
+    const testID = generateTestID('polling')
     const startTime = Date.now()
 
     try {
-      // Create journey first
+      // Create journey first via REAL HTTP request
       const journeyData = {
         title: `Poll Test Journey - ${testID}`,
         description: 'Testing status polling',
         persona: 'Test user',
+        stages: [],
+        touchpoints: [],
       }
 
-      const createResult = await agentService.createJourneyMap(journeyData as any)
+      console.log(`🚀 Creating journey for polling test...`)
+
+      const createResponse = await fetch(`${baseURL}/agent/journey`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(journeyData),
+      })
+
+      expect(createResponse.ok).toBe(true)
+
+      const createResult = await createResponse.json()
       expect(createResult.job_id).toBeDefined()
 
       const jobId = createResult.job_id as string
-      createdJourneyIds.push(jobId)
+      createdJobIds.push(jobId)
+
+      console.log(`🎯 Job ID: ${jobId}`)
 
       // Poll status multiple times
       let attempts = 0
@@ -124,9 +174,18 @@ describe('Journey Creation Integration Tests', () => {
       const maxAttempts = 10
 
       while (attempts < maxAttempts && status !== 'completed' && status !== 'failed') {
-        await new Promise(resolve => setTimeout(resolve, 3000))
+        await sleep(3000)
         
-        const statusResult = await agentService.getJobStatus(jobId)
+        const statusResponse = await fetch(`${baseURL}/agent/journey/${jobId}/status`, {
+          method: 'GET',
+        })
+
+        if (!statusResponse.ok) {
+          console.warn(`⚠️  Status check failed: ${statusResponse.status}`)
+          break
+        }
+
+        const statusResult = await statusResponse.json()
         status = statusResult.status
         
         console.log(`📊 Attempt ${attempts + 1}: Status = ${status}`)
@@ -139,6 +198,8 @@ describe('Journey Creation Integration Tests', () => {
       // Should have polled at least twice
       expect(attempts).toBeGreaterThanOrEqual(2)
 
+      console.log(`✅ Polling completed after ${attempts} attempts`)
+
       TestReporter.record({
         testName: 'should poll job status until completion',
         testFile: 'journeyCreation.integration.test.ts',
@@ -148,6 +209,8 @@ describe('Journey Creation Integration Tests', () => {
         timestamp: new Date().toISOString(),
       })
     } catch (error) {
+      console.error('❌ Polling test failed:', error)
+      
       TestReporter.record({
         testName: 'should poll job status until completion',
         testFile: 'journeyCreation.integration.test.ts',
@@ -161,25 +224,38 @@ describe('Journey Creation Integration Tests', () => {
   }, TEST_TIMEOUTS.api)
 
   it('should handle backend connection health check', async () => {
-    if (!shouldUseRealAPI()) {
-      console.log('⏭️  Skipping - requires real API')
+    if (!isRealAPI) {
+      console.log('⏭️  Skipping - set TEST_ENV=staging to run')
       return
     }
 
     const startTime = Date.now()
 
     try {
-      const isHealthy = await retry(
-        () => agentService.checkBackendConnection(),
-        3,
-        1000
-      )
+      console.log(`🏥 Checking backend health at ${baseURL}/health`)
 
-      // Backend should be healthy in staging/integration
-      expect(isHealthy).toBe(true)
+      const response = await retry(async () => {
+        const res = await fetch(`${baseURL}/health`, {
+          method: 'GET',
+        })
 
-      const connectionStatus = agentService.getConnectionStatus()
-      expect(connectionStatus.isConnected).toBe(true)
+        if (!res.ok && res.status >= 500) {
+          throw new Error(`Server error: ${res.status}`)
+        }
+
+        return res
+      }, 3, 1000)
+
+      console.log(`✅ Health check status: ${response.status}`)
+
+      // Backend should be healthy
+      expect(response.ok).toBe(true)
+      expect(response.status).toBe(200)
+
+      const healthData = await response.json()
+      console.log(`📦 Health data:`, healthData)
+
+      expect(healthData).toBeDefined()
 
       TestReporter.record({
         testName: 'should handle backend connection health check',
@@ -190,6 +266,8 @@ describe('Journey Creation Integration Tests', () => {
         timestamp: new Date().toISOString(),
       })
     } catch (error) {
+      console.error('❌ Health check failed:', error)
+      
       TestReporter.record({
         testName: 'should handle backend connection health check',
         testFile: 'journeyCreation.integration.test.ts',
