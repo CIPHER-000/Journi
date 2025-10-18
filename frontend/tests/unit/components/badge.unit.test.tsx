@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { Badge } from './badge'
+import { Badge } from '../../../src/components/ui/badge'
 
 describe('Badge Component', () => {
   it('should render badge with text', () => {

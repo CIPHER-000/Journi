@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { useActiveJourney } from './useActiveJourney'
+import { useActiveJourney } from '../../../src/hooks/useActiveJourney'
 
 // Mock AuthContext
-vi.mock('../context/AuthContext', () => ({
+vi.mock('../../../src/context/AuthContext', () => ({
   useAuth: vi.fn(() => ({ token: 'test-token' }))
 }))
 

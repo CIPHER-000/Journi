@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { FileUpload } from './FileUpload'
+import { FileUpload } from '../../../src/components/FileUpload'
 
 describe('FileUpload Component', () => {
   it('should render upload area', () => {

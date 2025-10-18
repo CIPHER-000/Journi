@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
-import { Progress } from './progress'
+import { Progress } from '../../../src/components/ui/progress'
 
 describe('Progress Component', () => {
   it('should render progress bar', () => {

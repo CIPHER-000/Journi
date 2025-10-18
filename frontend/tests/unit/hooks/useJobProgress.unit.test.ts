@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
-import { useJobProgress } from './useJobProgress'
+import { useJobProgress } from '../../../src/hooks/useJobProgress'
 
 // Mock fetch globally
 global.fetch = vi.fn() as any
