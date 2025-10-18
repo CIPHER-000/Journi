@@ -1,0 +1,25 @@
+{
+  "name": "Enforce Figma AI Design Standards",
+  "trigger": [
+    "ui_update",
+    "frontend_change",
+    "design_modification",
+    "component_refactor"
+  ],
+  "action": {
+    "description": "Ensure all frontend and UI design updates strictly follow the official Figma AI-generated design references and visual UI screenshots.",
+    "conditions": [
+      "Design elements are being created, updated, or restyled",
+      "Component layout, typography, images, or visual assets are being modified"
+    ],
+    "steps": [
+      "1. Before making any design or frontend changes, reference the Figma AI Code folder located at 'C:\\Users\\HP\\Journi\\Figma AI Code'.",
+      "2. Also reference the 'images' folder in the project root ('C:\\Users\\HP\\Journi\\images') for visual examples of the current product UI pages.",
+      "3. Verify that all colors, typography, component spacing, images, and visual structures match the latest Figma AI outputs and screenshot references.",
+      "4. Do not introduce new, unapproved styles, visual assets, or arbitrary aesthetic variations.",
+      "5. If design inconsistencies are detected, prioritize aligning with Figma AI standards and screenshots rather than making ad-hoc adjustments.",
+      "6. For uncertain cases, log a design clarification note referencing the specific Figma AI file or image used for validation."
+    ]
+  },
+  "notes": "The Figma AI Code folder and the 'images' folder together provide the authoritative source for all post-login UI and dashboard design references. All visual and structural design decisions must align with these sources to ensure consistent user experience and brand coherence."
+}
