@@ -30,9 +30,9 @@ export function PrimaryButton({
   };
 
   const variantClasses = {
-    primary: 'bg-gradient-to-r from-primary-600 to-secondary-600 text-white hover:from-primary-700 hover:to-secondary-700 focus:ring-primary-500 shadow-soft hover:shadow-medium',
+    primary: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500 focus:ring-offset-2 shadow-sm hover:shadow-md',
     secondary: 'bg-white text-gray-900 border border-gray-300 hover:bg-gray-50 focus:ring-gray-500 shadow-soft hover:shadow-medium',
-    accent: 'bg-gradient-to-r from-accent-600 to-accent-700 text-white hover:from-accent-700 hover:to-accent-800 focus:ring-accent-500 shadow-soft hover:shadow-medium'
+    accent: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500 focus:ring-offset-2 shadow-sm hover:shadow-md'
   };
 
   const buttonClasses = `${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${className}`;

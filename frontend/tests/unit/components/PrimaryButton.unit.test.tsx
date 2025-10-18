@@ -83,7 +83,8 @@ describe('PrimaryButton Component', () => {
     const { container } = render(<PrimaryButton>Primary</PrimaryButton>)
     
     const button = container.querySelector('button')
-    expect(button?.className).toContain('primary')
+    expect(button?.className).toContain('bg-green-600')
+    expect(button?.className).toContain('hover:bg-green-700')
   })
 
   it('should apply secondary variant styling', () => {
@@ -99,7 +100,8 @@ describe('PrimaryButton Component', () => {
     const { container } = render(<PrimaryButton variant="accent">Accent</PrimaryButton>)
     
     const button = container.querySelector('button')
-    expect(button?.className).toContain('accent')
+    expect(button?.className).toContain('bg-green-600')
+    expect(button?.className).toContain('hover:bg-green-700')
   })
 
   it('should apply custom className', () => {
