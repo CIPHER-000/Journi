@@ -5,6 +5,7 @@
   "rule_scope": {
     "include": [
       "code_generation",
+      "test_generation",
       "debugging",
       "frontend_change",
       "api_integration"
@@ -18,7 +19,6 @@
   "auto_load_mcp": true,
   "mcp_servers": [
     "./mcp/playwright.mcp.json",
-    "./mcp/gpt5.mcp.json",
-    "./mcp/freshdocs.mcp.json"
+    "./mcp/gpt5.mcp.json"
   ]
 }
