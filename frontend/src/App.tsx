@@ -16,6 +16,7 @@ import SettingsPage from './pages/SettingsPage'
 import ReportsPage from './pages/ReportsPage'
 import UpgradePage from './pages/UpgradePage'
 import TemplatesPage from './pages/TemplatesPage'
+import CreateJourneyPage from './pages/CreateJourneyPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
 import './App.css'
 
@@ -71,6 +72,13 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <TemplatesPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/create" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <CreateJourneyPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

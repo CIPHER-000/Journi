@@ -45,7 +45,7 @@ export function Topbar({ onMenuClick, searchQuery, onSearchChange, user }: Topba
           </button>
 
           {/* User avatar */}
-          <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+          <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
             {user?.name ? user.name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}
           </div>
         </div>
