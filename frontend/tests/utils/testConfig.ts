@@ -106,11 +106,12 @@ export const TEST_FEATURES = {
 }
 
 /**
- * Timeouts for different test types
+ * Timeouts for different test types (in milliseconds)
+ * Increased for reliable real API testing against staging backend
  */
 export const TEST_TIMEOUTS = {
-  unit: 5000,
-  integration: 30000,
-  api: 45000,
-  e2e: 60000,
+  unit: 5000,        // 5s for fast unit tests
+  integration: 45000, // 45s for integration tests with API calls
+  api: 60000,        // 60s for real API tests (backend may be slow on free tier)
+  e2e: 90000,        // 90s for end-to-end tests
 }

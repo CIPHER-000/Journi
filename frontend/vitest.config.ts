@@ -27,9 +27,9 @@ export default defineConfig({
       'tests/e2e/**/*',
     ],
     
-    // Test timeouts
-    testTimeout: 10000, // 10s for unit tests
-    hookTimeout: 10000,
+    // Test timeouts - increased for API tests with real network calls
+    testTimeout: 60000, // 60s global timeout (API tests need time for real backend)
+    hookTimeout: 30000, // 30s for setup/teardown hooks
     
     // Coverage configuration
     coverage: {
