@@ -13,17 +13,30 @@ import { getAPIConfig, TEST_TIMEOUTS, getTestEnvironment } from '../utils/testCo
 describe('Backend API Tests - Real Network Calls', () => {
   let baseURL: string
   let apiConfig: ReturnType<typeof getAPIConfig>
+  let shouldSkip: boolean
 
   beforeAll(() => {
     apiConfig = getAPIConfig()
     baseURL = apiConfig.baseURL
+    shouldSkip = getTestEnvironment() === 'mock'
     
     console.log(`\n🌐 Testing against: ${baseURL}`)
-    console.log(`📦 Environment: ${getTestEnvironment()}\n`)
+    console.log(`📦 Environment: ${getTestEnvironment()}`)
+    
+    if (shouldSkip) {
+      console.log(`⏭️  Skipping API tests - set TEST_ENV=staging to run\n`)
+    } else {
+      console.log(`✅ Running real API tests\n`)
+    }
   })
 
   describe('Health Check Endpoint', () => {
     it('should return 200 from /health endpoint', async () => {
+      if (shouldSkip) {
+        console.log('⏭️  Skipping - set TEST_ENV=staging to run')
+        return
+      }
+
       const response = await fetch(`${baseURL}/health`, {
         method: 'GET',
         headers: {
@@ -40,6 +53,11 @@ describe('Backend API Tests - Real Network Calls', () => {
     }, TEST_TIMEOUTS.api)
 
     it('should have correct response structure', async () => {
+      if (shouldSkip) {
+        console.log('⏭️  Skipping - set TEST_ENV=staging to run')
+        return
+      }
+
       const response = await fetch(`${baseURL}/health`)
       const data = await response.json()
 
@@ -51,6 +69,11 @@ describe('Backend API Tests - Real Network Calls', () => {
 
   describe('API Root Endpoint', () => {
     it('should respond to GET /', async () => {
+      if (shouldSkip) {
+        console.log('⏭️  Skipping - set TEST_ENV=staging to run')
+        return
+      }
+
       const response = await fetch(`${baseURL}/`, {
         method: 'GET',
       })
@@ -64,6 +87,11 @@ describe('Backend API Tests - Real Network Calls', () => {
 
   describe('CORS Configuration', () => {
     it('should have CORS headers configured', async () => {
+      if (shouldSkip) {
+        console.log('⏭️  Skipping - set TEST_ENV=staging to run')
+        return
+      }
+
       const response = await fetch(`${baseURL}/health`, {
         method: 'OPTIONS',
         headers: {
@@ -82,6 +110,11 @@ describe('Backend API Tests - Real Network Calls', () => {
 
   describe('Error Handling', () => {
     it('should return 404 for non-existent endpoint', async () => {
+      if (shouldSkip) {
+        console.log('⏭️  Skipping - set TEST_ENV=staging to run')
+        return
+      }
+
       const response = await fetch(`${baseURL}/nonexistent-route-12345`, {
         method: 'GET',
       })
@@ -90,6 +123,11 @@ describe('Backend API Tests - Real Network Calls', () => {
     }, TEST_TIMEOUTS.api)
 
     it('should handle malformed requests gracefully', async () => {
+      if (shouldSkip) {
+        console.log('⏭️  Skipping - set TEST_ENV=staging to run')
+        return
+      }
+
       const response = await fetch(`${baseURL}/health`, {
         method: 'POST',
         headers: {

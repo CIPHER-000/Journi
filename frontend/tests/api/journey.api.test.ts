@@ -8,21 +8,30 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { getAPIConfig, TEST_DATA, TEST_TIMEOUTS, getTestToken } from '../utils/testConfig'
+import { getAPIConfig, TEST_DATA, TEST_TIMEOUTS, getTestToken, getTestEnvironment } from '../utils/testConfig'
 import { generateTestID, retry, sleep } from '../utils/testHelpers'
 
 describe('Journey API Tests - Real Network Calls', () => {
   let baseURL: string
   let authToken: string
   let createdJobIds: string[] = []
+  let shouldSkip: boolean
 
   beforeAll(() => {
     const config = getAPIConfig()
     baseURL = config.baseURL
     authToken = getTestToken()
+    shouldSkip = getTestEnvironment() === 'mock'
     
     console.log(`\n🎯 Testing Journey API: ${baseURL}`)
-    console.log(`🔐 Auth token present: ${authToken ? 'Yes' : 'No'}\n`)
+    console.log(`📦 Environment: ${getTestEnvironment()}`)
+    console.log(`🔐 Auth token present: ${authToken ? 'Yes' : 'No'}`)
+    
+    if (shouldSkip) {
+      console.log(`⏭️  Skipping API tests - set TEST_ENV=staging to run\n`)
+    } else {
+      console.log(`✅ Running real API tests\n`)
+    }
   })
 
   afterAll(async () => {
@@ -45,6 +54,11 @@ describe('Journey API Tests - Real Network Calls', () => {
 
   describe('Journey Creation', () => {
     it('should create a journey map via POST /agent/journey', async () => {
+      if (shouldSkip) {
+        console.log('⏭️  Skipping - set TEST_ENV=staging to run')
+        return
+      }
+
       const testID = generateTestID('api-test')
       
       const journeyData = {
@@ -91,6 +105,11 @@ describe('Journey API Tests - Real Network Calls', () => {
     }, TEST_TIMEOUTS.api)
 
     it('should validate required fields', async () => {
+      if (shouldSkip) {
+        console.log('⏭️  Skipping - set TEST_ENV=staging to run')
+        return
+      }
+
       const invalidData = {
         // Missing required fields
         title: '',
@@ -114,6 +133,11 @@ describe('Journey API Tests - Real Network Calls', () => {
 
   describe('Job Status Polling', () => {
     it('should check job status via GET /agent/journey/:jobId/status', async () => {
+      if (shouldSkip) {
+        console.log('⏭️  Skipping - set TEST_ENV=staging to run')
+        return
+      }
+
       // First create a job
       const testID = generateTestID('status-test')
       
@@ -175,6 +199,11 @@ describe('Journey API Tests - Real Network Calls', () => {
 
   describe('Journey Retrieval', () => {
     it('should retrieve journeys via GET /agent/journeys', async () => {
+      if (shouldSkip) {
+        console.log('⏭️  Skipping - set TEST_ENV=staging to run')
+        return
+      }
+
       const response = await fetch(`${baseURL}/agent/journeys`, {
         method: 'GET',
         headers: {
@@ -199,6 +228,11 @@ describe('Journey API Tests - Real Network Calls', () => {
 
   describe('WebSocket Connection (if available)', () => {
     it('should have WebSocket endpoint documented', async () => {
+      if (shouldSkip) {
+        console.log('⏭️  Skipping - set TEST_ENV=staging to run')
+        return
+      }
+
       // This is a placeholder - WebSocket testing requires different setup
       console.log('ℹ️  WebSocket testing requires special configuration')
       console.log(`   Expected endpoint: ws${baseURL.replace('http', '')}`)
