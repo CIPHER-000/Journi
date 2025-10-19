@@ -66,8 +66,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           ${isSidebarCollapsed ? 'w-16' : 'w-64'}
         `}
       >
-        {/* Scrollable content within fixed sidebar */}
-        <div className={`h-full flex flex-col ${isSidebarCollapsed ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+        {/* Collapsed State - Show Menu Button */}
+        {isSidebarCollapsed ? (
+          <div className="hidden lg:flex flex-col items-center py-4 space-y-4 h-full">
+            <button
+              onClick={() => setIsSidebarCollapsed(false)}
+              className="h-10 w-10 p-0 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
+              title="Expand sidebar"
+            >
+              <Menu className="h-5 w-5 text-gray-600" />
+            </button>
+            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+          </div>
+        ) : (
+        <div className="h-full flex flex-col overflow-y-auto">
           {/* Logo Section */}
           <div className={`${isSidebarCollapsed ? 'p-4' : 'p-6'} border-b border-gray-100`}>
             <div className="flex items-center justify-between">
@@ -205,7 +219,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {!isSidebarCollapsed && <span>Sign Out</span>}
           </button>
         </div>
-        </div> {/* End scrollable container */}
+        </div>
+        )} {/* End expanded/collapsed content */}
       </aside>
 
       {/* Main Content Area */}
@@ -217,17 +232,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           onSearchChange={setSearchQuery}
           user={user}
         />
-
-        {/* Reopen Button (only when sidebar is collapsed) */}
-        {isSidebarCollapsed && (
-          <button
-            onClick={() => setIsSidebarCollapsed(false)}
-            className="fixed left-4 top-20 z-40 p-2 bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-            title="Open Sidebar"
-          >
-            <ChevronRight className="w-4 h-4 text-gray-600" />
-          </button>
-        )}
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto bg-gray-50">
