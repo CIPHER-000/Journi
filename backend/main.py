@@ -34,10 +34,12 @@ try:
     from src.routes.auth_routes import router as auth_router
     from src.routes.analytics_routes import router as analytics_router
     from src.routes.payments import router as payments_router
+    from src.routes.optimized_payments import router as optimized_payments_router
     from src.routes import journey_routes
     from src.routes import export_routes
     from src.middleware.auth_middleware import require_auth
     from src.models.auth import UserProfile, UserJourney, UsageLimitResponse
+    from src.database import create_db_pool, close_db_pool
 
     # Initialize services
     usage_service = UsageService()
@@ -98,8 +100,10 @@ app.add_middleware(
 app.include_router(auth_router)
 # Include analytics routes
 app.include_router(analytics_router)
-# Include payments routes
+# Include payments routes (legacy - v1)
 app.include_router(payments_router)
+# Include optimized payments routes (v2 - recommended)
+app.include_router(optimized_payments_router)
 # Include journey routes
 app.include_router(journey_routes.router)
 # Include export routes
@@ -115,6 +119,15 @@ async def startup_event():
     global job_manager
     try:
         logger.info("Starting up application...")
+        
+        # Initialize database connection pool
+        try:
+            await create_db_pool()
+            logger.info("Database connection pool initialized successfully")
+        except Exception as db_error:
+            logger.warning(f"Database pool initialization failed: {str(db_error)}")
+            logger.warning("Payment features may not work properly")
+        
         # Initialize job manager
         job_manager = JobManager()
         logger.info("Job manager initialized successfully")
@@ -142,6 +155,13 @@ async def shutdown_event():
     global job_manager
     try:
         logger.info("Shutting down application...")
+        
+        # Close database connection pool
+        try:
+            await close_db_pool()
+            logger.info("Database connection pool closed successfully")
+        except Exception as db_error:
+            logger.warning(f"Error closing database pool: {str(db_error)}")
         
         # Clean up job manager resources
         if job_manager:
