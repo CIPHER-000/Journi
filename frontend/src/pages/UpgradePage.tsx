@@ -2,11 +2,14 @@ import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
-import { Crown, Check, Headphones } from 'lucide-react'
+import { Crown, Check, Headphones, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useState } from 'react'
+import paymentService from '../services/paymentService'
 
 export default function UpgradePage() {
   const { userProfile } = useAuth()
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
   const currentPlan = {
     name: userProfile?.plan_type || 'Free',
@@ -78,9 +81,40 @@ export default function UpgradePage() {
     }
   ]
 
-  const handleUpgrade = () => {
-    // TODO: Implement actual upgrade flow with payment processing
-    alert('Upgrade functionality will be integrated with payment processing.')
+  const handleUpgrade = async (planName: string) => {
+    // Prevent multiple clicks
+    if (isProcessingPayment) return
+
+    // Handle Enterprise plan differently
+    if (planName === 'Enterprise') {
+      window.open('mailto:sales@getjourni.com?subject=Enterprise%20Plan%20Inquiry', '_blank')
+      return
+    }
+
+    // Validate user profile
+    if (!userProfile?.email) {
+      alert('User email not found. Please log in again.')
+      return
+    }
+
+    setIsProcessingPayment(true)
+
+    try {
+      // Initialize payment with Paystack
+      const response = await paymentService.initializePayment({
+        email: userProfile.email,
+        plan: planName.toLowerCase(),
+        user_id: userProfile.id,
+      })
+
+      // Redirect to Paystack immediately
+      paymentService.redirectToPaystack(response.authorization_url)
+
+    } catch (error: any) {
+      console.error('Payment initialization error:', error)
+      alert(error.message || 'Failed to initialize payment. Please try again.')
+      setIsProcessingPayment(false)
+    }
   }
 
   return (
@@ -190,7 +224,7 @@ export default function UpgradePage() {
                 </div>
 
                 <Button 
-                  onClick={handleUpgrade}
+                  onClick={() => handleUpgrade(plan.name)}
                   className={`w-full ${
                     plan.current
                       ? "bg-gray-100 text-gray-500 cursor-not-allowed"
@@ -198,10 +232,15 @@ export default function UpgradePage() {
                       ? "bg-green-600 hover:bg-green-700 text-white"
                       : "bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
                   }`}
-                  disabled={plan.current}
+                  disabled={plan.current || isProcessingPayment}
                 >
-                  {plan.current ? "Current Plan" : 
-                   plan.name === "Enterprise" ? "Contact Sales" : "Upgrade"}
+                  {isProcessingPayment ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : plan.current ? "Current Plan" : 
+                   plan.name === "Enterprise" ? "Contact Sales" : "Upgrade to Pro"}
                 </Button>
               </CardContent>
             </Card>

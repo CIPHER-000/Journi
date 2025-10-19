@@ -33,6 +33,7 @@ try:
     from src.services.usage_service import UsageService
     from src.routes.auth_routes import router as auth_router
     from src.routes.analytics_routes import router as analytics_router
+    from src.routes.payments import router as payments_router
     from src.routes import journey_routes
     from src.routes import export_routes
     from src.middleware.auth_middleware import require_auth
@@ -97,6 +98,8 @@ app.add_middleware(
 app.include_router(auth_router)
 # Include analytics routes
 app.include_router(analytics_router)
+# Include payments routes
+app.include_router(payments_router)
 # Include journey routes
 app.include_router(journey_routes.router)
 # Include export routes

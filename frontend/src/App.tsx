@@ -19,6 +19,7 @@ import UpgradePage from './pages/UpgradePage'
 import TemplatesPage from './pages/TemplatesPage'
 import CreateJourneyPage from './pages/CreateJourneyPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
+import PaymentCallbackPage from './pages/PaymentCallbackPage'
 import './App.css'
 
 // Create React Query client with optimized caching
@@ -46,6 +47,11 @@ function App() {
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/verify" element={<EmailVerificationPage />} />
+            <Route path="/payment/callback" element={
+              <ProtectedRoute>
+                <PaymentCallbackPage />
+              </ProtectedRoute>
+            } />
             
             {/* Protected routes */}
             <Route path="/dashboard" element={
