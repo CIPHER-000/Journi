@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Map, Upload, X, FileText, Users, Target, Lightbulb, Loader2,
-  CheckCircle, AlertCircle, Building2, UserCircle, Plus, Minus, Zap
+  CheckCircle, AlertCircle, Plus, Zap
 } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 import { Button } from '../components/ui/button'
@@ -17,6 +17,7 @@ interface FormData {
   industry: string
   businessGoals: string
   targetPersonas: string[]
+  customPersona: string
   journeyPhases: string[]
   additionalContext: string
   files: File[]
@@ -27,14 +28,26 @@ const industries = [
   'Manufacturing', 'Real Estate', 'Hospitality', 'Transportation', 'Other'
 ]
 
-const personaSuggestions = [
-  'Customer', 'User', 'Patient', 'Student', 'Client',
-  'Employee', 'Partner', 'Supplier', 'Investor', 'Regulator'
+const commonPersonas = [
+  'New User',
+  'Returning Customer',
+  'Trial User',
+  'Enterprise Admin',
+  'Power User',
+  'Casual User',
+  'Mobile User',
+  'Support Seeker'
 ]
 
-const phaseSuggestions = [
-  'Awareness', 'Consideration', 'Decision', 'Purchase', 'Onboarding',
-  'Usage', 'Support', 'Renewal', 'Advocacy', 'Feedback'
+const journeyPhaseOptions = [
+  'Awareness',
+  'Purchase/Signup',
+  'Usage/Engagement',
+  'Renewal/Retention',
+  'Consideration',
+  'Onboarding',
+  'Support',
+  'Advocacy'
 ]
 
 export default function CreateJourneyPage() {
@@ -48,8 +61,9 @@ export default function CreateJourneyPage() {
     title: '',
     industry: '',
     businessGoals: '',
-    targetPersonas: [''],
-    journeyPhases: [''],
+    targetPersonas: [],
+    customPersona: '',
+    journeyPhases: [],
     additionalContext: '',
     files: []
   })
@@ -69,38 +83,36 @@ export default function CreateJourneyPage() {
     multiple: true
   })
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handlePersonaChange = (index: number, value: string) => {
-    const newPersonas = [...formData.targetPersonas]
-    newPersonas[index] = value
-    setFormData(prev => ({ ...prev, targetPersonas: newPersonas }))
+  const togglePersona = (persona: string) => {
+    setFormData(prev => ({
+      ...prev,
+      targetPersonas: prev.targetPersonas.includes(persona)
+        ? prev.targetPersonas.filter(p => p !== persona)
+        : [...prev.targetPersonas, persona]
+    }))
   }
 
-  const addPersona = () => {
-    setFormData(prev => ({ ...prev, targetPersonas: [...prev.targetPersonas, ''] }))
+  const addCustomPersona = () => {
+    if (formData.customPersona.trim() && !formData.targetPersonas.includes(formData.customPersona.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        targetPersonas: [...prev.targetPersonas, prev.customPersona.trim()],
+        customPersona: ''
+      }))
+    }
   }
 
-  const removePersona = (index: number) => {
-    const newPersonas = formData.targetPersonas.filter((_, i) => i !== index)
-    setFormData(prev => ({ ...prev, targetPersonas: newPersonas }))
-  }
-
-  const handlePhaseChange = (index: number, value: string) => {
-    const newPhases = [...formData.journeyPhases]
-    newPhases[index] = value
-    setFormData(prev => ({ ...prev, journeyPhases: newPhases }))
-  }
-
-  const addPhase = () => {
-    setFormData(prev => ({ ...prev, journeyPhases: [...prev.journeyPhases, ''] }))
-  }
-
-  const removePhase = (index: number) => {
-    const newPhases = formData.journeyPhases.filter((_, i) => i !== index)
-    setFormData(prev => ({ ...prev, journeyPhases: newPhases }))
+  const togglePhase = (phase: string) => {
+    setFormData(prev => ({
+      ...prev,
+      journeyPhases: prev.journeyPhases.includes(phase)
+        ? prev.journeyPhases.filter(p => p !== phase)
+        : [...prev.journeyPhases, phase]
+    }))
   }
 
   const removeFile = (index: number) => {
@@ -264,40 +276,68 @@ export default function CreateJourneyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {formData.targetPersonas.map((persona, index) => (
-                <div key={index} className="flex gap-2">
+              <p className="text-sm text-gray-700 mb-3">Select from common personas:</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {commonPersonas.map((persona) => (
+                  <label
+                    key={persona}
+                    className="flex items-center space-x-2 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.targetPersonas.includes(persona)}
+                      onChange={() => togglePersona(persona)}
+                      className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                    />
+                    <span className="text-sm text-gray-700">{persona}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <p className="text-sm text-gray-700 mb-3">Add custom persona:</p>
+                <div className="flex gap-2">
                   <Input
-                    value={persona}
-                    onChange={(e) => handlePersonaChange(index, e.target.value)}
-                    placeholder={`Enter persona ${index + 1}`}
-                    list={`persona-suggestions-${index}`}
+                    value={formData.customPersona}
+                    onChange={(e) => handleInputChange('customPersona', e.target.value)}
+                    placeholder="e.g., Enterprise Decision Maker"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addCustomPersona()
+                      }
+                    }}
                   />
-                  <datalist id={`persona-suggestions-${index}`}>
-                    {personaSuggestions.map((suggestion) => (
-                      <option key={suggestion} value={suggestion} />
-                    ))}
-                  </datalist>
-                  {formData.targetPersonas.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removePersona(index)}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    onClick={addCustomPersona}
+                    className="bg-black hover:bg-gray-800 text-white px-4"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addPersona}
-                className="w-full"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Persona
-              </Button>
+                {formData.targetPersonas.filter(p => !commonPersonas.includes(p)).length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {formData.targetPersonas
+                      .filter(p => !commonPersonas.includes(p))
+                      .map((persona, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm"
+                        >
+                          {persona}
+                          <button
+                            type="button"
+                            onClick={() => togglePersona(persona)}
+                            className="text-gray-500 hover:text-gray-700"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -310,40 +350,23 @@ export default function CreateJourneyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {formData.journeyPhases.map((phase, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    value={phase}
-                    onChange={(e) => handlePhaseChange(index, e.target.value)}
-                    placeholder={`Enter journey phase ${index + 1}`}
-                    list={`phase-suggestions-${index}`}
-                  />
-                  <datalist id={`phase-suggestions-${index}`}>
-                    {phaseSuggestions.map((suggestion) => (
-                      <option key={suggestion} value={suggestion} />
-                    ))}
-                  </datalist>
-                  {formData.journeyPhases.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removePhase(index)}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addPhase}
-                className="w-full"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Phase
-              </Button>
+              <p className="text-sm text-gray-700 mb-3">Select the phases you want to include in this journey:</p>
+              <div className="grid grid-cols-2 gap-3">
+                {journeyPhaseOptions.map((phase) => (
+                  <label
+                    key={phase}
+                    className="flex items-center space-x-2 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.journeyPhases.includes(phase)}
+                      onChange={() => togglePhase(phase)}
+                      className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                    />
+                    <span className="text-sm text-gray-700">{phase}</span>
+                  </label>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
