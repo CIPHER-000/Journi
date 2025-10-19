@@ -19,9 +19,9 @@ export function ComingSoonOverlay({
         {children}
       </div>
 
-      {/* Coming Soon Banner - Absolute and centered */}
+      {/* Coming Soon Banner - Fixed and viewport centered */}
       <div 
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
         role="dialog"
         aria-label="Feature coming soon"
         aria-describedby="coming-soon-description"
