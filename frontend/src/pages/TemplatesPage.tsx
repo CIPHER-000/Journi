@@ -155,36 +155,33 @@ export default function TemplatesPage({ searchQuery = '' }: TemplatesPageProps) 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-soft transition-all duration-300"
+        className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-soft transition-all duration-300 flex flex-col h-full"
       >
+        {/* Header with icon and title */}
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
               <IconComponent className="w-5 h-5 text-green-600" />
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h3 className="font-medium text-gray-900 line-clamp-1">{template.name}</h3>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <h3 className="font-semibold text-gray-900 text-base line-clamp-1">{template.name}</h3>
                 {template.isPopular && (
-                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+                  <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0">
                     Popular
                   </span>
                 )}
                 {isCustom && (
-                  <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">
+                  <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0">
                     Custom
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>{template.industry}</span>
-                <span>•</span>
-                <span>{template.useCase}</span>
-              </div>
+              <p className="text-xs text-gray-500">{template.industry}</p>
             </div>
           </div>
           <button
-            className={`p-1.5 rounded-lg transition-colors ${
+            className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${
               template.isSaved ? 'text-yellow-600 bg-yellow-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
             }`}
           >
@@ -192,38 +189,40 @@ export default function TemplatesPage({ searchQuery = '' }: TemplatesPageProps) 
           </button>
         </div>
 
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2">{template.description}</p>
+        {/* Description - fixed height */}
+        <p className="text-sm text-gray-600 mb-4 line-clamp-2 h-10">{template.description}</p>
 
-        {/* Personas */}
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Users className="w-4 h-4" />
-            <span>{template.personas.length} personas</span>
+        {/* Content area that grows to fill space */}
+        <div className="flex-1 space-y-3 mb-4">
+          {/* Personas */}
+          <div>
+            <div className="flex items-center gap-2 text-xs text-gray-500 mb-1.5">
+              <Users className="w-3.5 h-3.5" />
+              <span>{template.personas.length} personas</span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {template.personas.slice(0, 2).map((persona) => (
+                <span key={persona} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+                  {persona}
+                </span>
+              ))}
+              {template.personas.length > 2 && (
+                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+                  +{template.personas.length - 2} more
+                </span>
+              )}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1">
-            {template.personas.slice(0, 2).map((persona) => (
-              <span key={persona} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
-                {persona}
-              </span>
-            ))}
-            {template.personas.length > 2 && (
-              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
-                +{template.personas.length - 2} more
-              </span>
-            )}
-          </div>
-        </div>
 
-        {/* Phases */}
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Map className="w-4 h-4" />
+          {/* Phases */}
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <Map className="w-3.5 h-3.5" />
             <span>{template.phases.length} phases covered</span>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-2">
+        {/* Actions - always at bottom */}
+        <div className="flex gap-2 mt-auto">
           <PrimaryButton
             variant="secondary"
             size="sm"
