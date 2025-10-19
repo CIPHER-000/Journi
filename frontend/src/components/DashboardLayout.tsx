@@ -66,18 +66,77 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           ${isSidebarCollapsed ? 'w-16' : 'w-64'}
         `}
       >
-        {/* Collapsed State - Show Menu Button */}
+        {/* Collapsed State - Show Icons Only */}
         {isSidebarCollapsed ? (
-          <div className="hidden lg:flex flex-col items-center py-4 space-y-4 h-full">
-            <button
-              onClick={() => setIsSidebarCollapsed(false)}
-              className="h-10 w-10 p-0 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
-              title="Expand sidebar"
-            >
-              <Menu className="h-5 w-5 text-gray-600" />
-            </button>
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
+          <div className="hidden lg:flex flex-col items-center h-full">
+            {/* Logo and Expand Button */}
+            <div className="p-4 border-b border-gray-100 w-full flex flex-col items-center space-y-3">
+              <button
+                onClick={() => setIsSidebarCollapsed(false)}
+                className="h-10 w-10 p-0 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
+                title="Expand sidebar"
+              >
+                <Menu className="h-5 w-5 text-gray-600" />
+              </button>
+              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+            </div>
+
+            {/* Navigation Icons */}
+            <nav className="flex-1 p-2 space-y-2 w-full">
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`
+                      flex items-center justify-center p-3 rounded-lg transition-all duration-200
+                      ${isActive(item.path)
+                        ? 'bg-green-50 text-green-600'
+                        : 'text-gray-600 hover:bg-gray-50'}
+                    `}
+                    title={item.label}
+                  >
+                    <Icon className={`w-5 h-5 ${
+                      isActive(item.path) ? 'text-green-600' : 'text-gray-400'
+                    }`} />
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Bottom Icons */}
+            <div className="p-2 border-t border-gray-100 space-y-2 w-full">
+              {bottomItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`
+                      flex items-center justify-center p-3 rounded-lg transition-all duration-200
+                      ${isActive(item.path)
+                        ? 'bg-green-50 text-green-600'
+                        : 'text-gray-600 hover:bg-gray-50'}
+                    `}
+                    title={item.label}
+                  >
+                    <Icon className={`w-5 h-5 ${
+                      isActive(item.path) ? 'text-green-600' : 'text-gray-400'
+                    }`} />
+                  </Link>
+                );
+              })}
+
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-center p-3 rounded-lg transition-all duration-200 text-gray-600 hover:bg-red-50 hover:text-red-600"
+                title="Sign Out"
+              >
+                <LogOut className="w-5 h-5 text-gray-400 hover:text-red-600" />
+              </button>
             </div>
           </div>
         ) : (
