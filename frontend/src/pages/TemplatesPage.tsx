@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { PrimaryButton } from '../components/ui/PrimaryButton'
+import { ComingSoonOverlay } from '../components/ComingSoonOverlay'
 
 interface TemplatesPageProps {
   searchQuery?: string
@@ -250,7 +251,11 @@ export default function TemplatesPage({ searchQuery = '' }: TemplatesPageProps) 
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8">
+    <ComingSoonOverlay 
+      message="🚧 Templates Coming Soon"
+      description="We're building an amazing template library to help you create journey maps faster. This feature will be available in an upcoming release!"
+    >
+      <div className="p-8 max-w-6xl mx-auto space-y-8">
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold text-gray-900">Templates</h1>
@@ -406,5 +411,6 @@ export default function TemplatesPage({ searchQuery = '' }: TemplatesPageProps) 
         </div>
       )}
     </div>
+    </ComingSoonOverlay>
   )
 }

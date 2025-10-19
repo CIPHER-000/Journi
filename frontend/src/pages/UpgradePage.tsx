@@ -26,9 +26,7 @@ export default function UpgradePage() {
         ]
       : [
           '5 journeys total',
-          'Basic templates',
-          'PDF exports',
-          'Community support'
+          'PDF exports'
         ]
   }
 
@@ -40,9 +38,7 @@ export default function UpgradePage() {
       description: 'Perfect for getting started',
       features: [
         '5 journeys total',
-        'Basic templates',
-        'PDF exports',
-        'Community support'
+        'PDF exports'
       ],
       popular: false,
       current: currentPlan.name === 'Free'
@@ -106,7 +102,7 @@ export default function UpgradePage() {
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">{currentPlan.name} Plan</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{currentPlan.name === 'free' ? 'Free' : currentPlan.name} Plan</h3>
               <p className="text-gray-600">{currentPlan.price}/month</p>
             </div>
             <Badge variant="outline" className="text-gray-600">
