@@ -1,5 +1,6 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Header } from './components/Header'
@@ -20,10 +21,24 @@ import CreateJourneyPage from './pages/CreateJourneyPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
 import './App.css'
 
+// Create React Query client with optimized caching
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
+      gcTime: 10 * 60 * 1000, // Cache persists for 10 minutes (garbage collection time)
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+      refetchOnReconnect: false, // Don't refetch on reconnect
+      retry: 1, // Retry failed requests once
+    },
+  },
+})
+
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router>
         <div className="min-h-screen bg-white">
           <Routes>
             {/* Public routes */}
@@ -93,6 +108,7 @@ function App() {
         </div>
       </Router>
     </AuthProvider>
+    </QueryClientProvider>
   )
 }
 

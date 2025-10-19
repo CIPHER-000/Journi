@@ -1,67 +1,20 @@
-import React, { useState, useEffect } from 'react'
 import { Card, CardContent } from '../components/ui/card'
-import { Progress } from '../components/ui/progress'
 import { Button } from '../components/ui/button'
-import { Plus, Map, FileText, BookOpen, Eye, Edit, Crown, TrendingUp, Loader2, Zap, User } from 'lucide-react'
+import { Plus, Map, FileText, BookOpen, Eye, Edit, Crown, TrendingUp, Loader2, Zap } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { useAuth } from '../context/AuthContext'
-
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'
-
-interface JourneyMap {
-  id: string
-  title: string
-  industry?: string
-  createdAt: Date | string
-  status: 'completed' | 'processing' | 'failed' | 'queued' | 'running'
-}
+import { useDashboardData } from '../hooks/useDashboardData'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const { user, userProfile, token } = useAuth()
-  const [journeyMaps, setJourneyMaps] = useState<JourneyMap[]>([])
-  const [loading, setLoading] = useState(true)
+  const { userProfile } = useAuth()
+  
+  // Use cached dashboard data
+  const { data, isLoading, isError, error } = useDashboardData()
+  const journeyMaps = data?.journeys || []
 
-  useEffect(() => {
-    const fetchUserJourneys = async () => {
-      if (!user || !token) return
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/usage`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
-
-        if (!response.ok) {
-          console.error('Error fetching journeys:', response.statusText)
-        } else {
-          const data = await response.json()
-
-          if (data.usage && data.usage.recent_journeys) {
-            const transformedJourneys = data.usage.recent_journeys.map((journey: any) => ({
-              id: journey.id,
-              title: journey.title,
-              industry: journey.industry || 'Unknown',
-              createdAt: new Date(journey.created_at),
-              status: journey.status as 'completed' | 'processing' | 'failed' | 'queued' | 'running'
-            }))
-            setJourneyMaps(transformedJourneys)
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching journeys:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchUserJourneys()
-  }, [user, token])
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
