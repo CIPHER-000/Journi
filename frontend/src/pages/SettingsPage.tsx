@@ -193,7 +193,7 @@ export default function SettingsPage() {
                   onChange={(e) => setProfileData({...profileData, company: e.target.value})}
                 />
               </div>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
+              <Button variant="outline" className="bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700">
                 Save Changes
               </Button>
             </CardContent>
@@ -266,7 +266,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 {currentPlan === "free" && (
-                  <Button onClick={handleUpgrade} className="bg-green-600 hover:bg-green-700 text-white gap-2">
+                  <Button onClick={handleUpgrade} variant="outline" className="bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 gap-2">
                     <Crown className="h-4 w-4" />
                     Upgrade to Pro
                   </Button>
@@ -359,7 +359,7 @@ export default function SettingsPage() {
                       ))}
                     </ul>
                     {currentPlan === "free" && (
-                      <Button onClick={handleUpgrade} className="w-full bg-green-600 hover:bg-green-700 text-white">
+                      <Button onClick={handleUpgrade} variant="outline" className="w-full bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700">
                         Upgrade to Pro
                       </Button>
                     )}
@@ -490,7 +490,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
+              <Button variant="outline" className="bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700">
                 Save Preferences
               </Button>
             </CardContent>
@@ -575,7 +575,7 @@ export default function SettingsPage() {
                 <p className="text-muted-foreground mb-4">
                   Upgrade to Pro to invite team members and collaborate on customer journey maps
                 </p>
-                <Button onClick={handleUpgrade} className="bg-green-600 hover:bg-green-700 text-white gap-2">
+                <Button onClick={handleUpgrade} variant="outline" className="bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 gap-2">
                   <Crown className="h-4 w-4" />
                   Upgrade to Pro
                 </Button>
@@ -587,7 +587,7 @@ export default function SettingsPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Team Members</CardTitle>
-                    <Button className="bg-green-600 hover:bg-green-700 text-white gap-2">
+                    <Button variant="outline" className="bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 gap-2">
                       <Plus className="h-4 w-4" />
                       Invite Member
                     </Button>
