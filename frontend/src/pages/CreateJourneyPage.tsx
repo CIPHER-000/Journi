@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { useAuth } from '../context/AuthContext'
+import { useInvalidateJourneys } from '../hooks/useJourneysData'
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'
 
@@ -53,6 +54,7 @@ const journeyPhaseOptions = [
 export default function CreateJourneyPage() {
   const navigate = useNavigate()
   const { user, token } = useAuth()
+  const { invalidate } = useInvalidateJourneys()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -168,6 +170,9 @@ export default function CreateJourneyPage() {
 
       const result = await response.json()
       setSuccess(true)
+
+      // Invalidate cache to update dashboard and journeys list
+      invalidate()
 
       // Redirect to dashboard after successful creation
       setTimeout(() => {

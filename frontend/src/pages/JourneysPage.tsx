@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
+import { useJourneysData } from '../hooks/useJourneysData'
 
 interface JourneyMap {
   id: string
@@ -23,65 +24,26 @@ interface JourneyMap {
   lastModified?: Date | string
 }
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'https://journi-backend.onrender.com'
-
 interface JourneysPageProps {
   searchQuery?: string
 }
 
 export default function JourneysPage({ searchQuery = '' }: JourneysPageProps) {
-  const { user, token, userProfile } = useAuth()
+  const { userProfile } = useAuth()
   const navigate = useNavigate()
-  const [journeyMaps, setJourneyMaps] = useState<JourneyMap[]>([])
-  const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
 
-  // Fetch journeys from API
-  useEffect(() => {
-    const fetchUserJourneys = async () => {
-      if (!user || !token) return
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/usage`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
-
-        if (!response.ok) {
-          console.error('Error fetching journeys:', response.statusText)
-          setLoading(false)
-          return
-        }
-
-        const data = await response.json()
-
-        if (data.usage && data.usage.recent_journeys) {
-          const transformedJourneys = data.usage.recent_journeys.map((journey: any) => ({
-            id: journey.id,
-            title: journey.title,
-            industry: journey.industry || 'Unknown',
-            createdAt: new Date(journey.created_at),
-            status: journey.status || 'draft',
-            personas: journey.personas || [],
-            phases: journey.phases || [],
-            lastModified: journey.updated_at ? new Date(journey.updated_at) : new Date(journey.created_at)
-          }))
-          setJourneyMaps(transformedJourneys)
-        }
-      } catch (error) {
-        console.error('Error fetching journeys:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchUserJourneys()
-  }, [user, token])
+  // Use cached journeys data
+  const { data, isLoading, isError } = useJourneysData()
+  const journeyMaps = data?.journeys.map((journey) => ({
+    ...journey,
+    personas: [] as string[],
+    phases: [] as string[],
+    lastModified: journey.createdAt
+  })) || []
 
   // Calculate usage data
   const userPlan = userProfile?.plan_type || 'free'
@@ -143,7 +105,7 @@ export default function JourneysPage({ searchQuery = '' }: JourneysPageProps) {
     'draft': Map
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
