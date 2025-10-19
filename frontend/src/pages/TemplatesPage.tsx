@@ -251,7 +251,7 @@ export default function TemplatesPage({ searchQuery = '' }: TemplatesPageProps) 
   }
 
   return (
-    <div className="space-y-8">
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold text-gray-900">Templates</h1>
