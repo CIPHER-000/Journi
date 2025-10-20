@@ -1,0 +1,49 @@
+feat: Add OpenRouter integration for development mode with comprehensive error handling
+
+- Created dedicated OpenRouter service (openrouter_service.py) with full API support
+- Implemented environment-based AI service switching (development=OpenRouter, production=OpenAI)
+- Added structured error responses for OpenRouter and OpenAI failures
+- Enhanced job manager error handling with user-friendly messages
+- Created comprehensive documentation and test suite
+- Fixed journey routing 404 error by adding /api prefix
+
+New Features:
+- OpenRouter service with generate_completion(), generate_chat_completion(), and CrewAI integration
+- Automatic service selection based on ENVIRONMENT variable
+- User-friendly error messages for all API failures (401, 429, 402, 503, timeouts)
+- API key validation with detailed error reporting
+- All 5 integration tests passing
+
+Configuration:
+- Added OPENROUTER_API_KEY, OPENROUTER_BASE_URL, OPENROUTER_MODEL to .env.example
+- Set ENVIRONMENT=development in .env to use OpenRouter
+- Original OpenAI service remains unchanged (zero breaking changes)
+
+Documentation:
+- OPENROUTER_INTEGRATION_GUIDE.md - Complete usage guide
+- OPENROUTER_IMPLEMENTATION_SUMMARY.md - Implementation details
+- JOURNEY_ROUTING_FIX.md - Routing fix documentation
+
+Testing:
+- test_openrouter.py - 5/5 tests passing
+- API key validation working
+- Completions and chat working
+- CrewAI integration working
+- Error handling validated
+
+Files Created:
+- backend/src/services/openrouter_service.py (380 lines)
+- backend/test_openrouter.py (230 lines)
+- OPENROUTER_INTEGRATION_GUIDE.md (500+ lines)
+- OPENROUTER_IMPLEMENTATION_SUMMARY.md (300+ lines)
+- JOURNEY_ROUTING_FIX.md
+
+Files Modified:
+- backend/src/agents/crew_coordinator.py - Environment-based switching
+- backend/src/services/job_manager.py - Enhanced error handling
+- backend/.env - Set development mode
+- backend/.env.example - Added OpenRouter config
+- frontend/src/pages/CreateJourneyPage.tsx - Fixed API route
+- frontend/src/services/agentService.ts - Fixed API route
+
+Status: Ready for testing and deployment
