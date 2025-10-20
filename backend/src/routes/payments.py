@@ -7,12 +7,26 @@ from fastapi import APIRouter, HTTPException, Depends, Request, Header
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, Dict, Any
 import logging
+import os
+from supabase import create_client, Client
 from src.controllers.paymentsController import PaymentsController
-from src.database import get_db_connection
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/payments", tags=["payments"])
+
+
+# Dependency: Get Supabase client
+def get_supabase_client() -> Client:
+    """Get Supabase client instance"""
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    
+    if not supabase_url or not supabase_key:
+        raise HTTPException(status_code=500, detail="Supabase configuration not found")
+    
+    return create_client(supabase_url, supabase_key)
 
 
 # Request/Response Models
@@ -117,7 +131,7 @@ async def initialize_payment(payload: PaymentInitRequest):
 
 
 @router.get("/verify/{reference}", response_model=PaymentVerifyResponse)
-async def verify_payment(reference: str):
+async def verify_payment(reference: str, supabase: Client = Depends(get_supabase_client)):
     """
     Verify a Paystack payment transaction
     
@@ -151,26 +165,19 @@ async def verify_payment(reference: str):
 
         # Update user's plan in database
         try:
-            conn = await get_db_connection()
+            update_data = {
+                "plan_type": plan,
+                "payment_status": "active",
+                "last_payment_ref": reference,
+                "updated_at": datetime.now().isoformat()
+            }
             
-            update_query = """
-                UPDATE users
-                SET plan_type = $1,
-                    payment_status = 'active',
-                    last_payment_ref = $2,
-                    updated_at = NOW()
-                WHERE email = $3
-                RETURNING id, email, plan_type
-            """
+            updated_user_response = supabase.table("users").update(update_data).eq("email", customer_email).execute()
             
-            updated_user = await conn.fetchrow(
-                update_query,
-                plan,
-                reference,
-                customer_email
-            )
-            
-            await conn.close()
+            if not updated_user_response.data:
+                updated_user = None
+            else:
+                updated_user = updated_user_response.data[0]
 
             if not updated_user:
                 logger.warning(
@@ -211,7 +218,8 @@ async def verify_payment(reference: str):
 @router.post("/webhook")
 async def paystack_webhook(
     request: Request,
-    x_paystack_signature: Optional[str] = Header(None)
+    x_paystack_signature: Optional[str] = Header(None),
+    supabase: Client = Depends(get_supabase_client)
 ):
     """
     Handle Paystack webhook events
@@ -265,23 +273,14 @@ async def paystack_webhook(
                 plan = metadata.get("plan", "pro")
                 reference = result.get("reference")
 
-                conn = await get_db_connection()
+                update_data = {
+                    "plan_type": plan,
+                    "payment_status": "active",
+                    "last_payment_ref": reference,
+                    "updated_at": datetime.now().isoformat()
+                }
                 
-                await conn.execute(
-                    """
-                    UPDATE users
-                    SET plan_type = $1,
-                        payment_status = 'active',
-                        last_payment_ref = $2,
-                        updated_at = NOW()
-                    WHERE email = $3
-                    """,
-                    plan,
-                    reference,
-                    customer_email
-                )
-                
-                await conn.close()
+                supabase.table("users").update(update_data).eq("email", customer_email).execute()
                 
                 logger.info(
                     f"User plan updated via webhook - "

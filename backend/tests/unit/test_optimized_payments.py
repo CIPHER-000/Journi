@@ -8,7 +8,6 @@ import asyncio
 import os
 from unittest.mock import Mock, patch, AsyncMock, MagicMock
 from datetime import datetime, timedelta
-import asyncpg
 
 # Mock environment variables BEFORE importing controller
 os.environ['PAYSTACK_SECRET_KEY'] = 'sk_test_mock_secret_key'
@@ -18,37 +17,51 @@ from src.controllers.optimizedPaymentsController import OptimizedPaymentsControl
 
 
 @pytest.fixture
-def mock_db_pool():
-    """Mock AsyncPG connection pool"""
-    pool = AsyncMock(spec=asyncpg.Pool)
-    connection = AsyncMock(spec=asyncpg.Connection)
+def mock_supabase_client():
+    """Mock Supabase client"""
+    client = Mock()
     
-    # Mock connection acquisition
-    pool.acquire.return_value.__aenter__.return_value = connection
-    pool.acquire.return_value.__aexit__.return_value = None
+    # Mock table method to return a query builder
+    table_mock = Mock()
+    client.table = Mock(return_value=table_mock)
     
-    # Mock transaction
-    connection.transaction.return_value.__aenter__.return_value = None
-    connection.transaction.return_value.__aexit__.return_value = None
+    # Mock query builder methods (fluent interface)
+    table_mock.select = Mock(return_value=table_mock)
+    table_mock.insert = Mock(return_value=table_mock)
+    table_mock.update = Mock(return_value=table_mock)
+    table_mock.delete = Mock(return_value=table_mock)
+    table_mock.upsert = Mock(return_value=table_mock)
+    table_mock.eq = Mock(return_value=table_mock)
+    table_mock.in_ = Mock(return_value=table_mock)
+    table_mock.gte = Mock(return_value=table_mock)
+    table_mock.order = Mock(return_value=table_mock)
+    table_mock.limit = Mock(return_value=table_mock)
     
-    return pool
+    # Mock execute method to return response
+    response_mock = Mock()
+    response_mock.data = []
+    table_mock.execute = Mock(return_value=response_mock)
+    
+    return client
 
 
 @pytest.fixture
-def controller(mock_db_pool):
-    """Create payment controller with mocked DB"""
-    return OptimizedPaymentsController(mock_db_pool)
+def controller(mock_supabase_client):
+    """Create payment controller with mocked Supabase client"""
+    return OptimizedPaymentsController(mock_supabase_client)
 
 
 class TestInitializeTransaction:
     """Test transaction initialization with idempotency"""
     
     @pytest.mark.asyncio
-    async def test_initialize_new_transaction(self, controller, mock_db_pool):
+    async def test_initialize_new_transaction(self, controller, mock_supabase_client):
         """Test initializing a new payment transaction"""
         # Mock no existing transaction
-        conn = mock_db_pool.acquire.return_value.__aenter__.return_value
-        conn.fetchrow.return_value = None
+        table_mock = mock_supabase_client.table.return_value
+        response_mock = Mock()
+        response_mock.data = []  # No existing transaction
+        table_mock.execute.return_value = response_mock
         
         # Mock Paystack API response
         mock_response = Mock()
@@ -76,20 +89,22 @@ class TestInitializeTransaction:
         assert result["reference"] == "ref_12345"
         assert result["cached"] is False
         
-        # Verify database insert was called
-        conn.execute.assert_called_once()
+        # Verify table.upsert was called
+        assert table_mock.upsert.called
     
     @pytest.mark.asyncio
-    async def test_reuse_existing_pending_transaction(self, controller, mock_db_pool):
+    async def test_reuse_existing_pending_transaction(self, controller, mock_supabase_client):
         """Test that existing pending transactions are reused (idempotency)"""
         # Mock existing pending transaction
-        conn = mock_db_pool.acquire.return_value.__aenter__.return_value
-        conn.fetchrow.return_value = {
-            "reference": "ref_existing",
-            "authorization_url": "https://checkout.paystack.com/existing",
-            "access_code": "existing123",
-            "created_at": datetime.now()
-        }
+        table_mock = mock_supabase_client.table.return_value
+        response_mock = Mock()
+        response_mock.data = [{
+            'reference': 'REF123',
+            'authorization_url': 'https://paystack.com/pay/ref123',
+            'access_code': 'access_code_123',
+            'created_at': datetime.now().isoformat()
+        }]
+        table_mock.execute.return_value = response_mock
         
         result = await controller.initialize_transaction(
             email="test@example.com",
@@ -98,7 +113,7 @@ class TestInitializeTransaction:
         )
         
         assert result["success"] is True
-        assert result["reference"] == "ref_existing"
+        assert result["reference"] == "REF123"
         assert result["cached"] is True
         
         # Verify Paystack API was NOT called
