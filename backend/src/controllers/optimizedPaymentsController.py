@@ -11,8 +11,8 @@ from fastapi import HTTPException
 import httpx
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
-import asyncpg
 from functools import lru_cache
+from supabase import Client
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +29,14 @@ _verification_cache = {}  # In-memory cache {reference: (result, timestamp)}
 class OptimizedPaymentsController:
     """Optimized controller for Paystack payment operations with idempotency"""
 
-    def __init__(self, db_pool: asyncpg.Pool):
+    def __init__(self, supabase_client: Client):
         """
-        Initialize controller with database connection pool
+        Initialize controller with Supabase client
         
         Args:
-            db_pool: AsyncPG connection pool for Supabase
+            supabase_client: Supabase client for database operations
         """
-        self.db_pool = db_pool
+        self.supabase = supabase_client
 
     async def initialize_transaction(
         self,
@@ -64,30 +64,19 @@ class OptimizedPaymentsController:
 
         # Check for existing pending transaction for this user/plan combo
         # This prevents duplicate initialization if user clicks button multiple times
-        async with self.db_pool.acquire() as conn:
-            existing = await conn.fetchrow(
-                """
-                SELECT reference, authorization_url, access_code, created_at
-                FROM payment_transactions
-                WHERE customer_email = $1 
-                  AND plan_type = $2
-                  AND status IN ('pending', 'processing')
-                  AND created_at > NOW() - INTERVAL '30 minutes'
-                ORDER BY created_at DESC
-                LIMIT 1
-                """,
-                email, plan
-            )
+        thirty_mins_ago = (datetime.now() - timedelta(minutes=30)).isoformat()
+        response = self.supabase.table("payment_transactions").select("*").eq("customer_email", email).eq("plan_type", plan).in_("status", ["pending", "processing"]).gte("created_at", thirty_mins_ago).order("created_at", desc=True).limit(1).execute()
 
-            if existing:
-                logger.info(f"Reusing existing pending transaction: {existing['reference']}")
-                return {
-                    "success": True,
-                    "authorization_url": existing["authorization_url"],
-                    "access_code": existing["access_code"],
-                    "reference": existing["reference"],
-                    "cached": True
-                }
+        if response.data:
+            existing = response.data[0]
+            logger.info(f"Reusing existing pending transaction: {existing['reference']}")
+            return {
+                "success": True,
+                "authorization_url": existing["authorization_url"],
+                "access_code": existing["access_code"],
+                "reference": existing["reference"],
+                "cached": True
+            }
 
         # Prepare request payload
         payload = {
@@ -123,26 +112,21 @@ class OptimizedPaymentsController:
                 data = result["data"]
 
                 # Store transaction in database for idempotency
-                async with self.db_pool.acquire() as conn:
-                    await conn.execute(
-                        """
-                        INSERT INTO payment_transactions 
-                        (reference, user_id, customer_email, amount, currency, status, 
-                         plan_type, access_code, authorization_url, metadata)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                        ON CONFLICT (reference) DO NOTHING
-                        """,
-                        data["reference"],
-                        user_id,
-                        email,
-                        amount,
-                        "NGN",
-                        "pending",
-                        plan,
-                        data["access_code"],
-                        data["authorization_url"],
-                        payload["metadata"]
-                    )
+                transaction_data = {
+                    "reference": data["reference"],
+                    "user_id": user_id,
+                    "customer_email": email,
+                    "amount": amount,
+                    "currency": "NGN",
+                    "status": "pending",
+                    "plan_type": plan,
+                    "access_code": data["access_code"],
+                    "authorization_url": data["authorization_url"],
+                    "metadata": payload["metadata"]
+                }
+                
+                # Upsert to handle conflicts
+                self.supabase.table("payment_transactions").upsert(transaction_data, on_conflict="reference").execute()
 
                 logger.info(f"Payment initialized: {email} - Reference: {data['reference']}")
 
@@ -190,43 +174,35 @@ class OptimizedPaymentsController:
                 return cached_result
 
         # Check database first for already processed transactions
-        async with self.db_pool.acquire() as conn:
-            db_transaction = await conn.fetchrow(
-                """
-                SELECT * FROM payment_transactions
-                WHERE reference = $1
-                """,
-                reference
-            )
+        response = self.supabase.table("payment_transactions").select("*").eq("reference", reference).execute()
+        
+        db_transaction = response.data[0] if response.data else None
 
-            # If already processed successfully, don't call Paystack again
-            if db_transaction and db_transaction["processed"] and db_transaction["status"] == "success":
-                logger.info(f"Transaction already processed: {reference}")
-                result = {
-                    "success": True,
-                    "status": "success",
-                    "reference": reference,
-                    "amount": db_transaction["amount"],
-                    "currency": db_transaction["currency"],
-                    "customer": {"email": db_transaction["customer_email"]},
-                    "metadata": db_transaction["metadata"],
-                    "paid_at": db_transaction["paid_at"].isoformat() if db_transaction["paid_at"] else None,
-                    "gateway_response": db_transaction["gateway_response"],
-                    "from_cache": True
-                }
-                self._cache_verification(reference, result)
-                return result
+        # If already processed successfully, don't call Paystack again
+        if db_transaction and db_transaction.get("processed") and db_transaction.get("status") == "success":
+            logger.info(f"Transaction already processed: {reference}")
+            result = {
+                "success": True,
+                "status": "success",
+                "reference": reference,
+                "amount": db_transaction["amount"],
+                "currency": db_transaction["currency"],
+                "customer": {"email": db_transaction["customer_email"]},
+                "metadata": db_transaction.get("metadata", {}),
+                "paid_at": db_transaction.get("paid_at"),
+                "gateway_response": db_transaction.get("gateway_response"),
+                "from_cache": True
+            }
+            self._cache_verification(reference, result)
+            return result
 
-            # Increment verification count
-            await conn.execute(
-                """
-                UPDATE payment_transactions
-                SET verification_count = verification_count + 1,
-                    last_verified_at = NOW()
-                WHERE reference = $1
-                """,
-                reference
-            )
+        # Increment verification count
+        if db_transaction:
+            current_count = db_transaction.get("verification_count", 0)
+            self.supabase.table("payment_transactions").update({
+                "verification_count": current_count + 1,
+                "last_verified_at": datetime.now().isoformat()
+            }).eq("reference", reference).execute()
 
         # Call Paystack API to verify
         if not PAYSTACK_SECRET_KEY:
@@ -255,25 +231,16 @@ class OptimizedPaymentsController:
                 transaction_data = result["data"]
 
                 # Update database with verification result
-                async with self.db_pool.acquire() as conn:
-                    await conn.execute(
-                        """
-                        UPDATE payment_transactions
-                        SET status = $1,
-                            channel = $2,
-                            gateway_response = $3,
-                            paid_at = $4,
-                            authorization_code = $5,
-                            updated_at = NOW()
-                        WHERE reference = $6
-                        """,
-                        transaction_data["status"],
-                        transaction_data.get("channel"),
-                        transaction_data.get("gateway_response"),
-                        transaction_data.get("paid_at"),
-                        transaction_data.get("authorization", {}).get("authorization_code"),
-                        reference
-                    )
+                update_data = {
+                    "status": transaction_data["status"],
+                    "channel": transaction_data.get("channel"),
+                    "gateway_response": transaction_data.get("gateway_response"),
+                    "paid_at": transaction_data.get("paid_at"),
+                    "authorization_code": transaction_data.get("authorization", {}).get("authorization_code"),
+                    "updated_at": datetime.now().isoformat()
+                }
+                
+                self.supabase.table("payment_transactions").update(update_data).eq("reference", reference).execute()
 
                 logger.info(f"Payment verified - Reference: {reference}, Status: {transaction_data['status']}")
 
@@ -334,46 +301,33 @@ class OptimizedPaymentsController:
             return {"success": False, "error": "No reference in webhook"}
 
         # IDEMPOTENCY CHECK: Has this event already been processed?
-        async with self.db_pool.acquire() as conn:
-            transaction = await conn.fetchrow(
-                """
-                SELECT id, processed, status, webhook_received_count
-                FROM payment_transactions
-                WHERE reference = $1
-                FOR UPDATE  -- Lock row to prevent race conditions
-                """,
-                reference
+        response = self.supabase.table("payment_transactions").select("*").eq("reference", reference).execute()
+        
+        if not response.data:
+            logger.warning(f"Webhook for unknown transaction: {reference}")
+            return {"success": False, "error": "Transaction not found"}
+        
+        transaction = response.data[0]
+
+        # Increment webhook counter
+        new_count = transaction.get("webhook_received_count", 0) + 1
+        self.supabase.table("payment_transactions").update({
+            "webhook_received_count": new_count,
+            "last_webhook_at": datetime.now().isoformat()
+        }).eq("reference", reference).execute()
+
+        # If already processed, log and return success (idempotent)
+        if transaction.get("processed"):
+            logger.info(
+                f"Webhook for already processed transaction: {reference} "
+                f"(count: {new_count})"
             )
-
-            if not transaction:
-                logger.warning(f"Webhook for unknown transaction: {reference}")
-                return {"success": False, "error": "Transaction not found"}
-
-            # Increment webhook counter
-            new_count = transaction["webhook_received_count"] + 1
-            await conn.execute(
-                """
-                UPDATE payment_transactions
-                SET webhook_received_count = $1,
-                    last_webhook_at = NOW()
-                WHERE reference = $2
-                """,
-                new_count,
-                reference
-            )
-
-            # If already processed, log and return success (idempotent)
-            if transaction["processed"]:
-                logger.info(
-                    f"Webhook for already processed transaction: {reference} "
-                    f"(count: {new_count})"
-                )
-                return {
-                    "success": True,
-                    "already_processed": True,
-                    "reference": reference,
-                    "webhook_count": new_count
-                }
+            return {
+                "success": True,
+                "already_processed": True,
+                "reference": reference,
+                "webhook_count": new_count
+            }
 
         logger.info(f"Processing webhook event: {event_type} for {reference}")
 
@@ -385,58 +339,40 @@ class OptimizedPaymentsController:
             plan = metadata.get("plan", "pro")
             user_id = metadata.get("user_id")
 
-            # Use database transaction to ensure atomicity
-            async with self.db_pool.acquire() as conn:
-                async with conn.transaction():
-                    # Mark as processed FIRST (idempotency)
-                    await conn.execute(
-                        """
-                        UPDATE payment_transactions
-                        SET processed = TRUE,
-                            processed_at = NOW(),
-                            status = 'success'
-                        WHERE reference = $1 AND processed = FALSE
-                        """,
-                        reference
-                    )
+            # Check one more time before processing (race condition protection)
+            check_response = self.supabase.table("payment_transactions").select("processed").eq("reference", reference).execute()
+            
+            if check_response.data and check_response.data[0].get("processed"):
+                logger.warning(f"Race condition detected for {reference}")
+                return {
+                    "success": True,
+                    "already_processed": True,
+                    "reference": reference
+                }
+            
+            # Mark as processed FIRST (idempotency)
+            self.supabase.table("payment_transactions").update({
+                "processed": True,
+                "processed_at": datetime.now().isoformat(),
+                "status": "success"
+            }).eq("reference", reference).eq("processed", False).execute()
 
-                    # Check if update actually happened (race condition protection)
-                    check = await conn.fetchval(
-                        "SELECT processed_at FROM payment_transactions WHERE reference = $1",
-                        reference
-                    )
+            # Update user plan
+            user_response = self.supabase.table("users").update({
+                "plan_type": plan,
+                "payment_status": "active",
+                "last_payment_ref": reference,
+                "updated_at": datetime.now().isoformat()
+            }).eq("email", customer_email).execute()
 
-                    if not check:
-                        logger.warning(f"Race condition detected for {reference}")
-                        return {
-                            "success": True,
-                            "already_processed": True,
-                            "reference": reference
-                        }
-
-                    # Update user plan
-                    updated_user = await conn.fetchrow(
-                        """
-                        UPDATE users
-                        SET plan_type = $1,
-                            payment_status = 'active',
-                            last_payment_ref = $2,
-                            updated_at = NOW()
-                        WHERE email = $3
-                        RETURNING id, email, plan_type
-                        """,
-                        plan,
-                        reference,
-                        customer_email
-                    )
-
-                    if not updated_user:
-                        logger.warning(f"User not found for email: {customer_email}")
-                    else:
-                        logger.info(
-                            f"User plan updated via webhook - "
-                            f"User: {updated_user['id']}, Plan: {updated_user['plan_type']}"
-                        )
+            if not user_response.data:
+                logger.warning(f"User not found for email: {customer_email}")
+            else:
+                updated_user = user_response.data[0]
+                logger.info(
+                    f"User plan updated via webhook - "
+                    f"User: {updated_user['id']}, Plan: {updated_user['plan_type']}"
+                )
 
             return {
                 "success": True,

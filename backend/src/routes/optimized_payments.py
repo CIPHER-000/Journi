@@ -6,13 +6,13 @@ With idempotency, caching, rate limiting, and best practices
 from fastapi import APIRouter, HTTPException, Depends, Request, Header
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, Dict, Any
+import json
 import logging
 from datetime import datetime, timedelta
 from collections import defaultdict
-import asyncpg
+from supabase import create_client, Client
 
 from src.controllers.optimizedPaymentsController import OptimizedPaymentsController
-from src.database import get_db_pool
 
 logger = logging.getLogger(__name__)
 
@@ -55,11 +55,21 @@ class PaymentVerifyResponse(BaseModel):
 
 
 # Dependency: Get payment controller
+def get_supabase_client() -> Client:
+    """Get Supabase client instance"""
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    
+    if not supabase_url or not supabase_key:
+        raise HTTPException(status_code=500, detail="Supabase configuration not found")
+    
+    return create_client(supabase_url, supabase_key)
+
 async def get_payment_controller(
-    db_pool: asyncpg.Pool = Depends(get_db_pool)
+    supabase: Client = Depends(get_supabase_client)
 ) -> OptimizedPaymentsController:
-    """Dependency to get payment controller with DB pool"""
-    return OptimizedPaymentsController(db_pool)
+    """Dependency to get payment controller with Supabase client"""
+    return OptimizedPaymentsController(supabase)
 
 
 # Rate limiting middleware

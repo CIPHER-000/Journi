@@ -15,7 +15,7 @@ python-dotenv
 pydantic[email]
 aiofiles
 supabase
-asyncpg
+# asyncpg - Deprecated: Now using Supabase REST API exclusively
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart

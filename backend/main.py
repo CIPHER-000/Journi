@@ -39,7 +39,6 @@ try:
     from src.routes import export_routes
     from src.middleware.auth_middleware import require_auth
     from src.models.auth import UserProfile, UserJourney, UsageLimitResponse
-    from src.database import create_db_pool, close_db_pool
 
     # Initialize services
     usage_service = UsageService()
@@ -120,13 +119,8 @@ async def startup_event():
     try:
         logger.info("Starting up application...")
         
-        # Initialize database connection pool
-        try:
-            await create_db_pool()
-            logger.info("Database connection pool initialized successfully")
-        except Exception as db_error:
-            logger.warning(f"Database pool initialization failed: {str(db_error)}")
-            logger.warning("Payment features may not work properly")
+        # Skipping Postgres pool initialization — using Supabase as primary data source
+        logger.info("Using Supabase REST API for all database operations")
         
         # Initialize job manager
         job_manager = JobManager()
@@ -144,7 +138,7 @@ async def startup_event():
         journey_routes.set_dependencies(job_manager, usage_service)
         export_routes.set_dependencies(job_manager)
         
-        logger.info("Application startup complete")
+        logger.info("Application startup complete - All services using Supabase")
     except Exception as e:
         logger.error(f"Error during startup: {str(e)}")
         raise
@@ -156,12 +150,8 @@ async def shutdown_event():
     try:
         logger.info("Shutting down application...")
         
-        # Close database connection pool
-        try:
-            await close_db_pool()
-            logger.info("Database connection pool closed successfully")
-        except Exception as db_error:
-            logger.warning(f"Error closing database pool: {str(db_error)}")
+        # No database pool to close - using Supabase REST API
+        logger.info("Supabase client connections will be cleaned up automatically")
         
         # Clean up job manager resources
         if job_manager:
@@ -172,7 +162,6 @@ async def shutdown_event():
                     job_manager.close()
             logger.info("Job manager shut down successfully")
         
-        # Add any other cleanup code here
         logger.info("Application shutdown complete")
     except Exception as e:
         logger.error(f"Error during shutdown: {str(e)}")
