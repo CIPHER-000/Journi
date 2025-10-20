@@ -155,7 +155,7 @@ export default function CreateJourneyPage() {
         formDataToSend.append(`files`, file)
       })
 
-      const response = await fetch(`${API_BASE_URL}/journey/create`, {
+      const response = await fetch(`${API_BASE_URL}/api/journey/create`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

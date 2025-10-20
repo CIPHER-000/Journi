@@ -34,7 +34,7 @@ export class AgentService {
       // Test backend connection first
       await this.checkBackendConnection();
       
-      const response = await fetch(`${this.baseUrl}/journey/create`, {
+      const response = await fetch(`${this.baseUrl}/api/journey/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

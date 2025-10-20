@@ -21,16 +21,38 @@ class CrewCoordinator:
     def __init__(self, user: UserProfile):
         self.user = user
         
-        # Get OpenAI API key (BYOK or default)
-        api_key = user.openai_api_key or os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("No OpenAI API key available")
+        # Environment-based AI service selection
+        env = os.getenv("ENVIRONMENT", "production").lower()
         
-        self.llm = ChatOpenAI(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o"),
-            temperature=0.7,
-            openai_api_key=api_key
-        )
+        if env == "development":
+            # Development mode: Use OpenRouter service
+            logger.info("Using OpenRouter service for development mode")
+            from ..services.openrouter_service import openrouter_service
+            
+            try:
+                self.llm = openrouter_service.get_llm_for_crewai(
+                    model=os.getenv("OPENROUTER_MODEL", "openai/gpt-3.5-turbo"),
+                    temperature=0.7
+                )
+                self.ai_service = "openrouter"
+                logger.info("OpenRouter LLM initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize OpenRouter: {str(e)}")
+                raise ValueError(f"OpenRouter initialization failed: {str(e)}")
+        else:
+            # Production mode: Use OpenAI service
+            logger.info("Using OpenAI service for production mode")
+            api_key = user.openai_api_key or os.getenv("OPENAI_API_KEY")
+            if not api_key:
+                raise ValueError("No OpenAI API key available")
+            
+            self.llm = ChatOpenAI(
+                model=os.getenv("OPENAI_MODEL", "gpt-4o"),
+                temperature=0.7,
+                openai_api_key=api_key
+            )
+            self.ai_service = "openai"
+            logger.info("OpenAI LLM initialized successfully")
         
         # Initialize all agents
         self.context_agent = ContextAgent(self.llm)

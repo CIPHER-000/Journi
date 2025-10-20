@@ -569,18 +569,36 @@ class JobManager:
             
             # Provide user-friendly error messages for common issues
             error_str = str(workflow_error).lower()
-            if "jobstatus" in error_str and "attribute" in error_str:
+            
+            # OpenRouter specific errors
+            if "openrouter" in error_str:
+                if "invalid" in error_str or "expired" in error_str or "401" in error_str:
+                    error_message = "Invalid or expired OpenRouter API key. Please check your API key in Settings."
+                elif "rate limit" in error_str or "429" in error_str:
+                    error_message = "OpenRouter rate limit exceeded. Please wait a few minutes before trying again."
+                elif "insufficient credits" in error_str or "402" in error_str:
+                    error_message = "Insufficient OpenRouter credits. Please add credits to your OpenRouter account."
+                elif "503" in error_str or "unavailable" in error_str:
+                    error_message = "OpenRouter service is temporarily unavailable. Please try again later."
+                elif "initialization failed" in error_str:
+                    error_message = "OpenRouter initialization failed. Please check your API key configuration."
+                else:
+                    error_message = f"OpenRouter error: {str(workflow_error)}"
+            # OpenAI specific errors  
+            elif "jobstatus" in error_str and "attribute" in error_str:
                 error_message = "Internal system error: Job status handling issue. Our team has been notified."
             elif "asyncio" in error_str and "unboundlocalerror" in error_str:
                 error_message = "Internal system error: Async processing issue. Please try again."
             elif "quota" in error_str or "billing" in error_str:
-                error_message = "OpenAI API quota exceeded. Please check your billing details."
+                error_message = "API quota exceeded. Please check your billing details."
             elif "rate limit" in error_str:
                 error_message = "API rate limit exceeded. Please try again in a few minutes."
             elif "authentication" in error_str or "api key" in error_str:
-                error_message = "Invalid OpenAI API key. Please check your API key in settings."
+                error_message = "Invalid API key. Please check your API key in Settings."
             elif "network" in error_str or "connection" in error_str:
                 error_message = "Network connection error. Please check your internet connection and try again."
+            elif "timeout" in error_str or "timed out" in error_str:
+                error_message = "Request timed out. The AI service is taking too long to respond. Please try again."
             else:
                 error_message = f"Journey generation failed: {str(workflow_error)}"
             
